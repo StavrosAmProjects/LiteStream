@@ -31,11 +31,12 @@ Implemented and committed as `594d312` on `codex/litestream-tv-fork`. Xtream set
 
 Manual checks for the maintainer:
 1. Add an Xtream provider with each choice: ALL shows all content; NONE hides normal provider content; CUSTOMIZE saves the selected countries/groups.
-2. Reopen CUSTOMIZE for an existing provider, change a selection, press Cancel, and verify its previous selection remains. Press Done and verify it updates.
-3. Verify filter behavior in Live TV, Movies, Series, and Search; favorites and the source catalogue remain intact.
-4. Add a second provider and verify its filter is independent. Switch profile and verify filters are isolated.
-5. Refresh the provider and verify the selection remains; use backup export/import to verify the existing `ipvio_live` backup coverage.
-6. With NONE selected, open Live TV > Countries and confirm there is a path to customize again.
-7. On a new Xtream provider, confirm backup-server fields are hidden until requested; resume a provider with saved backup entries and confirm they are visible.
+2. On a new Xtream provider, choose CUSTOMIZE, change a selection, and press Cancel; verify the uncommitted filter is discarded and default ALL visibility remains. Repeat and press Done to commit the selected subset.
+3. Reopen CUSTOMIZE for an existing provider, change a selection, press Cancel, and verify its previous selection remains. Press Done and verify it updates.
+4. Verify filter behavior in Live TV, Movies, Series, and Search; favorites and the source catalogue remain intact.
+5. Add a second provider and verify its filter is independent. Switch profile and verify filters are isolated.
+6. Refresh the provider and verify the selection remains; use backup export/import to verify the existing `ipvio_live` backup coverage.
+7. With NONE selected, open Live TV > Countries and confirm there is a path to customize again.
+8. On a new Xtream provider, confirm backup-server fields are hidden until requested; resume a provider with saved backup entries and confirm they are visible.
 
 Not checked here: Gradle/JUnit, Android TV focus, profile/backup round trip, or refresh behavior on a device. Risk: country inference and URL identity depend on provider group labels and stable provider URLs.

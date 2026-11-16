@@ -97,14 +97,12 @@ fun AddPlaylistScreen(onDone: () -> Unit) {
         pendingBackups = emptyList()
         if (backupsForProvider.isNotEmpty()) PlaylistStore.setBackups(ctx, finalUrl, backupsForProvider)
         scope.launch {
-            val alreadySaved = PlaylistStore.lists.any { it.url.trimEnd('/') == finalUrl.trimEnd('/') }
             if (!PlaylistStore.load(ctx, finalUrl, true)) return@launch
             if (imported.name.isNotBlank()) PlaylistStore.rename(ctx, PlaylistStore.active, imported.name)
             val savedUrl = PlaylistStore.savedUrl(ctx) ?: finalUrl
             when (mode) {
                 "none" -> { CountryFilterStore.write(ctx, savedUrl, emptySet()); onDone() }
                 "customize" -> {
-                    if (!alreadySaved) CountryFilterStore.write(ctx, savedUrl, emptySet())
                     if (PlaylistStore.channels.none { it.src == PlaylistStore.active }) onDone() else customizeUrl = savedUrl
                 }
                 else -> { CountryFilterStore.write(ctx, savedUrl, null); onDone() }

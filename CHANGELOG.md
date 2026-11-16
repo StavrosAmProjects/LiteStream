@@ -4,6 +4,7 @@
 - Add phone-first provider setup with an expiring local QR session, TV confirmation, and TXT/JSON/URL import with a redacted preview; setup-only sessions reject all other phone routes and do not show the legacy pairing code.
 - Add country-first Live TV browsing with a D-pad country, group, and channel view; unclassified channels remain available.
 - Add provider-scoped ALL / NONE / CUSTOMIZE visibility for Live TV, movies, series, and search without deleting playlist data.
+- Commit new provider filters only when CUSTOMIZE is confirmed; Cancel leaves default ALL visibility unchanged.
 - Keep optional Xtream backup-server fields collapsed during normal setup; saved entries remain available.
 - Set the playback-control auto-hide default to three seconds; saved user choices remain unchanged.
 - Give the fork LiteStream branding and a separate `com.litestream.tv` package; keep IPVIO data untouched and support backup-based transfer.
