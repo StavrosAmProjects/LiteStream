@@ -18,6 +18,10 @@ LiteStream TV is derived from IPVIO Stream. The retained IPVIO source and this f
 
 Kotlin standard library and coroutine artifacts are used by the application, but their resolved versions and the full transitive runtime dependency set have not been verified in this environment. They must be included in the release review from the resolved Gradle dependency graph. Dependencies are downloaded at build time; their license texts and required notices must be preserved from the respective upstream distributions.
 
+## Release review status
+
+This inventory covers direct declarations only. Maven Central metadata for `org.jellyfin.media3:media3-ffmpeg-decoder:1.9.0+1` declares GPL-3.0. That metadata does not prove the complete license inventory of native libraries bundled in the resolved AAR/APK. Before a binary release, inspect the exact resolved release dependency graph and packaged native files, then preserve all required notices and corresponding source. Gradle resolution and artifact inspection have not been run in this workspace, so transitive and bundled-binary licenses remain unverified. Before distributing an APK, also verify the release carries the modified-version/date and legal notices required by GPL-3.0 sections 5–6, and that recipients can obtain the corresponding source. See the [GPL-3.0 text](https://www.gnu.org/licenses/gpl-3.0.html#section5).
+
 License references checked for this direct inventory:
 
 - [AndroidX license](https://github.com/androidx/androidx/blob/androidx-main/LICENSE)

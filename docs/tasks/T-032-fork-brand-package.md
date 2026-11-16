@@ -17,7 +17,7 @@ The audited Android source used application ID `com.ipvio.stream`, the IPVIO lau
 - Clear the default upstream update URLs, default auto-check off, hide the first-start update card until an address is configured, and rename the release artifact to `LiteStream-TV.apk`.
 - Document side-by-side install, backup transfer, release signing, custom update URL, and Google OAuth setup.
 - Use LiteStream TV as the example TMDB API app name in the setup guide.
-- Update the README and direct dependency license inventory for the fork identity; leave transitive license review open until Gradle resolution is available.
+- Update the README and direct dependency license inventory for the fork identity; leave transitive and bundled native license review open until the exact release dependency graph and artifacts can be inspected.
 
 ## Affected files
 
@@ -32,13 +32,14 @@ The audited Android source used application ID `com.ipvio.stream`, the IPVIO lau
 - [x] README and direct third-party dependency inventory use the LiteStream TV identity and declared versions.
 - [x] About page version label uses the LiteStream TV translation key in all supported languages.
 - [x] TMDB API setup instructions use the fork's app name.
-- [ ] Resolve the complete release dependency graph and verify all transitive notices/licenses.
+- [ ] Resolve the complete release dependency graph and inspect the packaged native binaries for required notices/licenses.
+- [ ] Before distribution, check the modified-version/date and user-interface notices and provide corresponding source with the release under GPL-3.0 sections 5–6.
 - [ ] Verify package, adaptive icon, TV banner, OAuth, signed update, and backup migration in an Android build/device run.
 
 ## Risks and validation
 
-`git diff --check` is the only validation run. No Gradle dependency resolution, build, tests, APK, or device validation. The direct declared dependency license inventory is documented, but transitive licenses/notices remain unverified. The new application ID means data is separate; users must export/import a backup. Google Drive needs a LiteStream OAuth configuration; the code keeps the legacy Drive folder name and file prefixes for compatibility. The release repository is not configured, so update checking remains off until its URL is entered.
+`git diff --check` is the only validation run. No Gradle dependency resolution, build, tests, APK, or device validation. The direct dependency inventory is documented. Maven Central metadata for the Jellyfin FFmpeg decoder declares GPL-3.0; this does not establish every license for native libraries inside the resolved artifact. Transitive dependency and bundled native notices remain unverified until the exact release graph and APK are available. The new application ID means data is separate; users must export/import a backup. Google Drive needs a LiteStream OAuth configuration; the code keeps the legacy Drive folder name and file prefixes for compatibility. The release repository is not configured, so update checking remains off until its URL is entered.
 
 ## Status
 
-Implemented and committed as `594d312` on `codex/litestream-tv-fork`.
+Implemented and committed as `594d312` on `codex/litestream-tv-fork`. Direct Jellyfin license metadata and the remaining artifact-level review limit were recorded on 2026-11-17. Before release, verify the exact resolved dependency graph and native binaries; add a relevant modified-version date to the release notices; preserve appropriate in-app legal notices; and make the matching corresponding source available with the binary. See [GPL-3.0 sections 5–6](https://www.gnu.org/licenses/gpl-3.0.html#section5).
