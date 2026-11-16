@@ -2,7 +2,7 @@ Last update: 2026-11-16 (fork follow-up: About-page version translation). Read `
 
 ## Current task
 
-Current task: approved fork implementation, tasks T-027 through T-032, on `codex/litestream-tv-fork` from `e55395a73ee8ee7b21e67a00a677581d90fa9529`. The implementation started at `594d312`; current committed head is `0c31608`.
+Current task: approved fork implementation, tasks T-027 through T-032, on `codex/litestream-tv-fork` from `e55395a73ee8ee7b21e67a00a677581d90fa9529`. Implementation started at `594d312`; latest application-code change is `0c31608`.
 
 T-027 (phone provider setup and credential import): implemented and committed as `594d312`. Added an opt-in token URL session, stage/confirm flow, local TXT/JSON/URL parsing, TV file picker preview, staged M3U phone upload, LiteStream-branded temporary phone pages, and rejection of all non-setup routes during pairing. The pairing card no longer shows the legacy four-digit code or implies encrypted transport. Tests added; none run. Manual steps and risk are in `docs/tasks/T-027-phone-provider-setup.md`.
 T-028 (country-first Live TV browsing): implemented in `594d312`; `c133cb5` adds matching full country names within provider labels even when extra words follow the country name. Added country normalization and a three-pane D-pad view at Live TV > Countries; unknown content remains accessible and provider data is unchanged. Tests added; none run. Manual steps are in `docs/tasks/T-028-country-first-live-browse.md`.
