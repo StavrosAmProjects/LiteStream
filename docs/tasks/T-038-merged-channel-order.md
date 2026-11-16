@@ -21,3 +21,13 @@ The LiteStream Android audit confirmed country/category selection and grouping, 
 ## Status
 
 Source audit complete; existing features satisfy the requested workflow. No parallel ordering implementation added. Android TV discoverability and D-pad behavior should be checked by the maintainer.
+
+## Manual Android TV check
+
+1. Add two providers, enable both in Settings > Playlists, and save different country/group selections for each.
+2. In Live TV, choose **All playlists** and open Countries. Confirm the country view contains the combined channels that pass each provider's own filter.
+3. From the merged **All channels** list, create an own channel list. Add channels from both providers; verify search while adding searches the currently filtered merged catalogue.
+4. Open the own list, use the channel menu to move entries up/down, then play a channel and verify channel surfing stays in that custom order.
+5. Restart the app and verify the order remains. If checking profile backup, export and restore the profile and confirm the list and order return.
+
+This checks custom ordering of the user's curated cross-provider list. The underlying merged provider catalogue remains in provider order; it does not expose a global manual reorder mode.
