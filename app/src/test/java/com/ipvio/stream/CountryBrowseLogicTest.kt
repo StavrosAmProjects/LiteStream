@@ -14,6 +14,8 @@ class CountryBrowseLogicTest {
         assertEquals("GB", CountryBrowseLogic.classify("Drama | GB"))
         assertEquals("GB", CountryBrowseLogic.classify("🇬🇧 Great Britain | Sports"))
         assertEquals("US", CountryBrowseLogic.classify("United States - Entertainment"))
+        assertEquals("GR", CountryBrowseLogic.classify("Sports Greece HD"))
+        assertEquals("GB", CountryBrowseLogic.classify("News | United Kingdom Today"))
     }
 
     @Test fun doesNotGuessFromOrdinaryWordsAndPreservesUnknownEntries() {

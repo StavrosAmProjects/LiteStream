@@ -29,6 +29,7 @@ object CountryBrowseLogic {
         add("RU", "Russia", "Russian Federation")
         result
     }
+    private val aliasMaxWords by lazy { aliases.keys.maxOf { it.split(' ').size } }
 
     /** ISO country code, or null when the provider label has no confident country marker. */
     fun classify(label: String): String? {
@@ -38,13 +39,11 @@ object CountryBrowseLogic {
             if (normalized.isEmpty()) continue
             aliases[normalized]?.let { return it }
             val tokens = normalized.split(' ')
-            if (tokens.firstOrNull() in shortCodes) return aliases[tokens.first()]
-            if (tokens.lastOrNull() in shortCodes) return aliases[tokens.last()]
-            for (end in 1 until tokens.size) {
-                val prefix = tokens.take(end).joinToString(" ")
-                val suffix = tokens.takeLast(end).joinToString(" ")
-                if (prefix.length > 2 || prefix in shortCodes) aliases[prefix]?.let { return it }
-                if (suffix.length > 2 || suffix in shortCodes) aliases[suffix]?.let { return it }
+            for (start in tokens.indices) {
+                for (size in 1..minOf(aliasMaxWords, tokens.size - start)) {
+                    val candidate = tokens.subList(start, start + size).joinToString(" ")
+                    if (candidate.length > 2 || candidate in shortCodes) aliases[candidate]?.let { return it }
+                }
             }
         }
         return null

@@ -30,6 +30,7 @@ Manual checks for the maintainer:
 2. Press Back from channels, groups, and countries; each step returns one level.
 3. Play a channel and use normal channel switching; Back from playback returns to the country view.
 4. Try provider labels with `CY`, `Cyprus`, `GR`, `Greek`, `UK`, `GB`, and country flags; verify Unknown still shows unclassified channels.
+   Also check country names surrounded by provider words, such as `Sports Greece HD`.
 5. Verify the normal Live TV category list and provider catalogue are unchanged.
 
 Known limit: country display names come from Java's English locale data, with common provider aliases explicitly defined in the classifier. No persistent country/group filters or ALL/NONE/CUSTOMIZE setup is included in this task.
