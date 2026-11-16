@@ -216,7 +216,7 @@ fun AddPlaylistScreen(editProviderIndex: Int = -1, onDone: () -> Unit) {
 
     if (PlaylistStore.loading) { PlaylistLoadingOverlay(); return }
 
-    // Start focus on the M3U/Xtream choice (not on an input field: that would open the on-screen keyboard immediately)
+    // Start on phone setup, the preferred TV onboarding path; never open the keyboard on first focus.
     val startFocus = remember { FocusRequester() }
     LaunchedEffect(Unit) { if (editTarget == null) { delay(120); runCatching { startFocus.requestFocus() } } }
 
@@ -251,7 +251,7 @@ fun AddPlaylistScreen(editProviderIndex: Int = -1, onDone: () -> Unit) {
             }
             if (editTarget == null) {
             Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 8.dp, vertical = 5.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                FocusButton(Lang.tr("Am Handy einrichten").uppercase(Lang.locale()), primary = true, compact = true, onClick = { startPhoneSetup() })
+                FocusButton(Lang.tr("Am Handy einrichten").uppercase(Lang.locale()), Modifier.focusRequester(startFocus), primary = true, compact = true, onClick = { startPhoneSetup() })
                 FocusButton(Lang.tr("Anbieterdaten-Datei importieren").uppercase(Lang.locale()), compact = true) {
                     try { pickProviderFile.launch(arrayOf("text/*", "application/json", "application/octet-stream")) }
                     catch (e: Exception) { PlaylistStore.error = "Auf diesem Gerät gibt es keine Dateiauswahl." }
@@ -273,7 +273,7 @@ fun AddPlaylistScreen(editProviderIndex: Int = -1, onDone: () -> Unit) {
             }
             // The padding sits inside the scrolling row: an enlarged (focused) button must not be cut off at its edge
             Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 8.dp, vertical = 5.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                FocusButton("M3U-Link", Modifier.focusRequester(startFocus), primary = !xtream && !stalker, compact = true) { xtream = false; stalker = false }
+                FocusButton("M3U-Link", primary = !xtream && !stalker, compact = true) { xtream = false; stalker = false }
                 FocusButton("Xtream-Login", primary = xtream && !stalker, compact = true) { xtream = true; stalker = false }
                 FocusButton("Stalker-Portal", primary = stalker, compact = true) { stalker = true; xtream = false }
             }

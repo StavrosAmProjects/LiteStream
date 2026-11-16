@@ -34,6 +34,7 @@ Extend IPVIO's existing phone setup and file import paths. Keep credentials loca
 - [x] A valid phone submission only stages data; TV cancel discards staged phone M3U and closes the session; TV confirm starts the existing loader.
 - [x] Password is absent from the TV preview.
 - [x] Phone page clearly states that local credential transfer is unencrypted.
+- [x] Fresh setup gives initial D-pad focus to **Set up from phone**, before manual entry.
 - [x] Source review found no configured analytics/crash-reporting SDK or HTTP logging interceptor; the local crash record omits exception messages and addresses.
 - [x] Existing phone routes remain available outside setup; setup-only rejects the root and every non-token route.
 - [x] Unit tests cover parser and session edge cases, including staged file upload.
@@ -49,7 +50,7 @@ Extend IPVIO's existing phone setup and file import paths. Keep credentials loca
 Implemented in `594d312`, with transport disclosure follow-up `a834d1e`, expiry UI follow-up `cea13a4`, and immediate listener shutdown after submission, on `codex/litestream-tv-fork`. Source review: `Net.base` has no HTTP logging interceptor; repository search found no analytics/crash-reporting SDK; `CrashLog` stores exception type and up to four app stack locations, not messages or URLs. Credential-specific logging search found no matches. Source tests cover parser/session behavior and the transport warning; tests were not run. Listener shutdown after submission and ten-minute UI expiry still need device validation. `git diff --check` passed for the follow-up. Gradle/JUnit and Android TV checks were not run in this environment.
 
 Manual checks for the maintainer:
-1. Open Add Playlist on Android TV; verify Set up from phone is immediately visible, opens a QR/address, and the phone page accepts either fields or a full Xtream/M3U URL.
+1. Open Add Playlist on Android TV; verify initial focus is on Set up from phone, opens a QR/address, and the phone page accepts either fields or a full Xtream/M3U URL.
    The card should not show the legacy four-digit code or claim the connection is encrypted.
 2. Send Xtream details; verify the listener closes as the TV preview opens, the TV shows provider/server and no password, Cancel does not add it, and Confirm loads it.
 3. Repeat with a phone M3U file; Cancel removes the staged import and Confirm loads it.
