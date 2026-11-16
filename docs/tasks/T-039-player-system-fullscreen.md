@@ -28,4 +28,4 @@ Reuse AndroidX Core's `WindowInsetsControllerCompat` already available through t
 
 ## Status
 
-Implemented in the working tree; not built or device-tested.
+Implemented and committed as `ed968ff`; not built or device-tested.
