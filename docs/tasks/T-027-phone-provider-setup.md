@@ -32,6 +32,7 @@ Extend IPVIO's existing phone setup and file import paths. Keep credentials loca
 - [x] Setup QR uses a random token; expired and replayed submissions fail; setup-only session rejects legacy credential submission.
 - [x] A valid phone submission only stages data; TV cancel discards staged phone M3U and closes the session; TV confirm starts the existing loader.
 - [x] Password is absent from the TV preview.
+- [x] Phone page clearly states that local credential transfer is unencrypted.
 - [x] Existing phone routes remain available outside setup; setup-only rejects the root and every non-token route.
 - [x] Unit tests cover parser and session edge cases, including staged file upload.
 
@@ -43,7 +44,7 @@ Extend IPVIO's existing phone setup and file import paths. Keep credentials loca
 
 ## Status
 
-Implemented and committed as `594d312` on `codex/litestream-tv-fork`. `git diff --check` passed. Gradle/JUnit and Android TV checks were not run in this environment.
+Implemented in `594d312`, with transport disclosure follow-up `a834d1e`, on `codex/litestream-tv-fork`. A source test checks the warning in English and German; tests were not run. `git diff --check` passed. Gradle/JUnit and Android TV checks were not run in this environment.
 
 Manual checks for the maintainer:
 1. Open Add Playlist on Android TV; verify Set up from phone is immediately visible, opens a QR/address, and the phone page accepts either fields or a full Xtream/M3U URL.
