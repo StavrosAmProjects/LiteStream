@@ -33,6 +33,7 @@ Extend IPVIO's existing phone setup and file import paths. Keep credentials loca
 - [x] A valid phone submission only stages data; TV cancel discards staged phone M3U and closes the session; TV confirm starts the existing loader.
 - [x] Password is absent from the TV preview.
 - [x] Phone page clearly states that local credential transfer is unencrypted.
+- [x] Source review found no configured analytics/crash-reporting SDK or HTTP logging interceptor; the local crash record omits exception messages and addresses.
 - [x] Existing phone routes remain available outside setup; setup-only rejects the root and every non-token route.
 - [x] Unit tests cover parser and session edge cases, including staged file upload.
 
@@ -44,7 +45,7 @@ Extend IPVIO's existing phone setup and file import paths. Keep credentials loca
 
 ## Status
 
-Implemented in `594d312`, with transport disclosure follow-up `a834d1e`, on `codex/litestream-tv-fork`. A source test checks the warning in English and German; tests were not run. `git diff --check` passed. Gradle/JUnit and Android TV checks were not run in this environment.
+Implemented in `594d312`, with transport disclosure follow-up `a834d1e`, on `codex/litestream-tv-fork`. Source review: `Net.base` has no HTTP logging interceptor; repository search found no analytics/crash-reporting SDK; `CrashLog` stores exception type and up to four app stack locations, not messages or URLs. Credential-specific logging search found no matches. A source test checks the warning in English and German; tests were not run. `git diff --check` passed. Gradle/JUnit and Android TV checks were not run in this environment.
 
 Manual checks for the maintainer:
 1. Open Add Playlist on Android TV; verify Set up from phone is immediately visible, opens a QR/address, and the phone page accepts either fields or a full Xtream/M3U URL.
