@@ -125,7 +125,7 @@ fun AddPlaylistScreen(onDone: () -> Unit) {
     LaunchedEffect(setupPath) {
         val path = setupPath ?: return@LaunchedEffect
         delay(PhoneImport.SETUP_LIFETIME_MS)
-        if (setupPath == path && phonePending == null) {
+        if (setupPath == path) {
             receiver.stop()
             setupPath = null
             serving = false
@@ -156,6 +156,10 @@ fun AddPlaylistScreen(onDone: () -> Unit) {
         receiver.onSetupReceive = { input ->
             Handler(Looper.getMainLooper()).post {
                 val imported = ProviderImport(input.name.ifBlank { input.host.ifBlank { "Provider" } }, input, input.url.startsWith("file:"))
+                // The token is one-use; close the setup-only listener before TV confirmation.
+                receiver.stop()
+                setupPath = null
+                serving = false
                 phonePending = imported
             }
         }
