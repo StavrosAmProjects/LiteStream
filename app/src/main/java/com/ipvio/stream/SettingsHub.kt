@@ -72,6 +72,7 @@ private val CATS = listOf(
 /** Open a settings page directly (e.g. profile circle at the top with only one profile: page "Profiles"). */
 object SettingsNav {
     const val PROFILES = 10
+    const val PLAYLISTS = 9
     const val HOME = 17
     /** "Reset all settings" page; the donate page is always the last one (one after this). */
     const val RESET_ALL = 19
@@ -80,7 +81,7 @@ object SettingsNav {
 
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
-fun SettingsHub(onAdd: () -> Unit, reload: () -> Unit) {
+fun SettingsHub(onAdd: () -> Unit, reload: () -> Unit, onEditProvider: (Int) -> Unit) {
     val ctx = LocalContext.current
     var page by remember { mutableIntStateOf(-1) }
     var last by remember { mutableIntStateOf(0) }
@@ -141,7 +142,7 @@ fun SettingsHub(onAdd: () -> Unit, reload: () -> Unit) {
                 6 -> AudioPage(ctx)
                 7 -> FilterPage(ctx) { page = 9 }
                 8 -> LivePage(ctx)
-                9 -> PlaylistPage(ctx, onAdd, reload)
+                9 -> PlaylistPage(ctx, onAdd, reload, onEditProvider)
                 10 -> ProfilesPage(ctx) { page = -1 }
                 11 -> ApiKeysPage(ctx)
                 12 -> ParentalPage(ctx) { page = -1 }
@@ -1254,7 +1255,7 @@ private fun LivePage(ctx: Context) {
 }
 
 @Composable
-private fun PlaylistPage(ctx: Context, onAdd: () -> Unit, reload: () -> Unit) {
+private fun PlaylistPage(ctx: Context, onAdd: () -> Unit, reload: () -> Unit, onEditProvider: (Int) -> Unit) {
     val scope = rememberCoroutineScope()
     var editing by remember { mutableIntStateOf(-1) }
     var name by remember { mutableStateOf("") }
@@ -1295,6 +1296,7 @@ private fun PlaylistPage(ctx: Context, onAdd: () -> Unit, reload: () -> Unit) {
                 scope.launch { if (!PlaylistStore.reapplyLanguages(ctx)) PlaylistStore.applyMode(ctx) }
             }
             SmallPill("Umbenennen") { editing = i; name = pl.name }
+            if (StalkerLogic.parse(pl.url) == null) SmallPill(Lang.tr("Am Handy bearbeiten")) { onEditProvider(i) }
             if (XtreamLogic.fromUrl(pl.url) != null) SmallPill("Backup-Server") {
                 val b = PlaylistStore.backups(ctx, pl.url)
                 editingB = i; backups = backupList(b); backupErr = null

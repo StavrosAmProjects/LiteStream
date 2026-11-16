@@ -32,6 +32,13 @@ object PlaylistMode {
         version++
     }
 
+    fun move(c: Context, oldUrl: String, newUrl: String) {
+        if (oldUrl == newUrl) return
+        val mode = get(c, oldUrl)
+        prefs(c).edit().remove(key(oldUrl)).putInt(key(newUrl), mode).apply()
+        version++
+    }
+
     /** Hidden languages of a playlist plus its content mode as pseudo codes (used while loading, see LangTagLogic.hides). */
     fun withMode(c: Context, url: String, hidden: Set<String>): Set<String> = when (get(c, url)) {
         LIVE_ONLY -> hidden + LangTagLogic.NO_VOD

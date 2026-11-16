@@ -37,9 +37,10 @@ import kotlinx.coroutines.launch
 
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
-fun AddPlaylistScreen(onDone: () -> Unit) {
+fun AddPlaylistScreen(editProviderIndex: Int = -1, onDone: () -> Unit) {
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
+    val editTarget = PlaylistStore.lists.getOrNull(editProviderIndex)
     // Last entered playlist that has not finished loading (crash, power loss, abort): prefill
     val pend = remember { PlaylistStore.pending(ctx) }
     val pendX = remember { pend?.let { LoadLogic.xtreamParts(it.url) } }
@@ -122,6 +123,7 @@ fun AddPlaylistScreen(onDone: () -> Unit) {
             serving = true
         }
     }
+    LaunchedEffect(editProviderIndex) { if (editTarget != null) startPhoneSetup() }
     LaunchedEffect(setupPath) {
         val path = setupPath ?: return@LaunchedEffect
         delay(PhoneImport.SETUP_LIFETIME_MS)
@@ -155,7 +157,7 @@ fun AddPlaylistScreen(onDone: () -> Unit) {
         }
         receiver.onSetupReceive = { input ->
             Handler(Looper.getMainLooper()).post {
-                val imported = ProviderImport(input.name.ifBlank { input.host.ifBlank { "Provider" } }, input, input.url.startsWith("file:"))
+                val imported = ProviderImport(input.name.ifBlank { editTarget?.name ?: input.host.ifBlank { "Provider" } }, input, input.url.startsWith("file:"))
                 // The token is one-use; close the setup-only listener before TV confirmation.
                 receiver.stop()
                 setupPath = null
@@ -216,7 +218,7 @@ fun AddPlaylistScreen(onDone: () -> Unit) {
 
     // Start focus on the M3U/Xtream choice (not on an input field: that would open the on-screen keyboard immediately)
     val startFocus = remember { FocusRequester() }
-    LaunchedEffect(Unit) { delay(120); runCatching { startFocus.requestFocus() } }
+    LaunchedEffect(Unit) { if (editTarget == null) { delay(120); runCatching { startFocus.requestFocus() } } }
 
     // Phone (narrow or portrait): single column, without the phone card, smaller margins
     val cfg = androidx.compose.ui.platform.LocalConfiguration.current
@@ -245,8 +247,9 @@ fun AddPlaylistScreen(onDone: () -> Unit) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 BrandMark(Modifier.size(36.dp))
                 Text("LiteStream", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
-                Text("Playlist hinzufügen", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 14.dp))
+                Text(if (editTarget == null) "Playlist hinzufügen" else Lang.tr("Am Handy bearbeiten"), color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 14.dp))
             }
+            if (editTarget == null) {
             Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 8.dp, vertical = 5.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 FocusButton(Lang.tr("Am Handy einrichten").uppercase(Lang.locale()), primary = true, compact = true, onClick = { startPhoneSetup() })
                 FocusButton(Lang.tr("Anbieterdaten-Datei importieren").uppercase(Lang.locale()), compact = true) {
@@ -345,6 +348,21 @@ fun AddPlaylistScreen(onDone: () -> Unit) {
                     catch (e: Exception) { PlaylistStore.error = "Auf diesem Gerät gibt es keine Dateiauswahl. Spiele die Sicherung über die Handy-Seite rechts ein." }
                 }
             }
+            } else {
+                Text(editTarget.name, color = Accent2, fontSize = 18.sp, fontWeight = FontWeight.Bold, raw = true)
+                Text(Lang.tr("Gespeicherte Zugangsdaten bleiben auf dem Fernseher. Der Anbieter ändert sich erst nach Bestätigung und erfolgreichem Laden."), color = Muted, fontSize = 15.sp, lineHeight = 19.sp)
+                if (compact) PhoneCard(
+                    Modifier.fillMaxWidth().heightIn(min = 180.dp, max = 300.dp),
+                    if (serving && ip != null && setupPath != null) "http://$ip:${receiver.port}$setupPath" else null,
+                    onStart = ::startPhoneSetup
+                )
+                PlaylistStore.error?.let { Text(it, color = DS.Danger, fontSize = 14.sp, lineHeight = 18.sp) }
+                FocusButton("Abbrechen", compact = true) {
+                    PlaylistStore.clearPending(ctx)
+                    receiver.stop()
+                    onDone()
+                }
+            }
         }
         // Right: instructions for input on the phone
         if (!compact) PhoneCard(
@@ -357,6 +375,8 @@ fun AddPlaylistScreen(onDone: () -> Unit) {
     phonePending?.let { imported ->
         ProviderConfirmDialog(
             imported,
+            confirmText = if (editTarget == null) Lang.tr("Bestätigen und hinzufügen") else Lang.tr("Bestätigen und ersetzen"),
+            error = if (editTarget == null) null else PlaylistStore.error,
             onCancel = {
                 if (imported.discardOnCancel) ImportFiles.discard(ctx, imported.input.url)
                 phonePending = null
@@ -365,11 +385,53 @@ fun AddPlaylistScreen(onDone: () -> Unit) {
                 serving = false
             },
             onConfirm = {
+                if (PlaylistStore.loading) return@ProviderConfirmDialog
                 val finalUrl = imported.input.url.ifBlank {
                     if (imported.input.isXtream) PlaylistStore.xtreamUrl(imported.input.host, imported.input.user, imported.input.pass).orEmpty()
                     else ""
                 }
                 if (finalUrl.isBlank()) PlaylistStore.error = "Angaben unvollständig oder ungültig."
+                else if (editTarget != null) {
+                    val newUrl = PlaylistLogic.normalizeUrl(finalUrl)
+                    val oldUrl = PlaylistLogic.normalizeUrl(editTarget.url)
+                    when {
+                        newUrl == null -> PlaylistStore.error = "Angaben unvollständig oder ungültig."
+                        newUrl == oldUrl -> {
+                            if (imported.name.isNotBlank()) PlaylistStore.rename(ctx, editProviderIndex, imported.name)
+                            if (imported.discardOnCancel) ImportFiles.discard(ctx, imported.input.url)
+                            phonePending = null
+                            receiver.stop()
+                            setupPath = null
+                            serving = false
+                            onDone()
+                        }
+                        !ProviderEditLogic.canReplace(PlaylistStore.lists.map { it.url }, editProviderIndex, newUrl) -> {
+                            if (imported.discardOnCancel) ImportFiles.discard(ctx, imported.input.url)
+                            phonePending = null
+                            PlaylistStore.error = Lang.tr("Diese Adresse ist bereits als Playlist gespeichert.")
+                        }
+                        else -> {
+                            val previousActive = PlaylistStore.active
+                            phonePending = null
+                            receiver.stop()
+                            setupPath = null
+                            serving = false
+                            scope.launch {
+                                if (!PlaylistStore.load(ctx, newUrl, true)) { phonePending = imported; return@launch }
+                                if (!PlaylistStore.replaceSavedProvider(ctx, editProviderIndex, newUrl, imported.name, previousActive)) {
+                                    PlaylistStore.lists.indexOfFirst { it.url == newUrl }.takeIf { it >= 0 && it != editProviderIndex }?.let { PlaylistStore.remove(ctx, it) }
+                                    if (previousActive in PlaylistStore.lists.indices) PlaylistStore.switchTo(ctx, previousActive)
+                                    PlaylistStore.error = Lang.tr("Diese Adresse ist bereits als Playlist gespeichert.")
+                                    phonePending = imported
+                                    return@launch
+                                }
+                                if (previousActive != editProviderIndex && previousActive in PlaylistStore.lists.indices) PlaylistStore.switchTo(ctx, previousActive)
+                                phonePending = null
+                                onDone()
+                            }
+                        }
+                    }
+                }
                 else {
                     phonePending = null
                     receiver.stop()
@@ -406,7 +468,13 @@ fun AddPlaylistScreen(onDone: () -> Unit) {
 }
 
 @Composable
-private fun ProviderConfirmDialog(imported: ProviderImport, onCancel: () -> Unit, onConfirm: () -> Unit) {
+private fun ProviderConfirmDialog(
+    imported: ProviderImport,
+    confirmText: String = Lang.tr("Bestätigen und hinzufügen"),
+    error: String? = null,
+    onCancel: () -> Unit,
+    onConfirm: () -> Unit
+) {
     Dialog(onDismissRequest = onCancel) {
         Column(
             Modifier.fillMaxWidth().clip(RoundedCornerShape(DS.RadiusXl)).background(Surf).border(2.dp, Surf2, RoundedCornerShape(DS.RadiusXl)).padding(26.dp),
@@ -422,9 +490,10 @@ private fun ProviderConfirmDialog(imported: ProviderImport, onCancel: () -> Unit
                 Text(imported.serverLabel(), color = Muted, fontSize = 17.sp, raw = true)
             }
             Text(if (imported.input.isXtream) "Xtream-Zugangsdaten · Passwort verborgen" else "M3U-Adresse · Zugangsdaten verborgen", color = Muted, fontSize = 16.sp)
+            error?.let { Text(it, color = DS.Danger, fontSize = 14.sp) }
             Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 FocusButton("Abbrechen", compact = true, onClick = onCancel)
-                FocusButton(Lang.tr("Bestätigen und hinzufügen"), primary = true, compact = true, onClick = onConfirm)
+                FocusButton(confirmText, primary = true, compact = true, onClick = onConfirm)
             }
         }
     }

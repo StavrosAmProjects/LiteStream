@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+- Default fresh LiteStream TV installs to the English menu; an explicitly saved language choice remains unchanged.
+- Add **Edit on phone** for saved Xtream and M3U providers, with TV confirmation before replacing credentials.
 - Simplify the default TV Home while keeping optional rows in Home customization.
 - Apply saved provider country/group filters to live channel surfing.
 - Clarify that the Jellyfin decoder declaration does not verify transitive or bundled native binary licenses.

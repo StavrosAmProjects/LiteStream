@@ -17,6 +17,13 @@ object CountryFilterStore {
         edit.apply()
     }
 
+    fun move(c: Context, oldUrl: String, newUrl: String) {
+        if (oldUrl == newUrl) return
+        val selection = read(c, oldUrl)
+        write(c, oldUrl, null)
+        write(c, newUrl, selection)
+    }
+
     fun key(providerUrl: String): String = PREFIX + MessageDigest.getInstance("SHA-256")
         .digest(providerUrl.trim().toByteArray(Charsets.UTF_8))
         .joinToString("") { "%02x".format(it) }

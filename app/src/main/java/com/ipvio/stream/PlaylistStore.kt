@@ -452,6 +452,43 @@ object PlaylistStore {
         if (i in lists.indices && name.isNotBlank()) { lists[i] = PL(name.trim(), lists[i].url); persist(c) }
     }
 
+    /** Replace a successfully loaded temporary entry in place, retaining its provider-scoped choices and display slot. */
+    fun replaceSavedProvider(c: Context, targetIndex: Int, replacementUrl: String, name: String, previousActive: Int): Boolean {
+        ensure(c)
+        val u = PlaylistLogic.normalizeUrl(replacementUrl) ?: return false
+        val target = lists.getOrNull(targetIndex) ?: return false
+        val addedIndex = lists.indexOfFirst { it.url == u }
+        if (addedIndex < 0) return false
+        if (addedIndex == targetIndex) {
+            if (!ProviderEditLogic.canReplace(lists.map { it.url }, targetIndex, u)) return false
+            if (name.isNotBlank()) rename(c, targetIndex, name)
+            return true
+        }
+        val urlsWithoutAdded = lists.filterIndexed { index, _ -> index != addedIndex }.map { it.url }
+        if (!ProviderEditLogic.canReplace(urlsWithoutAdded, targetIndex, u)) return false
+
+        val oldUrl = target.url
+        val oldMultiKey = key(oldUrl)
+        val newMultiKey = key(u)
+        val wasAdditional = oldMultiKey in multi
+        val oldBase = XtreamLogic.fromUrl(oldUrl)?.base
+        val newBase = XtreamLogic.fromUrl(u)?.base
+        val backupHosts = if (oldBase != null && oldBase == newBase) backups(c, oldUrl) else emptyList()
+
+        lists[targetIndex] = PL(name.ifBlank { target.name }, u)
+        lists.removeAt(addedIndex)
+        multi = (multi - oldMultiKey).let { if (wasAdditional) it + newMultiKey else it }
+        active = previousActive.coerceIn(0, maxOf(lists.size - 1, 0))
+        CountryFilterStore.move(c, oldUrl, u)
+        PlaylistMode.move(c, oldUrl, u)
+        prefs(c).edit().remove(backupKey(oldUrl)).apply()
+        if (backupHosts.isNotEmpty()) setBackups(c, u, backupHosts)
+        deleteFiles(c, oldUrl)
+        persist(c)
+        syncFailover(c)
+        return true
+    }
+
     fun remove(c: Context, i: Int) {
         ensure(c)
         if (i !in lists.indices) return

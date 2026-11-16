@@ -212,7 +212,7 @@ fun HomeScreen(
     tab: Int, onTab: (Int) -> Unit, states: List<LazyListState>,
     onOpen: (Item) -> Unit, onPlayNow: (Item) -> Unit,
     onResume: (Entry, Item) -> Unit, onBrowse: (BrowseReq) -> Unit,
-    onCategories: (CatReq) -> Unit, onAdd: () -> Unit
+    onCategories: (CatReq) -> Unit, onAdd: () -> Unit, onEditProvider: (Int) -> Unit
 ) {
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -809,7 +809,7 @@ fun HomeScreen(
                         }
                         else -> {
                             item(key = "settop") { header(Modifier) }
-                            item { SettingsHub(onAdd, reload) }
+                            item { SettingsHub(onAdd, reload, onEditProvider) }
                         }
                     }
                 } }

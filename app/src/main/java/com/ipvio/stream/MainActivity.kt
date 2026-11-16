@@ -194,6 +194,7 @@ private fun AppContent() {
     // Interrupted in the middle of adding last time (crash, power loss): the add screen automatically continues loading
     val resumeAdd = remember { PlaylistStore.pending(ctx)?.autoResume == true }
     var adding by remember { mutableStateOf(PlaylistStore.savedUrl(ctx) == null || resumeAdd) }
+    var editingProviderIndex by remember { mutableIntStateOf(-1) }
     // Top detail page (Item or PersonRef) plus back stack, so Back retraces Movie → Person → Movie
     var top by remember { mutableStateOf<Any?>(null) }
     val trail = remember { mutableStateListOf<Any>() }
@@ -473,7 +474,13 @@ private fun AppContent() {
                 onBack = { cats = null },
                 onGoTab = { if (it != MenuLogic.EPG) cats = null; goTab(it) }
             ) }
-            adding -> Box(Modifier.fillMaxSize().screenEnter()) { AddPlaylistScreen { adding = false } }
+            adding -> Box(Modifier.fillMaxSize().screenEnter()) {
+                AddPlaylistScreen(editingProviderIndex) {
+                    adding = false
+                    if (editingProviderIndex >= 0) SettingsNav.openPage = SettingsNav.PLAYLISTS
+                    editingProviderIndex = -1
+                }
+            }
             // Boomer mode: very simple home screen with big channel tiles instead of the normal UI
             Boomer.enabled -> BoomerHome(
                 simpleTvAll, PlaylistStore.loading,
@@ -512,7 +519,8 @@ private fun AppContent() {
                 },
                 onBrowse = { browse = BrowseState(it) },
                 onCategories = { cats = it },
-                onAdd = { DemoMode.exit(); adding = true }
+                onAdd = { DemoMode.exit(); adding = true },
+                onEditProvider = { index -> editingProviderIndex = index; adding = true }
             ) }
         }
         if (RemoteUi.show) RemoteOverlay(Modifier.align(Alignment.Center))
