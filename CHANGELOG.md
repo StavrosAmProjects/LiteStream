@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Translate the LiteStream TV version label on the About page.
 - Add phone-first provider setup with an expiring local QR session, TV confirmation, and TXT/JSON/URL import with a redacted preview; setup-only sessions reject all other phone routes and do not show the legacy pairing code.
 - Add country-first Live TV browsing with a D-pad country, group, and channel view; unclassified channels remain available.
 - Match country names inside provider labels even when extra prefix/suffix words are present.

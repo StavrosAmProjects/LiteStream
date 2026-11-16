@@ -243,4 +243,5 @@ Pink¦Roze
 Schwarz¦Zwart
 Keiner¦Geen
 Kein¦Geen
+LiteStream TV · Version¦LiteStream TV · Versie
 """

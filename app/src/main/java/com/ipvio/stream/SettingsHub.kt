@@ -1533,7 +1533,7 @@ private fun ApiKeysPhoneEntry(ctx: Context, onKeys: (Map<String, String>) -> Uni
 
 @Composable
 private fun AboutPage(ctx: Context) {
-    Text("LiteStream TV · Version " + appVersion(ctx), color = Color.White, fontSize = 18.sp)
+    Text(Lang.tr("LiteStream TV · Version") + " " + appVersion(ctx), color = Color.White, fontSize = 18.sp)
     Hint(Lang.tr("LiteStream TV ist ein Player und liefert selbst keine Inhalte. Nutze nur Quellen, für die du eine Berechtigung hast."))
     Hint("Dieses Produkt verwendet die TMDB-API, wird aber nicht von TMDB unterstützt oder zertifiziert. Wertungen: OMDb. Intro-Zeiten: TheIntroDB.")
     Hint(Lang.tr("LiteStream TV ist ein Fork von IPVIO Stream und erhält dessen Hinweise zur GPL-3.0. Verwendete Bibliotheken: AndroidX/Jetpack Compose, Media3 (Apache 2.0), OkHttp, Coil (Apache 2.0), Jellyfin FFmpeg-Decoder (GPL-3.0), Schriften Outfit und Inter (SIL Open Font License)."))

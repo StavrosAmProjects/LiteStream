@@ -29,6 +29,7 @@ The audited Android source used application ID `com.ipvio.stream`, the IPVIO lau
 - [x] Launcher/app branding uses owner-provided LiteStream assets.
 - [x] Backup transfer and separate app data are documented.
 - [x] README and direct third-party dependency inventory use the LiteStream TV identity and declared versions.
+- [x] About page version label uses the LiteStream TV translation key in all supported languages.
 - [ ] Resolve the complete release dependency graph and verify all transitive notices/licenses.
 - [ ] Verify package, adaptive icon, TV banner, OAuth, signed update, and backup migration in an Android build/device run.
 

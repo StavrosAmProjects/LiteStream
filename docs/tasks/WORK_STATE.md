@@ -1,4 +1,4 @@
-Last update: 2026-11-16 (T-029 multi-provider customization index fix). Read `AGENTS.md` first, then this file.
+Last update: 2026-11-16 (fork follow-up: About-page version translation). Read `AGENTS.md` first, then this file.
 
 ## Current task
 
@@ -11,6 +11,7 @@ T-029 (provider country/group filters): implemented in `594d312`; follow-ups ens
 T-030 (playback overlay timeout): committed in `594d312`; the new-install default is three seconds and saved user choices stay intact. `PlayerScreen.kt` already auto-hides controls without recreating the player. Device-only validation steps are in `docs/tasks/T-030-player-overlay-timeout.md`; no device check run.
 T-031 (simple TV mode): committed in `594d312`; reused IPVIO's existing Boomer mode and applied provider visibility at its screen boundary. Manual device check and remaining risk are in `docs/tasks/T-031-simple-tv-mode-filters.md`.
 T-032 (fork identity and package): committed in `594d312`; set `com.litestream.tv`, LiteStream owner assets/labels, version `0.1.0`, backup migration docs, disabled upstream updates, and renamed the release artifact. Updated README and direct dependency license inventory with declared versions and test-only dependencies; transitive dependency resolution is still unverified. No build/device test. Details and remaining checks are in `docs/tasks/T-032-fork-brand-package.md`.
+Fork follow-up: About-page version label now translates in the supported languages instead of falling back to the old IPVIO label. `git diff --check` passed; no build or UI test run.
 
 T-026 (LiteStream TV fork architecture audit): complete. Source baseline is IPVIO `e55395a73ee8ee7b21e67a00a677581d90fa9529` (release 1.4.3 source) and LiteStream `28a55a9a08125e049bd5af6094fdcd237a484ce3` (`v0.3.1-working`). Latest published IPVIO APK release checked is 1.4.2 (`abc5a21`). Audit: `docs/tasks/T-026-litestream-fork-audit.md`. The maintainer confirmed ownership of LiteStream code, assets and branding and authorized their use as appropriate for this fork on 16 Nov 2026. The feature branch `codex/litestream-tv-fork` was created from the audited commit. Implementation progress is T-027 through T-032 above. Open matters: configure the fork's release repository/OAuth client, review GPL-3.0 and dependency notices before distribution, test locally on Android TV, and verify the local HTTP pairing on the target network.
 
