@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Use LiteStream TV as the example TMDB app name in the setup guide.
 - Clear provider country filters when their profile is deleted.
 - Tell phone setup users that local credential transfer is unencrypted.
 - Translate the LiteStream TV version label on the About page.

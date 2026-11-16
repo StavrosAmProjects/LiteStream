@@ -16,6 +16,7 @@ The audited Android source used application ID `com.ipvio.stream`, the IPVIO lau
 - Keep IPVIO GPL and copyright notices; note the fork origin in About and README. The donation section identifies its existing links as support for the original IPVIO project.
 - Clear the default upstream update URLs, default auto-check off, hide the first-start update card until an address is configured, and rename the release artifact to `LiteStream-TV.apk`.
 - Document side-by-side install, backup transfer, release signing, custom update URL, and Google OAuth setup.
+- Use LiteStream TV as the example TMDB API app name in the setup guide.
 - Update the README and direct dependency license inventory for the fork identity; leave transitive license review open until Gradle resolution is available.
 
 ## Affected files
@@ -30,6 +31,7 @@ The audited Android source used application ID `com.ipvio.stream`, the IPVIO lau
 - [x] Backup transfer and separate app data are documented.
 - [x] README and direct third-party dependency inventory use the LiteStream TV identity and declared versions.
 - [x] About page version label uses the LiteStream TV translation key in all supported languages.
+- [x] TMDB API setup instructions use the fork's app name.
 - [ ] Resolve the complete release dependency graph and verify all transitive notices/licenses.
 - [ ] Verify package, adaptive icon, TV banner, OAuth, signed update, and backup migration in an Android build/device run.
 
