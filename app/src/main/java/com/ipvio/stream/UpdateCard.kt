@@ -30,6 +30,7 @@ import com.ipvio.stream.UpdateCardLogic.Phase
 @Composable
 fun UpdateCardHost() {
     val ctx = LocalContext.current
+    if (AppUpdate.url(ctx).isBlank()) return
     val show = rememberSaveable {
         val seen = AppUpdate.firstCardSeen(ctx)
         val s = UpdateCardLogic.shouldShow(seen, PlaylistStore.savedUrl(ctx) != null)

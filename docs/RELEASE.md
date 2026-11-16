@@ -1,110 +1,58 @@
-# Releasing a new version
+# LiteStream TV releases
 
-IPVIO Stream checks the latest GitHub release once a day and offers the update in the bell at the top right.
-It reads `update.json`, a small file you attach to every release (section 3). Without that file it falls back to the GitHub API.
-Android installs an update **over** the old app (and keeps playlists, favorites, history and settings) only if
-both APKs are signed with **the same key**. Lose the key and every user has to uninstall and start from scratch.
+## Current state
 
-## 1. One-time: the signing key
+LiteStream TV uses package ID `com.litestream.tv` and starts at version `0.1.0` / version code `1`. It installs beside IPVIO Stream, so its app data is separate. It does not query IPVIO's GitHub releases. In-app updates stay off until a LiteStream TV `update.json` address is entered under Settings > About > App update.
 
-### If version 1.0 was built with "Build APK" in Android Studio (debug key)
+The GitHub release repository for this fork has not been configured in this checkout. Do not use the upstream IPVIO APK or release URL for LiteStream TV.
 
-That APK is signed with the debug key of your computer:
-`C:\Users\<you>\.android\debug.keystore` (Windows) or `~/.android/debug.keystore` (macOS/Linux).
-To let 1.0 users update without losing anything, keep signing with exactly this key:
+## Move data from IPVIO Stream
 
-1. Copy `debug.keystore` to a safe place **outside** the project (and make a backup, e.g. on a USB stick).
-2. Create `keystore.properties` in the project root (it is ignored by Git):
+1. In IPVIO Stream, create a backup. Include provider credentials only if you want them moved; protect the backup file because it can contain logins.
+2. Keep IPVIO installed. Install LiteStream TV as a separate app.
+3. In LiteStream TV, open Settings > Storage > Backup > Load backup from file. Review the restore summary before confirming.
+4. Check playlists, favorites, history and settings on the TV before deciding whether to remove IPVIO.
+
+The old installation remains unchanged. LiteStream has its own Android app data and signing identity.
+
+## Signing key
+
+Create a dedicated release key for LiteStream TV and keep it backed up outside the repository. Every later LiteStream TV APK must use the same key or Android will refuse an in-place update. Never commit `keystore.properties` or a key file.
+
+For a local signed build, create `keystore.properties` in the project root:
 
 ```properties
-storeFile=C:/keys/ipvio-debug.keystore
-storePassword=android
-keyAlias=androiddebugkey
-keyPassword=android
+storeFile=/secure/path/litestream-release.jks
+storePassword=...
+keyAlias=...
+keyPassword=...
 ```
 
-### Starting fresh with your own key (recommended for the future)
+The release workflow expects signing values in repository secrets. The workflow must run only in the new fork repository and publish `LiteStream-TV.apk` with `update.json`.
 
-Android Studio: **Build > Generate Signed App Bundle / APK > APK > Create new…**, or:
+## Configure updates after the repository exists
 
-```
-keytool -genkeypair -v -keystore ipvio-release.jks -alias ipvio -keyalg RSA -keysize 4096 -validity 36500
-```
+1. Build a signed release with a version code higher than the previous LiteStream TV release.
+2. Publish `LiteStream-TV.apk` and `update.json` in the same GitHub release.
+3. `update.json` must include `versionCode`, `versionName`, `apk`, and the APK's SHA-256. `apk` may be the release asset name or a full HTTPS URL.
+4. In the app, enter the direct `update.json` URL under Settings > About > App update. Enable automatic checks if wanted.
 
-Then the same `keystore.properties` with your file, alias and passwords.
-Users of an APK signed with a different key have to uninstall once (Settings > Storage > Create backup first, then restore).
-
-**Never commit the key or `keystore.properties`.** Both are already in `.gitignore`.
-
-## 2. Every release
-
-Since 15 Nov 2026, `.github/workflows/release.yml` does steps 1 to 6 after a merge from `dev` into `main`. It runs the tests first and publishes only if they pass. It refuses to overwrite an existing tag, and it writes `update.json` with the SHA-256 itself. The manual steps below are the fallback and still define the file format.
-
-**Required before the first automatic release:** the GitHub secrets `ANDROID_KEYSTORE_BASE64` (base64 of the keystore file), `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` and `ANDROID_KEY_PASSWORD` must hold the **same key** that signed 1.4.2. A different key means that no user can install the update over the app.
-
-1. In `app/build.gradle.kts` raise `versionCode` (by 1) and `versionName` (e.g. `"1.2"`).
-2. Build the signed APK: `gradlew assembleRelease` (or Build > Generate Signed App Bundle / APK).
-   The file is `app/build/outputs/apk/release/app-release.apk`.
-3. Rename it to **`IPVIO-Stream.apk`**.
-4. Create `update.json` for exactly this APK (section 3).
-5. On GitHub: **Releases > Draft a new release**
-   - Tag: `v` + versionName, e.g. `v1.2` (the app compares this tag with its own version)
-   - Title and notes: what is new (the first lines appear in the app)
-   - Attach **both** `IPVIO-Stream.apk` and `update.json`
-   - **Publish release** (not "pre-release", the app ignores those)
-6. Check: open `https://github.com/Emrodev/IPVIO-Stream/releases/latest/download/update.json` in a browser. It must show your JSON.
-
-The download link in the README and the Downloader code always point to the newest release:
-`https://github.com/Emrodev/IPVIO-Stream/releases/latest/download/IPVIO-Stream.apk`
-
-## 3. update.json (Windows)
-
-The app downloads `https://github.com/Emrodev/IPVIO-Stream/releases/latest/download/update.json` first. It contains the
-SHA-256 of the APK, so the app can reject a damaged download before the installer opens.
-
-1. Put the final `IPVIO-Stream.apk` in a folder, open **Command Prompt** there (type `cmd` in the folder's address bar).
-2. Run `certutil -hashfile IPVIO-Stream.apk SHA256`.
-   The second line is the hash: 64 characters `0-9 a-f`. Older Windows versions print it with spaces; the app ignores spaces and upper/lower case.
-3. Create `update.json` with Notepad (save as **UTF-8**, file type "All files", name exactly `update.json`):
+Example:
 
 ```json
 {
-  "versionCode": 5,
-  "versionName": "1.4",
-  "apk": "IPVIO-Stream.apk",
-  "sha256": "PASTE-THE-64-CHARACTER-HASH-HERE",
+  "versionCode": 2,
+  "versionName": "0.1.1",
+  "apk": "LiteStream-TV.apk",
+  "sha256": "64-character-lowercase-sha256",
   "minSupportedCode": 0,
   "mandatory": false,
-  "notes": "What is new, one short line"
+  "notes": "Short release notes"
 }
 ```
 
-| Field | Meaning |
-|---|---|
-| `versionCode` | Must equal `versionCode` in `app/build.gradle.kts` for this APK. The app refuses an APK with another number. |
-| `versionName` | Shown to the user; use the same as the tag without `v`. |
-| `apk` | Name of the APK asset in the same release (a full `https://` address also works). |
-| `sha256` | Hash from step 2. **Required** for the built-in source. |
-| `minSupportedCode` | Installed apps with a lower `versionCode` get a required update (no "Später" button). `0` = off. |
-| `mandatory` | `true` = this update is required for everybody. Back still closes the dialog, so nobody is locked out. |
-| `notes` | Optional text under the version in the update dialog (max 300 characters). |
+The app verifies the downloaded package name, version and signer before opening Android's installer. Keep the update address blank until the fork has its own release; a blank address disables update checks.
 
-4. Attach `update.json` to the release together with the APK (step 5 of section 2).
+## Google Drive
 
-Rules:
-- **Every time you rebuild the APK, calculate the hash again** and update `versionCode` and `sha256`. A wrong hash makes every user see "Prüfsumme stimmt nicht".
-- Use `"mandatory": true` or `minSupportedCode` only for real emergencies (a broken release). Both are visible to all users.
-- If `update.json` is missing or broken, the app falls back to the GitHub API. That path has **no hash**; the signature check still applies.
-- A custom update address (Settings > App update) may point to an `update.json` without `sha256`; if present it is checked.
-
-## 4. What users see
-
-- Within a day the bell shows a red dot and "Update available: version 1.2". One click downloads and opens the installer.
-- Settings > About > App update: check now, install, or turn off the automatic check.
-- The first time, Android asks to allow "Install unknown apps" for IPVIO Stream.
-
-Version 1.0 has no update check yet, so 1.0 users install 1.1 once by hand (Downloader code or link). From 1.1 on it works from inside the app.
-
-Before the installer opens, the app checks the download and shows a clear text instead of Android's "App not installed":
-wrong checksum, incomplete download, not an app file, another app, version not newer, version number differs from `update.json`,
-or a signature that does not match the installed app (for example a debug build over a release build).
+Google Drive sign-in uses the client configured in `secrets.properties` and `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` repository secrets. Configure a LiteStream TV OAuth consent screen before enabling it in distributed APKs. The existing Drive folder and file prefixes keep their IPVIO names for compatibility with existing backups; do not rename them without a migration plan.

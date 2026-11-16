@@ -54,30 +54,81 @@ fun AddPlaylistScreen(onDone: () -> Unit) {
     var devId by remember { mutableStateOf(pendS?.id1 ?: "") }
     var devId2 by remember { mutableStateOf(pendS?.id2 ?: "") }
     var url by remember { mutableStateOf(if (pend != null && pendX == null && pendS == null) pend.url else "") }
+    var providerName by remember { mutableStateOf("") }
     var host by remember { mutableStateOf(pendX?.first ?: "") }
     var user by remember { mutableStateOf(pendX?.second ?: "") }
     var pass by remember { mutableStateOf(pendX?.third ?: "") }
     var showPass by remember { mutableStateOf(false) }
     // Backup servers (optional): after an interrupted entry, restore the ones already saved
     val backups = remember { backupList(pend?.url?.let { PlaylistStore.backups(ctx, it) } ?: emptyList()) }
-    // Send from the phone: local mini server as long as this screen is open
+    var showBackups by remember { mutableStateOf(backups.any(String::isNotBlank)) }
+    var phonePending by remember { mutableStateOf<ProviderImport?>(null) }
+    var providerChoice by remember { mutableStateOf<ProviderImport?>(null) }
+    var pendingBackups by remember { mutableStateOf(emptyList<String>()) }
+    var customizeUrl by remember { mutableStateOf<String?>(null) }
+    var setupPath by remember { mutableStateOf<String?>(null) }
+    var serving by remember { mutableStateOf(false) }
+    // The local phone server starts only when the user opens phone setup.
     val ip = remember { PhoneImport.localIp() }
     val receiver = remember {
-        PhoneImport { inp ->
+        PhoneImport(onReceive = { inp ->
             Handler(Looper.getMainLooper()).post {
-                val u = if (inp.isXtream) PlaylistStore.xtreamUrl(inp.host, inp.user, inp.pass) else inp.url
+                val u = if (inp.isXtream) inp.url.takeIf { XtreamLogic.fromUrl(it) != null } ?: PlaylistStore.xtreamUrl(inp.host, inp.user, inp.pass) else inp.url
                 stalker = false
                 if (inp.isXtream) { xtream = true; host = inp.host; user = inp.user; pass = inp.pass } else { xtream = false; url = inp.url }
                 if (u == null) PlaylistStore.error = "Angaben unvollständig: Server, Benutzername und Passwort nötig."
                 else scope.launch { if (PlaylistStore.load(ctx, u, true)) onDone() }
             }
+        }, setupOnly = true)
+    }
+    suspend fun addProvider(finalUrl: String, name: String = providerName) {
+        if (PlaylistStore.load(ctx, finalUrl, true)) {
+            if (name.isNotBlank()) PlaylistStore.rename(ctx, PlaylistStore.active, name)
+            onDone()
         }
     }
-    var serving by remember { mutableStateOf(false) }
+    fun chooseProviderMode(mode: String) {
+        val imported = providerChoice ?: return
+        val finalUrl = imported.input.url.takeIf { XtreamLogic.fromUrl(it) != null }
+            ?: PlaylistStore.xtreamUrl(imported.input.host, imported.input.user, imported.input.pass)
+        if (finalUrl == null) { PlaylistStore.error = "Angaben unvollständig oder ungültig."; return }
+        providerChoice = null
+        val backupsForProvider = pendingBackups
+        pendingBackups = emptyList()
+        if (backupsForProvider.isNotEmpty()) PlaylistStore.setBackups(ctx, finalUrl, backupsForProvider)
+        scope.launch {
+            val alreadySaved = PlaylistStore.lists.any { it.url.trimEnd('/') == finalUrl.trimEnd('/') }
+            if (!PlaylistStore.load(ctx, finalUrl, true)) return@launch
+            if (imported.name.isNotBlank()) PlaylistStore.rename(ctx, PlaylistStore.active, imported.name)
+            val savedUrl = PlaylistStore.savedUrl(ctx) ?: finalUrl
+            when (mode) {
+                "none" -> { CountryFilterStore.write(ctx, savedUrl, emptySet()); onDone() }
+                "customize" -> {
+                    if (!alreadySaved) CountryFilterStore.write(ctx, savedUrl, emptySet())
+                    if (PlaylistStore.channels.none { it.src == PlaylistStore.active }) onDone() else customizeUrl = savedUrl
+                }
+                else -> { CountryFilterStore.write(ctx, savedUrl, null); onDone() }
+            }
+        }
+    }
+    fun startPhoneSetup() {
+        val path = receiver.startSetup()
+        if (path == null || ip == null) {
+            receiver.stop()
+            setupPath = null
+            serving = false
+            PlaylistStore.error = "Die Einrichtung vom Handy ist nicht verfügbar. Prüfe die WLAN-Verbindung des Fernsehers."
+        } else {
+            PlaylistStore.error = null
+            setupPath = path
+            serving = true
+        }
+    }
     DisposableEffect(Unit) {
         // Round 20: upload a playlist file from the phone, read the crash report on the phone
         receiver.uploadDir = ImportFiles.tmpDir(ctx)
         receiver.saveUpload = { name, f -> ImportFiles.save(ctx, name, f) }
+        receiver.discardUpload = { url -> ImportFiles.discard(ctx, url) }
         receiver.crash = { ImportFiles.crashText(ctx) }
         // Full transfer from another device (settings, history, playlists with logins): also possible from the phone page
         receiver.restore = { t ->
@@ -94,7 +145,12 @@ fun AddPlaylistScreen(onDone: () -> Unit) {
         receiver.onList = { name, bytes ->
             Handler(Looper.getMainLooper()).post { ListImportApply.run(ctx, name, bytes) }
         }
-        serving = receiver.start()
+        receiver.onSetupReceive = { input ->
+            Handler(Looper.getMainLooper()).post {
+                val imported = ProviderImport(input.name.ifBlank { input.host.ifBlank { "Provider" } }, input, input.url.startsWith("file:"))
+                phonePending = imported
+            }
+        }
         onDispose { receiver.stop() }
     }
     val canCancel = PlaylistStore.lists.isNotEmpty() || PlaylistStore.channels.isNotEmpty()
@@ -103,7 +159,20 @@ fun AddPlaylistScreen(onDone: () -> Unit) {
         scope.launch {
             val u = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { ImportFiles.fromUri(ctx, uri) }
             if (u == null) PlaylistStore.error = "Das ist keine gültige M3U-Datei."
-            else if (PlaylistStore.load(ctx, u, true)) onDone()
+            else addProvider(u)
+        }
+    }
+    val pickProviderFile = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        scope.launch {
+            val imported = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                runCatching { ctx.contentResolver.openInputStream(uri)?.use(ProviderImportLogic::read)?.let(ProviderImportLogic::parse) }.getOrNull()
+            }
+            if (imported == null) PlaylistStore.error = "Keine gültige Anbieterdaten-Datei. Unterstützt werden TXT, JSON und vollständige Xtream- oder M3U-Adressen."
+            else {
+                PlaylistStore.error = null
+                phonePending = imported
+            }
         }
     }
     // Backup of another device (with playlists and logins): load the file, the app restarts with everything in place
@@ -163,16 +232,28 @@ fun AddPlaylistScreen(onDone: () -> Unit) {
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 BrandMark(Modifier.size(36.dp))
-                Text("IPVIO", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
+                Text("LiteStream", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
                 Text("Playlist hinzufügen", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 14.dp))
             }
+            Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 8.dp, vertical = 5.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                FocusButton(Lang.tr("Am Handy einrichten").uppercase(Lang.locale()), primary = true, compact = true, onClick = { startPhoneSetup() })
+                FocusButton(Lang.tr("Anbieterdaten-Datei importieren").uppercase(Lang.locale()), compact = true) {
+                    try { pickProviderFile.launch(arrayOf("text/*", "application/json", "application/octet-stream")) }
+                    catch (e: Exception) { PlaylistStore.error = "Auf diesem Gerät gibt es keine Dateiauswahl." }
+                }
+            }
+            if (compact) PhoneCard(
+                Modifier.fillMaxWidth().heightIn(min = 180.dp, max = 300.dp),
+                if (serving && ip != null && setupPath != null) "http://$ip:${receiver.port}$setupPath" else null,
+                onStart = ::startPhoneSetup
+            )
             // Many new users ask which link to enter: say clearly that the app brings no content of its own
             Column(
                 Modifier.fillMaxWidth().clip(RoundedCornerShape(DS.RadiusM)).background(Color(0x14FFFFFF)).border(1.dp, Surf2, RoundedCornerShape(DS.RadiusM)).padding(10.dp),
                 verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 Text("Wichtig zu wissen", color = Accent2, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                Text("IPVIO Stream ist nur ein Abspielgerät. Die App liefert selbst keine Sender, Filme, Serien und keine Playlist. Den Link oder die Zugangsdaten bekommst du von deinem IPTV-Anbieter oder aus deiner eigenen Quelle. Wir können dir keinen Link nennen.",
+                Text(Lang.tr("LiteStream TV ist nur ein Abspielgerät. Die App liefert selbst keine Sender, Filme, Serien und keine Playlist. Den Link oder die Zugangsdaten bekommst du von deinem IPTV-Anbieter oder aus deiner eigenen Quelle. Wir können dir keinen Link nennen."),
                     color = Muted, fontSize = 12.sp, lineHeight = 16.sp)
             }
             // The padding sits inside the scrolling row: an enlarged (focused) button must not be cut off at its edge
@@ -181,6 +262,7 @@ fun AddPlaylistScreen(onDone: () -> Unit) {
                 FocusButton("Xtream-Login", primary = xtream && !stalker, compact = true) { xtream = true; stalker = false }
                 FocusButton("Stalker-Portal", primary = stalker, compact = true) { stalker = true; xtream = false }
             }
+            Field(providerName, { providerName = it }, Lang.tr("Anbietername"))
             if (stalker) {
                 Field(portal, { portal = it }, "Portal-Adresse (z. B. http://portal.tld:8080/c/)")
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -214,22 +296,28 @@ fun AddPlaylistScreen(onDone: () -> Unit) {
                 Row(Modifier.padding(horizontal = 8.dp, vertical = 5.dp)) {
                     FocusButton(if (showPass) "Passwort verbergen" else "Passwort anzeigen", compact = true) { showPass = !showPass }
                 }
-                BackupFields(backups)
-                Row(Modifier.padding(horizontal = 8.dp, vertical = 5.dp)) {
-                    FocusButton("+ Backup-Server", compact = true) { backups.add("") }
+                FocusButton(Lang.tr("Backup-Server") + if (showBackups) " −" else " +", compact = true) { showBackups = !showBackups }
+                if (showBackups) {
+                    BackupFields(backups)
+                    Row(Modifier.padding(horizontal = 8.dp, vertical = 5.dp)) {
+                        FocusButton("+ Backup-Server", compact = true) { backups.add("") }
+                    }
+                    Text(BACKUP_HINT, color = Muted, fontSize = 15.sp)
                 }
-                Text(BACKUP_HINT, color = Muted, fontSize = 15.sp)
             }
             PlaylistStore.error?.let { Text(it, color = DS.Danger, fontSize = 14.sp, lineHeight = 18.sp) }
             Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 8.dp, vertical = 5.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 FocusButton(if (PlaylistStore.loading) "Lade…" else "Hinzufügen", primary = true, compact = true) {
                     if (PlaylistStore.loading) return@FocusButton
-                    val finalUrl = if (stalker) StalkerLogic.source(portal, mac, sn, devId, devId2)?.encode() else if (xtream) PlaylistStore.xtreamUrl(host, user, pass) else url
+                    val finalUrl = if (stalker) StalkerLogic.source(portal, mac, sn, devId, devId2)?.encode() else if (xtream) XtreamLogic.fromUrl(url)?.let { url } ?: PlaylistStore.xtreamUrl(host, user, pass) else url
                     if (finalUrl == null) PlaylistStore.error = if (stalker) "Angaben unvollständig: Portal-Adresse und MAC-Adresse (z. B. 00:1A:79:12:34:56) nötig." else "Angaben unvollständig: Server, Benutzername und Passwort nötig."
                     else if (xtream && !stalker && !backupsValid(backups)) PlaylistStore.error = BACKUP_INVALID
                     else {
-                        if (xtream && !stalker) PlaylistStore.setBackups(ctx, finalUrl, backups.toList())
-                        scope.launch { if (PlaylistStore.load(ctx, finalUrl, true)) onDone() }
+                        if (xtream && !stalker) {
+                            val input = PhoneImportLogic.toInput(mapOf("url" to finalUrl, "name" to providerName))
+                            if (input == null) PlaylistStore.error = "Angaben unvollständig oder ungültig."
+                            else { pendingBackups = backups.toList(); providerChoice = ProviderImport(providerName.ifBlank { input.host }, input) }
+                        } else scope.launch { addProvider(finalUrl) }
                     }
                 }
                 if (canCancel) FocusButton("Abbrechen", compact = true) { PlaylistStore.clearPending(ctx); onDone() }
@@ -247,8 +335,102 @@ fun AddPlaylistScreen(onDone: () -> Unit) {
             }
         }
         // Right: instructions for input on the phone
-        if (!compact) PhoneCard(Modifier.weight(1f), if (serving && ip != null) "http://" + ip + ":" + receiver.port else null, receiver.code)
+        if (!compact) PhoneCard(
+            Modifier.weight(1f),
+            if (serving && ip != null && setupPath != null) "http://$ip:${receiver.port}$setupPath" else null,
+            onStart = ::startPhoneSetup
+        )
     }
+    }
+    phonePending?.let { imported ->
+        ProviderConfirmDialog(
+            imported,
+            onCancel = {
+                if (imported.discardOnCancel) ImportFiles.discard(ctx, imported.input.url)
+                phonePending = null
+                receiver.stop()
+                setupPath = null
+                serving = false
+            },
+            onConfirm = {
+                val finalUrl = imported.input.url.ifBlank {
+                    if (imported.input.isXtream) PlaylistStore.xtreamUrl(imported.input.host, imported.input.user, imported.input.pass).orEmpty()
+                    else ""
+                }
+                if (finalUrl.isBlank()) PlaylistStore.error = "Angaben unvollständig oder ungültig."
+                else {
+                    phonePending = null
+                    receiver.stop()
+                    setupPath = null
+                    serving = false
+                    if (imported.input.isXtream) {
+                        pendingBackups = emptyList()
+                        providerChoice = imported
+                    } else scope.launch { addProvider(finalUrl, imported.name) }
+                }
+            }
+        )
+    }
+    providerChoice?.let { imported ->
+        ProviderChoiceDialog(
+            imported.name,
+            onCancel = { providerChoice = null; pendingBackups = emptyList() },
+            onChoose = ::chooseProviderMode
+        )
+    }
+    customizeUrl?.let { providerUrl ->
+        Dialog(onDismissRequest = { customizeUrl = null; onDone() }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+            CountryFilterScreen(
+                PlaylistStore.channels.filter { it.src == PlaylistStore.active }, CountryFilterStore.read(ctx, providerUrl),
+                onCancel = { customizeUrl = null; onDone() },
+                onDone = { selection ->
+                    CountryFilterStore.write(ctx, providerUrl, selection)
+                    customizeUrl = null
+                    onDone()
+                }
+            )
+        }
+    }
+}
+
+@Composable
+private fun ProviderConfirmDialog(imported: ProviderImport, onCancel: () -> Unit, onConfirm: () -> Unit) {
+    Dialog(onDismissRequest = onCancel) {
+        Column(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(DS.RadiusXl)).background(Surf).border(2.dp, Surf2, RoundedCornerShape(DS.RadiusXl)).padding(26.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text("Anbieter prüfen", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(Lang.tr("Anbietername") + ":", color = Color.White, fontSize = 18.sp)
+                Text(imported.name, color = Color.White, fontSize = 18.sp, raw = true)
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(Lang.tr("Server") + ":", color = Muted, fontSize = 17.sp)
+                Text(imported.serverLabel(), color = Muted, fontSize = 17.sp, raw = true)
+            }
+            Text(if (imported.input.isXtream) "Xtream-Zugangsdaten · Passwort verborgen" else "M3U-Adresse · Zugangsdaten verborgen", color = Muted, fontSize = 16.sp)
+            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                FocusButton("Abbrechen", compact = true, onClick = onCancel)
+                FocusButton(Lang.tr("Bestätigen und hinzufügen"), primary = true, compact = true, onClick = onConfirm)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProviderChoiceDialog(name: String, onCancel: () -> Unit, onChoose: (String) -> Unit) {
+    Dialog(onDismissRequest = onCancel) {
+        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(DS.RadiusXl)).background(Surf).border(2.dp, Surf2, RoundedCornerShape(DS.RadiusXl)).padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(Lang.tr("Anbieter") + ": $name", color = Color.White, fontSize = 20.sp, maxLines = 1)
+            Text("Wie viele Sender möchtest du zuerst sehen?", color = Muted, fontSize = 16.sp)
+            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                FocusButton(Lang.tr("Alles"), primary = true, compact = true) { onChoose("all") }
+                FocusButton(Lang.tr("Nichts"), compact = true) { onChoose("none") }
+                FocusButton(Lang.tr("Anpassen"), compact = true) { onChoose("customize") }
+            }
+            FocusButton(Lang.tr("Abbrechen"), compact = true, onClick = onCancel)
+        }
     }
 }
 
@@ -271,7 +453,7 @@ val InstantSpec = object : androidx.compose.foundation.gestures.BringIntoViewSpe
 
 /** Card with instructions: enter the playlist conveniently on the phone instead of with the remote. */
 @Composable
-private fun PhoneCard(modifier: Modifier, address: String?, code: String) {
+private fun PhoneCard(modifier: Modifier, address: String?, onStart: () -> Unit) {
     val shape = RoundedCornerShape(DS.RadiusXl)
     var bigQr by remember { mutableStateOf(false) }
     // The card scrolls (the focused QR code brings the rest into view), so nothing is cut off on small screens
@@ -285,13 +467,11 @@ private fun PhoneCard(modifier: Modifier, address: String?, code: String) {
             color = Muted, fontSize = 15.sp, lineHeight = 21.sp
         )
         if (address == null) {
-            Text(
-                "Die Übertragung vom Handy ist gerade nicht verfügbar. Das Gerät muss mit dem WLAN verbunden sein.",
-                color = Color(0xFFFFB86B), fontSize = 17.sp, lineHeight = 24.sp
-            )
+            Text("Starte eine zeitlich begrenzte Einrichtung. Der Fernseher muss im WLAN sein.", color = Muted, fontSize = 17.sp, lineHeight = 24.sp)
+            FocusButton(Lang.tr("Am Handy einrichten").uppercase(Lang.locale()), primary = true, compact = true, onClick = onStart)
         } else {
             Step(1, "Handy mit demselben WLAN verbinden wie dieses Gerät.")
-            Step(2, "Im Browser des Handys diese Adresse öffnen:")
+            Step(2, "Mit dem Handy scannen oder diese Adresse im Browser öffnen:")
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     Modifier.weight(1f).clip(RoundedCornerShape(DS.RadiusM)).background(Bg).padding(horizontal = 18.dp, vertical = 12.dp)
@@ -308,16 +488,7 @@ private fun PhoneCard(modifier: Modifier, address: String?, code: String) {
                     Text("OK = groß", color = Muted, fontSize = 12.sp)
                 }
             }
-            Step(3, "Den Code von hier eingeben:")
-            Row(
-                Modifier.clip(RoundedCornerShape(DS.RadiusM)).background(Bg).padding(horizontal = 18.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Text("Code", color = Muted, fontSize = 18.sp)
-                Text(code, color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 4.sp)
-            }
-            Step(4, "Zugangsdaten eintragen oder eine M3U-Datei hochladen und senden. Die Playlist wird danach automatisch geladen.")
+            Step(3, "Daten senden und danach am Fernseher prüfen und bestätigen.")
         }
     }
     if (bigQr && address != null) Dialog(onDismissRequest = { bigQr = false }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
@@ -331,7 +502,6 @@ private fun PhoneCard(modifier: Modifier, address: String?, code: String) {
                     Text("Handy und dieses Gerät müssen im selben WLAN sein. Halte die Kamera auf das Bild. Es klappt auch aus einiger Entfernung.", color = Muted, fontSize = 18.sp, lineHeight = 26.sp)
                     Text("Oder Adresse im Browser eintippen:", color = Muted, fontSize = 16.sp)
                     Text(address, color = Accent2, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, raw = true)
-                    Text("Code: $code", color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, raw = true)
                     Text("Zurück oder OK schließt das Bild.", color = Muted, fontSize = 15.sp)
                 }
             }

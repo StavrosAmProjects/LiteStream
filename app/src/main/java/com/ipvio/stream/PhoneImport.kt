@@ -11,8 +11,8 @@ import java.security.SecureRandom
 import kotlin.concurrent.thread
 
 /** A playlist sent from the phone: either an M3U link or Xtream login data. */
-class PhoneInput(val url: String, val host: String, val user: String, val pass: String) {
-    val isXtream get() = url.isBlank()
+class PhoneInput(val url: String, val host: String, val user: String, val pass: String, val name: String = "") {
+    val isXtream get() = host.isNotBlank()
 }
 
 /** Pure helper functions (testable, without Android). */
@@ -28,12 +28,61 @@ object PhoneImportLogic {
     /** Validates input; null = invalid. */
     fun toInput(f: Map<String, String>): PhoneInput? {
         val url = f["url"].orEmpty().trim()
-        if (url.isNotEmpty()) return if (url.startsWith("http://") || url.startsWith("https://")) PhoneInput(url, "", "", "") else null
+        val name = f["name"].orEmpty().trim().take(80)
+        if (url.isNotEmpty()) {
+            XtreamLogic.fromUrl(url)?.let { acct ->
+                val base = safeHttpBase(acct.base) ?: return null
+                val rawBase = url.substringBefore(Regex("/(?:get|player_api)\\.php", RegexOption.IGNORE_CASE).find(url)?.value.orEmpty())
+                val pathAndQuery = url.removePrefix(rawBase)
+                return PhoneInput(base + pathAndQuery, base, acct.user, acct.pass, name)
+            }
+            return if (PlaylistLogic.normalizeUrl(url) != null && url.startsWith("http", true)) PhoneInput(url, "", "", "", name) else null
+        }
         val host = f["host"].orEmpty().trim()
         val user = f["user"].orEmpty().trim()
         val pass = f["pass"].orEmpty().trim()
-        return if (host.isNotEmpty() && user.isNotEmpty() && pass.isNotEmpty()) PhoneInput("", host, user, pass) else null
+        val normalized = PlaylistLogic.xtreamUrl(host, user, pass)?.let(XtreamLogic::fromUrl) ?: return null
+        return PhoneInput("", normalized.base, normalized.user, normalized.pass, name)
     }
+
+    private fun safeHttpBase(raw: String): String? = runCatching {
+        val uri = java.net.URI(raw)
+        val scheme = uri.scheme?.lowercase()?.takeIf { it == "http" || it == "https" } ?: return null
+        val host = uri.host?.let { if (it.contains(':') && !it.startsWith('[')) "[$it]" else it } ?: return null
+        "$scheme://$host" + (if (uri.port >= 0) ":${uri.port}" else "") + uri.rawPath.orEmpty().trimEnd('/')
+    }.getOrNull()
+
+    fun newSetupToken(rnd: SecureRandom): String = ByteArray(32).also(rnd::nextBytes).joinToString("") { "%02x".format(it) }
+
+    fun setupTokenValid(given: String, expected: String, expiresAt: Long, now: Long, consumed: Boolean): Boolean =
+        !consumed && now < expiresAt && given.length == expected.length &&
+            java.security.MessageDigest.isEqual(given.toByteArray(Charsets.US_ASCII), expected.toByteArray(Charsets.US_ASCII))
+
+    fun setupPage(li: Int, token: String): String {
+        fun t(a: String, b: String) = tr(li, a, b)
+        return """<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>LiteStream TV setup</title><style>$CSS</style></head><body>
+<h1>${t("LiteStream TV einrichten", "Set up LiteStream TV")}</h1>
+<p>${t("Zugangsdaten werden direkt und nur an deinen Fernseher gesendet. Bestätige sie anschließend am Fernseher.", "Credentials are sent directly to your TV. Review and confirm them on the TV.")}</p>
+<form method="post" action="/setup/$token/send">
+<input name="name" maxlength="80" placeholder="${t("Name des Anbieters", "Provider name")}" autocomplete="organization">
+<textarea id="full-url" name="url" rows="3" placeholder="${t("Xtream- oder M3U-Adresse einfügen", "Paste complete Xtream or M3U URL")}" autocomplete="off"></textarea>
+<h2>${t("Oder Zugangsdaten einzeln eingeben", "Or enter details separately")}</h2>
+<input id="server" name="host" placeholder="${t("Server-Adresse", "Server address")}" autocapitalize="off" autocomplete="url">
+<input id="username" name="user" placeholder="${t("Benutzername", "Username")}" autocapitalize="off" autocomplete="username">
+<input id="password" name="pass" type="password" placeholder="${t("Passwort", "Password")}" autocomplete="current-password">
+<button type="submit">${t("An den Fernseher senden", "Send to TV")}</button></form>
+<h2>${t("M3U-Datei senden", "Send an M3U file")}</h2>
+<input id="provider-file" type="file" accept=".m3u,.m3u8,audio/x-mpegurl,application/vnd.apple.mpegurl">
+<button type="button" onclick="uploadProvider()">${t("Datei an den Fernseher senden", "Send file to TV")}</button><p id="provider-status"></p>
+<script>var fullUrl=document.getElementById('full-url');fullUrl.addEventListener('input',function(){try{var u=new URL(this.value),q=u.searchParams,user=q.get('username'),pass=q.get('password');if(user&&pass&&/\/(get|player_api)\.php$/i.test(u.pathname)){document.getElementById('server').value=u.origin+u.pathname.replace(/\/(get|player_api)\.php$/i,'');document.getElementById('username').value=user;document.getElementById('password').value=pass}}catch(_){}});['server','username','password'].forEach(function(id){document.getElementById(id).addEventListener('input',function(){fullUrl.value=''})});function uploadProvider(){var f=document.getElementById('provider-file').files[0];if(!f)return;document.getElementById('provider-status').textContent='…';fetch('/setup/$token/file?name='+encodeURIComponent(f.name),{method:'POST',body:f}).then(function(r){return r.text()}).then(function(t){document.open();document.write(t);document.close()}).catch(function(){document.getElementById('provider-status').textContent='Error'})}</script>
+</body></html>"""
+    }
+
+    fun setupMessage(li: Int, kind: String): String = when (kind) {
+        "expired" -> tr(li, "Diese Einrichtungssitzung ist abgelaufen. Starte sie erneut am Fernseher.", "This setup session expired. Start a new one on the TV.")
+        "used" -> tr(li, "Zugangsdaten wurden bereits gesendet. Bestätige sie am Fernseher.", "Credentials were already sent. Confirm them on the TV.")
+        else -> tr(li, "Ungültige Angaben. Prüfe die Adresse und Zugangsdaten.", "Invalid details. Check the URL and credentials.")
+    }.let { "<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"></head><body style=\"font-family:system-ui,sans-serif;background:#0B0F19;color:#fff;padding:24px\"><h2>$it</h2></body></html>" }
 
     fun newCode(rnd: java.util.Random): String = (1000 + rnd.nextInt(9000)).toString()
 
@@ -73,16 +122,17 @@ document.getElementById('$statusId').textContent='…';fetch('$path?code='+encod
 
     fun page(li: Int): String = page(li, Features())
 
-    fun page(li: Int, feats: Features): String {
+fun page(li: Int, feats: Features, setupOnly: Boolean = false): String {
         fun t(a: String, b: String) = tr(li, a, b)
         return """<!doctype html><html lang="${I18nCore.CODES.getOrElse(li) { "en" }}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>IPVIO Stream</title><style>
+<title>LiteStream TV</title><style>
 body{font-family:system-ui,sans-serif;background:#0B0F19;color:#fff;margin:0;padding:20px;max-width:560px}
 h1{font-size:22px}h2{font-size:16px;color:#9aa;margin-top:28px}
 input,textarea{width:100%;box-sizing:border-box;padding:14px;margin:6px 0;border-radius:10px;border:1px solid #333;background:#171a26;color:#fff;font-size:16px}
 button{width:100%;padding:14px;margin-top:10px;border:0;border-radius:10px;background:#4ADE80;color:#0B0F19;font-size:17px;font-weight:700}
-</style></head><body><h1>IPVIO Stream</h1>
-<p>${t("Sende deine Playlist an den Fernseher. Den Code siehst du auf dem Bildschirm.", "Send your playlist to the TV. You can see the code on the screen.")}</p>
+</style></head><body><h1>LiteStream TV</h1>
+<p>${t("Sende deine Playlist an den Fernseher. Den Code siehst du auf dem Bildschirm.", "Send your playlist to the TV. You can see the code on the screen.")}</p>""" +
+            (if (setupOnly) "" else """
 <form method="post" action="/send"><h2>${t("M3U-Link", "M3U link")}</h2>
 <input name="code" inputmode="numeric" maxlength="4" placeholder="${t("Code vom Fernseher", "Code from the TV")}" required>
 <textarea name="url" rows="3" placeholder="http://…/playlist.m3u"></textarea>
@@ -92,8 +142,8 @@ button{width:100%;padding:14px;margin-top:10px;border:0;border-radius:10px;backg
 <input name="host" placeholder="${t("Server (z. B. http://server.tld:8080)", "Server (e.g. http://server.tld:8080)")}">
 <input name="user" placeholder="${t("Benutzername", "Username")}" autocapitalize="off">
 <input name="pass" placeholder="${t("Passwort", "Password")}" autocapitalize="off">
-<button type="submit">${t("An den Fernseher senden", "Send to TV")}</button></form>""" +
-            (if (feats.upload) """<h2>${t("oder Playlist-Datei vom Handy", "or a playlist file from your phone")}</h2>
+<button type="submit">${t("An den Fernseher senden", "Send to TV")}</button></form>""") +
+            (if (feats.upload && !setupOnly) """<h2>${t("oder Playlist-Datei vom Handy", "or a playlist file from your phone")}</h2>
 <input id="uc" inputmode="numeric" maxlength="4" placeholder="${t("Code vom Fernseher", "Code from the TV")}">
 <input id="uf" type="file" accept=".m3u,.m3u8,.txt,audio/x-mpegurl,application/vnd.apple.mpegurl,text/plain">
 <button onclick="up()">${t("Datei hochladen", "Upload file")}</button><p id="us"></p>""" + sendFileJs("up", "/upload", "uc", "uf", "us") else "") +
@@ -119,7 +169,7 @@ button{width:100%;padding:14px;margin-top:10px;border:0;border-radius:10px;backg
     /** API keys: one form with the four keys, protected by the code like every other page. */
     fun keysPage(li: Int): String {
         fun t(a: String, b: String) = tr(li, a, b)
-        return """<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>IPVIO Stream</title><style>$CSS</style></head><body>
+        return """<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>LiteStream TV</title><style>$CSS</style></head><body>
 <h1>${t("API-Schlüssel", "API keys")}</h1>
 <p>${t("Füge die Schlüssel hier ein, z. B. aus der Zwischenablage. Leere Felder lassen den gespeicherten Schlüssel unverändert.", "Paste the keys here, e.g. from the clipboard. Empty fields keep the stored key.")}</p>
 <form method="post" action="/keys">
@@ -135,7 +185,7 @@ button{width:100%;padding:14px;margin-top:10px;border:0;border-radius:10px;backg
     /** Transfer: download a backup (optionally with playlists) or restore a backup. */
     fun transferPage(li: Int): String {
         fun t(a: String, b: String) = tr(li, a, b)
-        return """<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>IPVIO Stream</title><style>$CSS</style></head><body>
+        return """<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>LiteStream TV</title><style>$CSS</style></head><body>
 <h1>${t("Auf ein anderes Gerät übertragen", "Transfer to another device")}</h1>
 <p>${t("1. Auf dem alten Gerät die Sicherung herunterladen. 2. Auf dem neuen Gerät diese Seite öffnen und die Datei einspielen.", "1. Download the backup on the old device. 2. Open this page on the new device and upload the file.")}</p>
 <form method="get" action="/backup"><h2>${t("Sicherung herunterladen", "Download backup")}</h2>
@@ -159,7 +209,7 @@ button{width:100%;padding:14px;margin-top:10px;border:0;border-radius:10px;backg
             text.isBlank() -> "<p>" + t("Kein Absturz gespeichert.", "No crash saved.") + "</p>"
             else -> "<p>" + t("Text markieren und kopieren, z. B. für einen Fehlerbericht auf GitHub.", "Select and copy the text, e.g. for a bug report on GitHub.") + "</p><pre>$esc</pre>"
         }
-        return """<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>IPVIO Stream</title><style>$CSS</style></head><body>
+        return """<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>LiteStream TV</title><style>$CSS</style></head><body>
 <h1>${t("Absturzbericht", "Crash report")}</h1>$body</body></html>"""
     }
 
@@ -186,16 +236,30 @@ button{width:100%;padding:14px;margin-top:10px;border:0;border-radius:10px;backg
  * for transfer to another device) and read the last crash report ([crash]). What is not set
  * does not appear on the page.
  */
-class PhoneImport(private val onReceive: (PhoneInput) -> Unit) {
+class PhoneImport(private val onReceive: (PhoneInput) -> Unit, private val setupOnly: Boolean = false) {
     @Volatile private var server: ServerSocket? = null
     private val fails = java.util.concurrent.atomic.AtomicInteger(0)
+    private val setupConsumed = java.util.concurrent.atomic.AtomicBoolean(false)
+    private val setupInFlight = java.util.concurrent.atomic.AtomicBoolean(false)
     @Volatile private var lockedAt = 0L
+    @Volatile private var setupToken = ""
+    @Volatile private var setupExpiresAt = 0L
     val code: String = PhoneImportLogic.newCode(SecureRandom())
     @Volatile var port: Int = 0
         private set
+    var onSetupReceive: ((PhoneInput) -> Unit)? = null
+
+    /** Opens a fresh, one-use setup session and starts the local server if needed. */
+    fun startSetup(): String? {
+        setupToken = PhoneImportLogic.newSetupToken(SecureRandom())
+        setupExpiresAt = System.currentTimeMillis() + SETUP_LIFETIME_MS
+        setupConsumed.set(false)
+        return if (start()) "/setup/$setupToken" else null
+    }
 
     /** Store an uploaded playlist file: (file name, content) → address "file://…" or null. */
     var saveUpload: ((String, java.io.File) -> String?)? = null
+    var discardUpload: ((String) -> Unit)? = null
     /** Folder for uploads (temporary), set together with [saveUpload]. */
     var uploadDir: java.io.File? = null
     /** Create the backup as text; parameter = with playlists. */
@@ -227,7 +291,7 @@ class PhoneImport(private val onReceive: (PhoneInput) -> Unit) {
         return true
     }
 
-    fun stop() { runCatching { server?.close() }; server = null }
+    fun stop() { setupExpiresAt = 0L; setupConsumed.set(true); runCatching { server?.close() }; server = null }
 
     private class Head(val method: String, val path: String, val query: Map<String, String>, val len: Long, val lang: String)
 
@@ -252,8 +316,8 @@ class PhoneImport(private val onReceive: (PhoneInput) -> Unit) {
         return Head(first[0], target.substringBefore('?'), q, len, lang)
     }
 
-    private fun readSmall(ins: InputStream, len: Long): String? {
-        if (len > 8192) return null
+    private fun readSmall(ins: InputStream, len: Long, max: Long = 8192): String? {
+        if (len > max) return null
         val body = ByteArray(len.toInt())
         var n = 0
         while (n < len) { val r = ins.read(body, n, len.toInt() - n); if (r < 0) break; n += r }
@@ -311,15 +375,57 @@ class PhoneImport(private val onReceive: (PhoneInput) -> Unit) {
 
     private fun html(status: Int, s: String) = Reply(status, s.toByteArray(Charsets.UTF_8))
 
+    private fun setupRoute(h: Head, ins: InputStream, li: Int): Reply? {
+        val route = SETUP_PATH.matchEntire(h.path) ?: return null
+        val token = route.groupValues[1]
+        val action = route.groupValues[2]
+        fun valid() = PhoneImportLogic.setupTokenValid(token, setupToken, setupExpiresAt, System.currentTimeMillis(), setupConsumed.get())
+        if (!valid()) return html(410, PhoneImportLogic.setupMessage(li, "expired"))
+        if (action.isEmpty() && h.method == "GET") return html(200, PhoneImportLogic.setupPage(li, token))
+        if (action !in setOf("/send", "/file") || h.method != "POST") return html(404, PhoneImportLogic.message(li, "bad"))
+        if (setupConsumed.get()) return html(409, PhoneImportLogic.setupMessage(li, "used"))
+        val receive = onSetupReceive ?: return html(404, PhoneImportLogic.message(li, "bad"))
+        if (!setupInFlight.compareAndSet(false, true)) return html(409, PhoneImportLogic.setupMessage(li, "used"))
+        try {
+            if (action == "/send") {
+                if (h.len <= 0 || h.len > MAX_SETUP_BODY) return html(413, PhoneImportLogic.message(li, "file"))
+                val fields = PhoneImportLogic.parseForm(readSmall(ins, h.len, MAX_SETUP_BODY) ?: return html(400, PhoneImportLogic.setupMessage(li, "bad")))
+                val input = PhoneImportLogic.toInput(fields) ?: return html(400, PhoneImportLogic.setupMessage(li, "bad"))
+                if (!valid() || !setupConsumed.compareAndSet(false, true)) return html(410, PhoneImportLogic.setupMessage(li, "expired"))
+                receive(input)
+            } else {
+                val save = saveUpload ?: return html(404, PhoneImportLogic.message(li, "bad"))
+                val dir = uploadDir ?: return html(404, PhoneImportLogic.message(li, "bad"))
+                if (h.len <= 0 || h.len > MAX_UPLOAD) return html(413, PhoneImportLogic.message(li, "file"))
+                dir.mkdirs()
+                val tmp = java.io.File(dir, "setup_${System.nanoTime()}.part")
+                val ok = runCatching { readToFile(ins, h.len, tmp) }.getOrDefault(false)
+                if (!ok || !valid()) { tmp.delete(); return html(if (ok) 410 else 400, PhoneImportLogic.setupMessage(li, "bad")) }
+                val name = h.query["name"].orEmpty().substringAfterLast('/').substringBeforeLast('.').filterNot(Char::isISOControl).take(80).ifBlank { "Provider" }
+                val url = save(name, tmp)
+                tmp.delete()
+                if (url == null) return html(400, PhoneImportLogic.message(li, "file"))
+                if (!valid() || !setupConsumed.compareAndSet(false, true)) {
+                    discardUpload?.invoke(url)
+                    return html(410, PhoneImportLogic.setupMessage(li, "expired"))
+                }
+                receive(PhoneInput(url, "", "", "", name))
+            }
+            return html(200, PhoneImportLogic.message(li, "ok"))
+        } finally { setupInFlight.set(false) }
+    }
+
     private fun handle(s: Socket) {
         s.soTimeout = 15000
         val ins = s.getInputStream()
         val h = readHead(ins) ?: return
         val li = PhoneImportLogic.langIndex(h.lang)
         val feats = PhoneImportLogic.Features(saveUpload != null, backup != null, crash != null, onEpg != null, onList != null, onKeys != null)
-        val r: Reply = when (h.method + " " + h.path) {
-            "GET /" -> html(200, PhoneImportLogic.page(li, feats))
-            "POST /send" -> {
+        val r: Reply = if (setupOnly && !SETUP_PATH.matches(h.path)) {
+            html(404, PhoneImportLogic.message(li, "bad"))
+        } else setupRoute(h, ins, li) ?: when (h.method + " " + h.path) {
+            "GET /" -> html(200, PhoneImportLogic.page(li, feats, setupOnly))
+            "POST /send" -> if (setupOnly) html(404, PhoneImportLogic.message(li, "bad")) else {
                 val f = PhoneImportLogic.parseForm(readSmall(ins, h.len) ?: "")
                 when (val c = codeOk(f["code"])) {
                     200 -> {
@@ -374,7 +480,7 @@ class PhoneImport(private val onReceive: (PhoneInput) -> Unit) {
                 }
             }
             // Playlist file: the browser sends the file as the body (small script on the page)
-            "POST /upload" -> {
+            "POST /upload" -> if (setupOnly) html(404, PhoneImportLogic.message(li, "bad")) else {
                 val save = saveUpload; val dir = uploadDir
                 val c = codeOk(h.query["code"])
                 if (save == null || dir == null) html(404, PhoneImportLogic.message(li, "bad"))
@@ -442,7 +548,7 @@ class PhoneImport(private val onReceive: (PhoneInput) -> Unit) {
             }
         }
         val out = s.getOutputStream()
-        val reason = when (r.status) { 200 -> "OK"; 400 -> "Bad Request"; 403 -> "Forbidden"; 404 -> "Not Found"; 413 -> "Payload Too Large"; 429 -> "Too Many Requests"; else -> "Error" }
+        val reason = when (r.status) { 200 -> "OK"; 400 -> "Bad Request"; 403 -> "Forbidden"; 404 -> "Not Found"; 409 -> "Conflict"; 410 -> "Gone"; 413 -> "Payload Too Large"; 429 -> "Too Many Requests"; else -> "Error" }
         out.write(("HTTP/1.1 ${r.status} $reason\r\nContent-Type: ${r.type}\r\nCache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\n" +
             "Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; form-action 'self'; img-src data:; frame-ancestors 'none'\r\n" +
             r.extra + "Content-Length: ${r.body.size}\r\nConnection: close\r\n\r\n").toByteArray())
@@ -456,6 +562,9 @@ class PhoneImport(private val onReceive: (PhoneInput) -> Unit) {
 
         /** Largest uploadable list export (Letterboxd, MyAnimeList, Trakt); same limit as the file picker on the TV (ListImportUi). */
         const val MAX_LIST_UPLOAD = 16L * 1024 * 1024
+        const val SETUP_LIFETIME_MS = 10 * 60 * 1000L
+        const val MAX_SETUP_BODY = 16 * 1024L
+        private val SETUP_PATH = Regex("""^/setup/([a-f0-9]{64})(/send|/file)?$""")
 
         /** Local IPv4 address of the device in the Wi-Fi/LAN (or null). */
         fun localIp(): String? = runCatching {

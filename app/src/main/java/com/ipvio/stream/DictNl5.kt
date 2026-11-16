@@ -277,7 +277,7 @@ Sicherung mit Playlists speichern …¦Back-up met afspeellijsten opslaan …
 Auf diesem Gerät gibt es keine Dateiauswahl. Nutze die Übertragung im WLAN.¦Dit apparaat heeft geen bestandskiezer. Gebruik de wifi-overdracht.
 Gesichert werden Einstellungen, Favoriten, Verlauf, Weiterschauen und Profile. Playlists und Zugangsdaten sind nur in „Sicherung mit Playlists“ enthalten (die Datei enthält Passwörter, gib sie nicht weiter). Beim Wiederherstellen startet die App neu. Auf einem neuen Gerät geht das gleich beim Hinzufügen der ersten Playlist.¦Instellingen, favorieten, geschiedenis, verder kijken en profielen worden opgeslagen. Afspeellijsten en inloggegevens staan alleen in “Back-up met afspeellijsten opslaan” (het bestand bevat wachtwoorden, deel het niet). De app herstart bij het terugzetten. Op een nieuw apparaat kan dat meteen bij het toevoegen van de eerste afspeellijst.
 Wichtig zu wissen¦Goed om te weten
-IPVIO Stream ist nur ein Abspielgerät. Die App liefert selbst keine Sender, Filme, Serien und keine Playlist. Den Link oder die Zugangsdaten bekommst du von deinem IPTV-Anbieter oder aus deiner eigenen Quelle. Wir können dir keinen Link nennen.¦IPVIO Stream is alleen een speler. De app levert zelf geen zenders, films, series of afspeellijst. De link of inloggegevens krijg je van je IPTV-aanbieder of eigen bron. Wij kunnen je geen link geven.
+LiteStream TV ist nur ein Abspielgerät. Die App liefert selbst keine Sender, Filme, Serien und keine Playlist. Den Link oder die Zugangsdaten bekommst du von deinem IPTV-Anbieter oder aus deiner eigenen Quelle. Wir können dir keinen Link nennen.¦LiteStream TV is alleen een speler. De app levert zelf geen zenders, films, series of afspeellijst. De link of inloggegevens krijg je van je IPTV-aanbieder of eigen bron. Wij kunnen je geen link geven.
 OK = groß¦OK = groot
 Handy und dieses Gerät müssen im selben WLAN sein. Halte die Kamera auf das Bild. Es klappt auch aus einiger Entfernung.¦Telefoon en dit apparaat moeten op hetzelfde wifi zitten. Houd de camera op het beeld. Het werkt ook op enige afstand.
 Oder Adresse im Browser eintippen:¦Of typ het adres in de browser:
@@ -446,7 +446,7 @@ Heute keine Spiele deiner Favoriten.¦Vandaag geen wedstrijden van je favorieten
 Noch keine Teams gemerkt. Im Team Center gibt es „Team merken“.¦Nog geen teams onthouden. Gebruik “Team onthouden” in het Teamcentrum.
 Design und Farbe¦Ontwerp en kleur
 Berechtigung erteilt. Der Autostart ist bereit.¦Toestemming verleend. Automatisch starten is klaar.
-Berechtigung fehlt noch. Bitte „Einstellung öffnen“ wählen und IPVIO Stream erlauben.¦Toestemming ontbreekt nog. Kies “Instelling openen” en sta IPVIO Stream toe.
+Berechtigung fehlt noch. Bitte „Einstellung öffnen“ wählen und LiteStream TV erlauben.¦Toestemming ontbreekt nog. Kies “Instelling openen” en sta LiteStream TV toe.
 Hauptliste¦hoofdlijst
 zusätzlich angezeigt¦ook getoond
 Nicht mehr zusätzlich anzeigen¦Niet meer extra tonen

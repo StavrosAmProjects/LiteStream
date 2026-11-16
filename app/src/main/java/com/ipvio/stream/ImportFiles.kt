@@ -27,6 +27,14 @@ object ImportFiles {
         return Uri.fromFile(dst).toString()
     }
 
+    /** Remove a staged phone upload only when it belongs to the app's imports folder. */
+    fun discard(c: Context, uri: String) {
+        runCatching {
+            val file = File(Uri.parse(uri).path ?: return)
+            if (file.canonicalFile.parentFile == dir(c).canonicalFile) file.delete()
+        }
+    }
+
     /** Accept a file from the device's file picker. */
     fun fromUri(c: Context, uri: Uri): String? {
         val tmp = File(tmpDir(c), "pick_" + System.currentTimeMillis())
@@ -44,6 +52,6 @@ object ImportFiles {
     fun crashText(c: Context): String? {
         val l = CrashLog.last(c) ?: return null
         return l.first + "\n\n" + java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.ROOT).format(java.util.Date(l.second)) +
-            "\nIPVIO Stream " + AppUpdate.currentName(c) + " · Android " + android.os.Build.VERSION.RELEASE + " · " + android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL
+            "\nLiteStream TV " + AppUpdate.currentName(c) + " · Android " + android.os.Build.VERSION.RELEASE + " · " + android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL
     }
 }

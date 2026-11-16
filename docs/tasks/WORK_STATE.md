@@ -1,6 +1,18 @@
-Last update: 2026-11-12 (release 1.4 prepared). Read `CLAUDE.md` first, then this file.
+Last update: 2026-11-16 (T-032 license inventory follow-up). Read `AGENTS.md` first, then this file.
 
 ## Current task
+
+Current task: approved fork implementation, tasks T-027 through T-032, on `codex/litestream-tv-fork` from `e55395a73ee8ee7b21e67a00a677581d90fa9529`.
+
+T-027 (phone provider setup and credential import): implemented in the working tree. Added an opt-in token URL session, stage/confirm flow, local TXT/JSON/URL parsing, TV file picker preview, staged M3U phone upload, LiteStream-branded temporary phone pages, and rejection of all non-setup routes during pairing. The pairing card no longer shows the legacy four-digit code or implies encrypted transport. Tests added; none run. Manual steps and risk are in `docs/tasks/T-027-phone-provider-setup.md`.
+T-028 (country-first Live TV browsing): implemented in the working tree. Added deterministic country normalization and a three-pane D-pad view at Live TV > Countries; unknown content remains accessible and provider data is unchanged. Tests added; none run. Manual steps are in `docs/tasks/T-028-country-first-live-browse.md`.
+
+T-029 (provider country/group filters): implemented in the working tree. Xtream setup offers ALL/NONE/CUSTOMIZE; hashed provider-scoped selections live in existing profile-scoped preferences. Filters affect normal Live TV, Home, Search, and Boomer presentation while preserving source data. Optional backup-server fields are collapsed in normal setup and reopened when saved entries exist. Tests added; none run. `git diff --check` passed. Manual validation and risks are in `docs/tasks/T-029-provider-country-filters.md`.
+T-030 (playback overlay timeout): changed the new-install default to three seconds; saved user choices stay intact. `PlayerScreen.kt` already auto-hides controls without recreating the player. Device-only validation steps are in `docs/tasks/T-030-player-overlay-timeout.md`; no device check run.
+T-031 (simple TV mode): reused IPVIO's existing Boomer mode and applied provider visibility at its screen boundary. Manual device check and remaining risk are in `docs/tasks/T-031-simple-tv-mode-filters.md`.
+T-032 (fork identity and package): set `com.litestream.tv`, LiteStream owner assets/labels, version `0.1.0`, backup migration docs, disabled upstream updates, and renamed the release artifact. Updated README and direct dependency license inventory with declared versions and test-only dependencies; transitive dependency resolution is still unverified. No build/device test. Details and remaining checks are in `docs/tasks/T-032-fork-brand-package.md`.
+
+T-026 (LiteStream TV fork architecture audit): complete. Source baseline is IPVIO `e55395a73ee8ee7b21e67a00a677581d90fa9529` (release 1.4.3 source) and LiteStream `28a55a9a08125e049bd5af6094fdcd237a484ce3` (`v0.3.1-working`). Latest published IPVIO APK release checked is 1.4.2 (`abc5a21`). Audit: `docs/tasks/T-026-litestream-fork-audit.md`. The maintainer confirmed ownership of LiteStream code, assets and branding and authorized their use as appropriate for this fork on 16 Nov 2026. The feature branch `codex/litestream-tv-fork` was created from the audited commit. Implementation progress is T-027 through T-032 above. Open matters: configure the fork's release repository/OAuth client, review GPL-3.0 and dependency notices before distribution, test locally on Android TV, and verify the local HTTP pairing on the target network.
 
 Release 1.4 (`versionCode` 5): `main` plus the speed series (T-019 to T-023), R8 over the whole app (T-024) and the update card fix (T-025). Reported by the maintainer on 12 Nov 2026: built and tested on the device, works. The individual checks and any measurements were not recorded. The statuses "not built, not tested" further down for these tasks are older than this report. The maintainer builds the signed APK, creates `update.json` and publishes the GitHub release `v1.4` (steps in `docs/RELEASE.md`). The assistant did not build or publish anything. Rollback for R8 if users report a crash at start: `enable = false` in `app/build.gradle.kts` and a new release.
 
@@ -62,6 +74,4 @@ Playlist mode switch fix (see Completed steps, 12 Nov 2026): implemented, **open
 
 ## Next step
 
-Device tests of T-015 (steps in its task file; needs a test release with `update.json`) and of T-014 (first-start update card). Mode switch fix, demo mode, favorites reorder, settings reset: confirmed working by the maintainer on 12 Nov 2026. Still open: device tests of #45 backup, #47 Stalker, #49, #50, #52. Then decide T-010 and T-012 against the on-demand loading, and PR #40 / PR #9.
-Device tests of the mode switch fix (uncommitted) and of everything merged on 12 Nov 2026 (#41, #43, #45, #47 Stalker, #49 category order and refresh default, #50 Xtream progress, #52 online subtitle search from #9). Then decide T-010 and T-012 against the on-demand loading, and PR #40 / PR #9.
->
+Continue the approved fork on `codex/litestream-tv-fork`: run the maintainer Gradle/JUnit and Android TV checks for T-027 through T-032; create/configure the fork's own release repository and OAuth client before any distribution; use TV feedback to decide whether Boomer should become the default simple home. Earlier IPVIO handoff notes above are historical context for this fork branch.

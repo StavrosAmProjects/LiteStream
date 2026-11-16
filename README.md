@@ -1,22 +1,16 @@
-# IPVIO Stream
+# LiteStream TV
 
-DOWNLOADER CODE: 4200542
+LiteStream TV is a TV-first fork of IPVIO Stream for **Android TV, Google TV and Amazon Fire TV**. It keeps IPVIO's Kotlin, Compose, Media3 player and provider infrastructure, with a simpler television flow.
 
-A free, open-source IPTV player for **Android TV, Google TV and Amazon Fire TV**, built with Kotlin and Jetpack Compose and designed for the remote control.
+![LiteStream TV home screen](docs/screenshots/homescreen.jpg)
 
-![IPVIO Stream home screen](docs/screenshots/homescreen.jpg)
+> **LiteStream TV does not provide any content.** It contains no channels, playlists, films or series. It is only a player for playlists that **you** add yourself. Only use sources that you are allowed to access.
 
-> **IPVIO Stream does not provide any content.** It contains no channels, playlists, films or series. It is only a player for playlists that **you** add yourself (Xtream Codes login or M3U address). Only use sources that you are legally allowed to use.
+This fork is based on [IPVIO Stream](https://github.com/Emrodev/IPVIO-Stream). It preserves the upstream GPL-3.0 notices and third-party notices.
 
 ## Install
 
-**Download:** [IPVIO-Stream.apk (latest release)](https://github.com/Emrodev/IPVIO-Stream/releases/latest/download/IPVIO-Stream.apk)
-
-**Fire TV / Android TV with the Downloader app:** enter
-```
-https://github.com/Emrodev/IPVIO-Stream/releases/latest/download/IPVIO-Stream.apk
-```
-Allow "Install unknown apps" for Downloader (or your file manager) when asked, then install. No account or registration needed.
+**LiteStream TV APK release is not configured yet.** The IPVIO release APK is a different app and must not be installed as this fork.
 
 ## Features
 
@@ -111,11 +105,13 @@ Requirements: Android Studio (current version) with the Android SDK; the Gradle 
 
 ```
 git clone <this repository>
-cd IPVIO-Stream
+cd LITESTREAM
 ./gradlew assembleDebug        # Windows: gradlew.bat assembleDebug
 ```
 
-The APK is then in `app/build/outputs/apk/debug/`. For releases and in-app updates see [docs/RELEASE.md](docs/RELEASE.md): every release must be signed with the same key (`keystore.properties`), otherwise users lose their data when updating.
+The APK is then in `app/build/outputs/apk/debug/`. Release signing and the in-app update source are not configured yet; see [docs/RELEASE.md](docs/RELEASE.md). Every LiteStream TV release must use the same signing key.
+
+Package ID: `com.litestream.tv`. It installs alongside IPVIO Stream, whose app data remains separate. Export an IPVIO backup and import it in LiteStream TV to move settings and playlists. Keep IPVIO installed until the restore is confirmed.
 
 Optional Google Drive backup: [docs/GOOGLE_DRIVE.md](docs/GOOGLE_DRIVE.md).
 
@@ -147,7 +143,7 @@ IPVIO Stream stays free, ad-free and open source. Donations are voluntary and do
 
 Copyright (C) 2026 IPVIO Stream contributors
 
-IPVIO Stream is free software: you can redistribute it and/or modify it under the terms of the **GNU General Public License version 3** (see [LICENSE](LICENSE)). The GPL is required because the app includes the GPL-3.0 licensed FFmpeg audio decoder. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for the libraries, fonts and services used.
+LiteStream TV is distributed under the **GNU General Public License version 3** (see [LICENSE](LICENSE)), preserving IPVIO's license and notices. The declared Jellyfin Media3 FFmpeg decoder dependency is GPL-3.0; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for the direct dependency and font inventory. Transitive dependency licenses still need verification from the resolved release build.
 
 The name "IPVIO" and the IPVIO logo identify the original project. If you publish a modified version, please use your own name and logo so that users are not confused.
 

@@ -9,6 +9,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.runtime.*
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -103,10 +105,19 @@ fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: Li
     LaunchedEffect(plBack) { if (plBack) { plBack = false; runCatching { plFocus.requestFocus() } } }
     val plScope = rememberCoroutineScope()
     val srcK = if (LiveSource.k in srcNames.indices && srcNames.size > 1) LiveSource.k else -1
-    val live = remember(liveAll, srcK) { if (srcK < 0) liveAll else liveAll.filter { it.src == srcK } }
-    val groups = remember(groupsAll, srcK) {
-        if (srcK < 0) groupsAll else LinkedHashMap<String, List<Item>>().also { m ->
-            for ((g, l) in groupsAll) { val f = l.filter { it.src == srcK }; if (f.isNotEmpty()) m[g] = f }
+    val providerUrls = remember(PlaylistStore.shownUrl, srcNames) { listOfNotNull(PlaylistStore.shownUrl) + PlaylistStore.extraUrls(ctx) }
+    var filterRevision by remember { mutableIntStateOf(0) }
+    val savedFilters = remember(providerUrls, filterRevision) { providerUrls.map { CountryFilterStore.read(ctx, it) } }
+    val allProvidersUnfiltered = savedFilters.all { it == null }
+    val filteredAll = remember(liveAll, savedFilters) { CountryFilterLogic.filterSources(liveAll, savedFilters) }
+    val live = remember(filteredAll, srcK) { if (srcK < 0) filteredAll else filteredAll.filter { it.src == srcK } }
+    val groups = remember(groupsAll, srcK, allProvidersUnfiltered, savedFilters) {
+        if (srcK < 0 && allProvidersUnfiltered) groupsAll else LinkedHashMap<String, List<Item>>().also { m ->
+            for ((g, entries) in groupsAll) {
+                val sourceEntries = if (srcK < 0) entries else entries.filter { it.src == srcK }
+                val visible = if (allProvidersUnfiltered) sourceEntries else CountryFilterLogic.filterSources(sourceEntries, savedFilters)
+                if (visible.isNotEmpty()) m[g] = visible
+            }
         }
     }
     // Genres (sports, movies, documentary, kids, news, music) – detected by category and channel name
@@ -124,6 +135,8 @@ fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: Li
     // Channel name search ("SEARCH" entry): text is kept while the tab is open
     var query by remember { mutableStateOf("") }
     var showMulti by remember { mutableStateOf(false) }
+    var countryBrowse by remember { mutableStateOf(false) }
+    var countryFilterEditor by remember { mutableStateOf(false) }
     if (showMulti) MultiViewScreen(live) { showMulti = false }
     val searchReq = remember { FocusRequester() }
     // First key of the on-screen keyboard shown in the search (right side)
@@ -139,7 +152,7 @@ fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: Li
         value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { Recorder.list(ctx).map { Recorder.itemOf(it) } }
         LiveRecCache.items = value
     }
-    val names = (if (PlaylistStore.lists.size > 1) listOf("PL") else emptyList()) + listOf("HOME", "GUIDE", "SEARCH", "MULTI", FAV_CAT) + (if (recs.isNotEmpty()) listOf("REC") else emptyList()) + myLists.map { ChannelListLogic.key(it) } + listOf("NEW", "ALL") + genres.keys.filter { it !in HiddenCats.list } + favCats + CatOrder.sorted(CatOrder.LIVE, groups.keys.toList()).filter { it !in favCats && it !in HiddenCats.list } + (if (HiddenCats.list.any { it in groups || it in genres }) listOf("HIDDEN") else emptyList())
+    val names = (if (PlaylistStore.lists.size > 1) listOf("PL") else emptyList()) + listOf("COUNTRIES", "HOME", "GUIDE", "SEARCH", "MULTI", FAV_CAT) + (if (recs.isNotEmpty()) listOf("REC") else emptyList()) + myLists.map { ChannelListLogic.key(it) } + listOf("NEW", "ALL") + genres.keys.filter { it !in HiddenCats.list } + favCats + CatOrder.sorted(CatOrder.LIVE, groups.keys.toList()).filter { it !in favCats && it !in HiddenCats.list } + (if (HiddenCats.list.any { it in groups || it in genres }) listOf("HIDDEN") else emptyList())
     val catKeys = remember(names) { val seen = HashSet<String>(); names.mapIndexed { i, n -> if (seen.add(n)) n else "$n#$i" } }
     val curList = ChannelLists.byKey(sel)
     // Own list currently being filled (OK on a channel adds it); declared early because bundling depends on it
@@ -193,6 +206,7 @@ fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: Li
     val catState = remember { LazyListState() }
     // Focus is in the channel list (set by enterChannels, cleared when the focus goes back to the categories)
     var inChannels by remember { mutableStateOf(false) }
+    LaunchedEffect(names, sel) { if (sel !in names) { sel = "ALL"; LiveMemory.setSel(ctx, "ALL"); inChannels = false } }
     // Like Movies/Series ("Mit Hoch/Runter verschieben"): the category floats, Up/Down move it, OK or Back puts it down
     var floatingCat by remember { mutableStateOf<String?>(null) }
     // Issue 15: Right (like OK) on a category enters the channel list. The first row is not composed when the list is still
@@ -345,6 +359,7 @@ fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: Li
                         return@itemsIndexed
                     }
                     val label = when {
+                        n == "COUNTRIES" -> "Länder"
                         n == FAV_CAT -> "Favoriten"
                         n == "HOME" -> "Start"
                         n == "ALL" -> "Alle Sender"
@@ -364,7 +379,7 @@ fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: Li
                     val count = when {
                         n == FAV_CAT -> favs.size
                         n == "ALL" -> live.size
-                        n == "HOME" -> 0
+                        n == "HOME" || n == "COUNTRIES" -> 0
                         n == "REC" -> recs.size
                         LiveGenre.isGenreKey(n) -> genres[n]?.size ?: 0
                         ml != null -> ChannelListLogic.resolve(ml, byIdLazy.value).size
@@ -390,11 +405,11 @@ fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: Li
                                     }
                                 } else Modifier
                             ),
-                            onFocus = { sel = n; inChannels = false }, onRight = { enterChannels() },
+                            onFocus = { sel = n; inChannels = false }, onRight = { if (n == "COUNTRIES") countryBrowse = true else enterChannels() },
                             onFav = { if (ml != null) listMenu = true else if (plainCat) catMenu = true else if (LiveGenre.isGenreKey(n)) genMenu = true else if (n != FAV_CAT && n != "ALL" && n != "REC" && !LiveGenre.isGenreKey(n)) CatFavs.toggle(ctx, n) },
                             icon = icon, raw = ml != null,
                             floating = plainCat && floatingCat == n
-                        ) { if (floatingCat == null) enterChannels() }
+                        ) { if (floatingCat == null) { if (n == "COUNTRIES") countryBrowse = true else enterChannels() } }
                         // Menu of a provider category: favorite on/off, hide, move, sorting of all categories
                         var sortMenu by remember { mutableStateOf(false) }
                         // Menu of a genre category (Sports, Movies, ...): hide
@@ -544,6 +559,29 @@ fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: Li
                     }
 }
         ask?.let { a -> NameDialog(a.title, a.initial, onDismiss = { ask = null }) { a.onSave(it); ask = null } }
+        val filterSource = if (srcK >= 0) srcK else if (providerUrls.size == 1) 0 else null
+        val filterUrl = filterSource?.let(providerUrls::getOrNull)
+        if (countryBrowse) Dialog(onDismissRequest = { countryBrowse = false }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+            CountryBrowseScreen(live, onExit = { countryBrowse = false }, onCustomize = if (filterUrl == null) null else ({ countryFilterEditor = true })) { item, channels, group ->
+                ZapContext.list = channels
+                ZapContext.key = group
+                LiveMemory.setSel(ctx, "ALL")
+                onOpen(item)
+            }
+        }
+        if (countryFilterEditor && filterUrl != null && filterSource != null) Dialog(
+            onDismissRequest = { countryFilterEditor = false }, properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            CountryFilterScreen(
+                PlaylistStore.channels.filter { it.src == filterSource }, CountryFilterStore.read(ctx, filterUrl),
+                onCancel = { countryFilterEditor = false },
+                onDone = { selection ->
+                    CountryFilterStore.write(ctx, filterUrl, selection)
+                    countryFilterEditor = false
+                    filterRevision++
+                }
+            )
+        }
     }
 }
 

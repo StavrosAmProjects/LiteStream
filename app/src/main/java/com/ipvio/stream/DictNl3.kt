@@ -141,7 +141,7 @@ Farbe 2 · Hervorhebung¦Kleur 2 · Accenten
 Farbe 2 · automatisch¦Kleur 2 · automatisch
 Farbe 2 ist auf diesem Hintergrund schwer lesbar.¦Kleur 2 is op deze achtergrond slecht leesbaar.
 Farbe 1 färbt Knöpfe, Balken und markierte Flächen – die Schrift darauf wird automatisch hell oder dunkel, damit sie lesbar bleibt. Farbe 2 färbt Hervorhebungen, Rahmen und farbige Schrift. „Automatisch“ berechnet Farbe 2 passend zu Farbe 1.¦Kleur 1 kleurt knoppen, balken en gemarkeerde vlakken – de tekst erop wordt automatisch licht of donker, zodat die leesbaar blijft. Kleur 2 kleurt accenten, randen en gekleurde tekst. „Automatisch” berekent kleur 2 passend bij kleur 1.
-IPVIO Navy¦IPVIO Navy
+LiteStream Navy¦LiteStream Navy
 Einfacher mit dem Handy¦Makkelijker met je telefoon
 Mit der Fernbedienung zu tippen ist mühsam. Schick die Zugangsdaten lieber vom Handy:¦Typen met de afstandsbediening is lastig. Stuur de inloggegevens liever vanaf je telefoon:
 Handy mit demselben WLAN verbinden wie dieses Gerät.¦Verbind je telefoon met hetzelfde wifi-netwerk als dit apparaat.

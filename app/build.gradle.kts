@@ -32,14 +32,14 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.ipvio.stream"
+        applicationId = "com.litestream.tv"
         minSdk = 24
         targetSdk = 37
         // Raise both for every release; the GitHub release tag must match versionName (e.g. tag "v1.1").
-        versionCode = 9
-        versionName = "1.4.3"
+        versionCode = 1
+        versionName = "0.1.0"
         // Name under the icon; the debug build overrides it (see buildTypes)
-        manifestPlaceholders["appLabel"] = "IPVIO Stream"
+        manifestPlaceholders["appLabel"] = "LiteStream TV"
 
         buildConfigField("String", "TMDB_KEY", "\"${secret("TMDB_KEY")}\"")
         buildConfigField("String", "OMDB_KEY", "\"${secret("OMDB_KEY")}\"")
@@ -57,11 +57,10 @@ android {
     }
 
     buildTypes {
-        // Test build (Run in Android Studio / debug APK): own app ID, so the private IPVIO app on the TV
-        // is not overwritten. Both apps can be installed side by side (own data, own name).
+        // Debug build can be installed beside the release build for side-by-side testing.
         debug {
             applicationIdSuffix = ".test"
-            manifestPlaceholders["appLabel"] = "IPVIO Stream"
+            manifestPlaceholders["appLabel"] = "LiteStream TV"
         }
         release {
             if (hasKeystore) signingConfig = signingConfigs.getByName("release")

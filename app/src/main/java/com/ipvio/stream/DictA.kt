@@ -34,6 +34,26 @@ vor 1990¦before 1990¦1990 öncesi¦prije 1990.¦prije 1990.¦prije 1990.¦ante
 {0} laden … {#1}/{#2}¦Loading {0} … {#1}/{#2}¦{0} yükleniyor … {#1}/{#2}¦Učitavanje: {0} … {#1}/{#2}¦Učitavanje: {0} … {#1}/{#2}¦Učitavanje: {0} … {#1}/{#2}¦Cargando {0} … {#1}/{#2}¦Chargement : {0} … {#1}/{#2}¦Caricamento: {0} … {#1}/{#2}
 Metadaten¦Metadata¦Meta veriler¦Metapodaci¦Metapodaci¦Metapodaci¦Metadatos¦Métadonnées¦Metadati
 Länder¦Countries¦Ülkeler¦Države¦Države¦Države¦Países¦Pays¦Paesi
+Land auswählen¦Choose a country¦Bir ülke seç¦Odaberite državu¦Odaberite državu¦Izaberite državu¦Elige un país¦Choisir un pays¦Scegli un paese
+Kategorie auswählen¦Choose a category¦Bir kategori seç¦Odaberite kategoriju¦Odaberite kategoriju¦Izaberite kategoriju¦Elige una categoría¦Choisir une catégorie¦Scegli una categoria
+Alles¦ALL¦TÜMÜ¦SVE¦SVE¦SVE¦TODO¦TOUT¦TUTTO
+Nichts¦NONE¦HİÇBİRİ¦NIŠTA¦NIŠTA¦NIŠTA¦NINGUNO¦AUCUN¦NESSUNO
+Anpassen¦CUSTOMIZE¦ÖZELLEŞTİR¦PRILAGODI¦PRILAGODI¦PRILAGODI¦PERSONALIZAR¦PERSONNALISER¦PERSONALIZZA
+Alles auswählen¦Select all¦Tümünü seç¦Odaberi sve¦Odaberi sve¦Izaberi sve¦Seleccionar todo¦Tout sélectionner¦Seleziona tutto
+Nichts auswählen¦Select none¦Hiçbirini seçme¦Ne odaberi ništa¦Ne odaberi ništa¦Ne biraj ništa¦No seleccionar nada¦Ne rien sélectionner¦Non selezionare
+Fertig¦Done¦Bitti¦Gotovo¦Gotovo¦Gotovo¦Listo¦Terminé¦Fatto
+Auswahl anpassen¦Customize selection¦Seçimi özelleştir¦Prilagodi izbor¦Prilagodi odabir¦Prilagodi izbor¦Personalizar selección¦Personnaliser la sélection¦Personalizza selezione
+Anbieter¦Provider¦Sağlayıcı¦Davatelj¦Pružatelj¦Provajder¦Proveedor¦Fournisseur¦Provider
+Wie viele Sender möchtest du zuerst sehen?¦Which channels should appear first?¦Önce hangi kanalları görmek istersin?¦Koje kanale želiš prvo vidjeti?¦Koje kanale želiš prvo vidjeti?¦Koje kanale želiš prvo videti?¦¿Qué canales quieres ver primero?¦Quelles chaînes voulez-vous voir d’abord ?¦Quali canali vuoi vedere per primi?
+Keine Inhalte¦No content¦İçerik yok¦Nema sadržaja¦Nema sadržaja¦Nema sadržaja¦Sin contenido¦Aucun contenu¦Nessun contenuto
+Am Handy einrichten¦SET UP FROM PHONE¦Telefondan kur¦Postavi putem telefona¦Postavi putem telefona¦Podesi putem telefona¦Configurar desde el móvil¦Configurer depuis le téléphone¦Configura dal telefono
+Anbieterdaten-Datei importieren¦IMPORT PROVIDER FILE¦Sağlayıcı dosyasını içe aktar¦Uvezi datoteku davatelja¦Uvezi datoteku pružatelja¦Uvezi datoteku provajdera¦Importar archivo del proveedor¦Importer le fichier du fournisseur¦Importa file provider
+Anbietername¦Provider name¦Sağlayıcı adı¦Naziv davatelja¦Naziv pružatelja¦Naziv provajdera¦Nombre del proveedor¦Nom du fournisseur¦Nome provider
+Server¦Server¦Sunucu¦Server¦Poslužitelj¦Server¦Servidor¦Serveur¦Server
+Anbieter prüfen¦Review provider¦Sağlayıcıyı incele¦Provjeri davatelja¦Provjeri pružatelja¦Proveri provajdera¦Revisar proveedor¦Vérifier le fournisseur¦Controlla provider
+Bestätigen und hinzufügen¦Confirm and add¦Onayla ve ekle¦Potvrdi i dodaj¦Potvrdi i dodaj¦Potvrdi i dodaj¦Confirmar y añadir¦Confirmer et ajouter¦Conferma e aggiungi
+Xtream-Zugangsdaten · Passwort verborgen¦Xtream credentials · password hidden¦Xtream bilgileri · parola gizli¦Xtream podaci · lozinka skrivena¦Xtream podaci · lozinka skrivena¦Xtream podaci · lozinka skrivena¦Credenciales Xtream · contraseña oculta¦Identifiants Xtream · mot de passe masqué¦Credenziali Xtream · password nascosta
+M3U-Adresse · Zugangsdaten verborgen¦M3U address · credentials hidden¦M3U adresi · bilgiler gizli¦M3U adresa · podaci skriveni¦M3U adresa · podaci skriveni¦M3U adresa · podaci skriveni¦Dirección M3U · credenciales ocultas¦Adresse M3U · identifiants masqués¦Indirizzo M3U · credenziali nascoste
 Zurück = Filter¦Back = Filters¦Geri = Filtreler¦Nazad = Filteri¦Natrag = Filtri¦Nazad = Filteri¦Atrás = Filtros¦Retour = Filtres¦Indietro = Filtri
 Sortierung¦Sort¦Sıralama¦Sortiranje¦Sortiranje¦Sortiranje¦Orden¦Tri¦Ordinamento
 Rating¦Rating¦Puan¦Ocjena¦Ocjena¦Ocena¦Valoración¦Note¦Voto

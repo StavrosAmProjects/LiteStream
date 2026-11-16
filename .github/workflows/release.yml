@@ -103,17 +103,17 @@ jobs:
           APKSIGNER=$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -1)
           "$APKSIGNER" verify --print-certs "$APK"
 
-      - name: Create IPVIO-Stream.apk and update.json
+      - name: Create LiteStream-TV.apk and update.json
         run: |
-          cp app/build/outputs/apk/release/app-release.apk IPVIO-Stream.apk
-          SHA=$(sha256sum IPVIO-Stream.apk | cut -d' ' -f1)
-          printf '{\n  "versionCode": %s,\n  "versionName": "%s",\n  "apk": "IPVIO-Stream.apk",\n  "sha256": "%s",\n  "minSupportedCode": 0,\n  "mandatory": false\n}\n' \
+          cp app/build/outputs/apk/release/app-release.apk LiteStream-TV.apk
+          SHA=$(sha256sum LiteStream-TV.apk | cut -d' ' -f1)
+          printf '{\n  "versionCode": %s,\n  "versionName": "%s",\n  "apk": "LiteStream-TV.apk",\n  "sha256": "%s",\n  "minSupportedCode": 0,\n  "mandatory": false\n}\n' \
             "${{ steps.version.outputs.code }}" "${{ steps.version.outputs.name }}" "$SHA" > update.json
           cat update.json
 
       - name: Publish GitHub release
         run: |
-          gh release create "v${{ steps.version.outputs.name }}" IPVIO-Stream.apk update.json \
+          gh release create "v${{ steps.version.outputs.name }}" LiteStream-TV.apk update.json \
             --target "$GITHUB_SHA" \
-            --title "IPVIO Stream ${{ steps.version.outputs.name }}" \
+            --title "LiteStream TV ${{ steps.version.outputs.name }}" \
             --generate-notes

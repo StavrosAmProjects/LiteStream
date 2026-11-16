@@ -23,6 +23,18 @@ class PhoneImportTest {
         repeat(50) { assertEquals(4, PhoneImportLogic.newCode(java.util.Random(it.toLong())).length) }
     }
 
+    @Test fun setupTokenIsRandomShortLivedAndOneUse() {
+        val random = java.security.SecureRandom()
+        val first = PhoneImportLogic.newSetupToken(random)
+        val second = PhoneImportLogic.newSetupToken(random)
+        assertEquals(64, first.length)
+        assertNotEquals(first, second)
+        assertTrue(PhoneImportLogic.setupTokenValid(first, first, 200L, 100L, false))
+        assertFalse(PhoneImportLogic.setupTokenValid("0".repeat(64), first, 200L, 100L, false))
+        assertFalse(PhoneImportLogic.setupTokenValid(first, first, 200L, 200L, false))
+        assertFalse(PhoneImportLogic.setupTokenValid(first, first, 200L, 100L, true))
+    }
+
     private fun post(port: Int, body: String): String {
         Socket("127.0.0.1", port).use { s ->
             val b = body.toByteArray()
@@ -42,6 +54,56 @@ class PhoneImportTest {
             assertTrue(post(pi.port, "code=${pi.code}&url=http%3A%2F%2Fa%2Fb.m3u").startsWith("HTTP/1.1 200"))
             assertEquals("http://a/b.m3u", got?.url)
         } finally { pi.stop() }
+    }
+
+    @Test fun setupTokenStagesCredentialsAndRejectsReplay() {
+        val received = java.util.concurrent.CountDownLatch(1)
+        var got: PhoneInput? = null
+        val pi = PhoneImport { }
+        pi.onSetupReceive = { got = it; received.countDown() }
+        val route = pi.startSetup()!!
+        try {
+            assertTrue(rawRequest(pi.port, "GET /setup/${"0".repeat(64)}", byteArrayOf()).startsWith("HTTP/1.1 410"))
+            assertTrue(rawRequest(pi.port, "GET $route", byteArrayOf()).startsWith("HTTP/1.1 200"))
+            val body = "name=TV&url=https%3A%2F%2Ftv.example%3A8080%2Fget.php%3Fusername%3Du%26password%3Dp".toByteArray()
+            assertTrue(rawRequest(pi.port, "POST $route/send", body).startsWith("HTTP/1.1 200"))
+            assertTrue(received.await(2, java.util.concurrent.TimeUnit.SECONDS))
+            assertEquals("TV", got?.name)
+            assertTrue(got?.isXtream == true)
+            assertTrue(rawRequest(pi.port, "POST $route/send", body).startsWith("HTTP/1.1 410"))
+        } finally { pi.stop() }
+    }
+
+    @Test fun setupOnlyRejectsLegacyCredentialRoute() {
+        val pi = PhoneImport({}, setupOnly = true)
+        assertTrue(pi.start())
+        try {
+            assertTrue(rawRequest(pi.port, "POST /send", "code=${pi.code}&url=http%3A%2F%2Fa%2Fb.m3u".toByteArray()).startsWith("HTTP/1.1 404"))
+            assertTrue(rawRequest(pi.port, "GET /", byteArrayOf()).startsWith("HTTP/1.1 404"))
+            assertTrue(rawRequest(pi.port, "GET /crash", byteArrayOf()).startsWith("HTTP/1.1 404"))
+            assertTrue(rawRequest(pi.port, "POST /restore?code=${pi.code}", "{}".toByteArray()).startsWith("HTTP/1.1 404"))
+        } finally { pi.stop() }
+    }
+
+    @Test fun setupFileIsStagedOnceForTvConfirmation() {
+        val dir = java.nio.file.Files.createTempDirectory("phone-setup-test").toFile()
+        val received = java.util.concurrent.CountDownLatch(1)
+        var got: PhoneInput? = null
+        val pi = PhoneImport({}, setupOnly = true)
+        pi.uploadDir = dir
+        pi.saveUpload = { name, file ->
+            assertEquals("Provider", name)
+            assertEquals("#EXTM3U\n", file.readText())
+            "file:///staged.m3u"
+        }
+        pi.onSetupReceive = { got = it; received.countDown() }
+        val route = pi.startSetup()!!
+        try {
+            assertTrue(rawRequest(pi.port, "POST $route/file?name=Provider.m3u", "#EXTM3U\n".toByteArray()).startsWith("HTTP/1.1 200"))
+            assertTrue(received.await(2, java.util.concurrent.TimeUnit.SECONDS))
+            assertEquals("file:///staged.m3u", got?.url)
+            assertTrue(rawRequest(pi.port, "POST $route/file?name=Provider.m3u", "#EXTM3U\n".toByteArray()).startsWith("HTTP/1.1 410"))
+        } finally { pi.stop(); dir.deleteRecursively() }
     }
 
     @Test fun sperreNachFuenfFehlversuchen() {

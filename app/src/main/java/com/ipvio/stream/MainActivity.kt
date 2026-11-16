@@ -255,6 +255,13 @@ private fun AppContent() {
     }
 
     val all = PlaylistStore.channels
+    val tvProviderUrls = remember(PlaylistStore.shownUrl, PlaylistStore.sourceNames) {
+        listOfNotNull(PlaylistStore.shownUrl) + PlaylistStore.extraUrls(ctx)
+    }
+    val tvProviderFilters = tvProviderUrls.map { CountryFilterStore.read(ctx, it) }
+    val simpleTvAll = remember(all, tvProviderFilters) {
+        CountryFilterLogic.filterSources(all, tvProviderFilters)
+    }
     val liveAll = remember(all) { all.filter { it.kind == Kind.LIVE } }
     // Do not fall into the screensaver while downloading and parsing the playlist
     KeepScreenOn("playlist", PlaylistStore.loading)
@@ -469,7 +476,7 @@ private fun AppContent() {
             adding -> Box(Modifier.fillMaxSize().screenEnter()) { AddPlaylistScreen { adding = false } }
             // Boomer mode: very simple home screen with big channel tiles instead of the normal UI
             Boomer.enabled -> BoomerHome(
-                all, PlaylistStore.loading,
+                simpleTvAll, PlaylistStore.loading,
                 onPlay = { ch, list ->
                     ZapContext.list = list; ZapContext.key = null
                     start(ch, ch.title, ch.url)

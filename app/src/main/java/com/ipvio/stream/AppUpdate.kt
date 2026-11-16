@@ -25,14 +25,13 @@ data class UpdateInfo(
 
 /**
  * Update from within the app.
- * Default: `update.json`, a file attached to the latest release on GitHub (PRIMARY_URL). If it is missing or unreadable,
- * the GitHub API of the latest release is used (DEFAULT_URL). The app checks once a day, shows
+ * Updates are disabled until a LiteStream TV release URL is configured. The app checks a configured URL only, shows
  * "Update available" in the bell at the top right and installs on a button press. Android always asks once
  * (for apps outside the Play Store it does not work entirely without confirmation).
  *
  * A custom address (Settings > About) still works: either a GitHub API address
  * (https://api.github.com/repos/NAME/REPO/releases/latest) or a small JSON file
- * {"versionCode": 2, "versionName": "1.1", "apk": "ipvio.apk", "sha256": "(optional)", "notes": "What's new"}.
+ * {"versionCode": 2, "versionName": "0.1.1", "apk": "LiteStream-TV.apk", "sha256": "(optional)", "notes": "What's new"}.
  *
  * Before the installer opens (T-015): SHA-256 of the download (if the source gave one), package name, versionCode and
  * signer certificate of the APK are checked (see [UpdateVerify]). The signer check is what protects against a replaced
@@ -42,11 +41,8 @@ data class UpdateInfo(
  * key (see docs/RELEASE.md). Otherwise Android rejects the installation.
  */
 object AppUpdate {
-    /** Built-in fallback address: the GitHub API of the latest release of the project. */
-    const val DEFAULT_URL = "https://api.github.com/repos/Emrodev/IPVIO-Stream/releases/latest"
-
-    /** Built-in primary address: `update.json` attached to the latest release (T-015). */
-    const val PRIMARY_URL = "https://github.com/Emrodev/IPVIO-Stream/releases/latest/download/update.json"
+    /** Empty until this fork has its own release repository. */
+    const val DEFAULT_URL = ""
 
     /** Found update (for the bell), null = none known. */
     var available by mutableStateOf<UpdateInfo?>(null)
@@ -60,7 +56,7 @@ object AppUpdate {
     fun setUrl(c: Context, v: String) = prefs(c).edit().putString("url", v.trim()).apply()
 
     /** Automatic check at start (default: on). */
-    fun auto(c: Context) = prefs(c).getBoolean("auto", true)
+    fun auto(c: Context) = prefs(c).getBoolean("auto", false)
     fun setAuto(c: Context, on: Boolean) = prefs(c).edit().putBoolean("auto", on).apply()
 
     /** T-014: the first-start update card was already decided (shown or skipped). New key, existing keys are untouched. */
@@ -79,17 +75,7 @@ object AppUpdate {
         runCatching {
             val u = url(c)
             if (u.isBlank()) error("Keine Update-Adresse eingetragen")
-            // Built-in source: update.json first, the GitHub API if that fails for any reason (no asset yet, bad file, no network).
-            // Custom address: only that address, as before.
-            val res = if (u == DEFAULT_URL) {
-                try {
-                    fetch(c, PRIMARY_URL, strict = true)
-                } catch (e: kotlinx.coroutines.CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    fetch(c, DEFAULT_URL, strict = false)
-                }
-            } else fetch(c, u, strict = false)
+            val res = fetch(c, u, strict = false)
             prefs(c).edit().putLong("last", System.currentTimeMillis()).apply()
             available = res
             remember(c, res)
@@ -99,8 +85,8 @@ object AppUpdate {
 
     /** One request to [u]; returns null if the installed version is current. [strict] = the file must carry a SHA-256. */
     private fun fetch(c: Context, u: String, strict: Boolean): UpdateInfo? {
-        val req = Request.Builder().url(u).header("User-Agent", "IPVIO Stream")
-            .header("Accept", if (u == DEFAULT_URL) "application/vnd.github+json" else "application/json, application/vnd.github+json").build()
+        val req = Request.Builder().url(u).header("User-Agent", "LiteStream TV")
+            .header("Accept", "application/json, application/vnd.github+json").build()
         return Net.base.newCall(req).execute().use { r ->
             if (r.code == 404) error("Noch keine Veröffentlichung gefunden")
             if (!r.isSuccessful) error("Fehler ${r.code}")
@@ -202,7 +188,7 @@ object AppUpdate {
             val dir = File(c.cacheDir, "updates").apply { mkdirs(); listFiles()?.forEach { it.delete() } }
             val out = File(dir, "ipvio-update.apk")
             val client = Net.withTimeouts(15, 60)
-            client.newCall(Request.Builder().url(info.apkUrl).header("User-Agent", "IPVIO Stream").build()).execute().use { r ->
+            client.newCall(Request.Builder().url(info.apkUrl).header("User-Agent", "LiteStream TV").build()).execute().use { r ->
                 if (!r.isSuccessful) error("Fehler ${r.code}")
                 val body = r.body ?: error("Leere Antwort")
                 val total = body.contentLength()

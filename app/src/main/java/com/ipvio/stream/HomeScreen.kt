@@ -216,7 +216,13 @@ fun HomeScreen(
 ) {
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
-    val allRaw = PlaylistStore.channels
+    val providerUrls = remember(PlaylistStore.shownUrl, PlaylistStore.sourceNames) {
+        listOfNotNull(PlaylistStore.shownUrl) + PlaylistStore.extraUrls(ctx)
+    }
+    val providerFilters = providerUrls.map { CountryFilterStore.read(ctx, it) }
+    val allRaw = remember(PlaylistStore.channels, providerFilters) {
+        CountryFilterLogic.filterSources(PlaylistStore.channels, providerFilters)
+    }
     // Movies/series: playlist selection at the top (with several shown playlists) – only titles of this playlist
     val areaK = if (tab in 1..2) AreaSource.get(tab) else -1
     val all = remember(allRaw, areaK, tab) { if (areaK < 0) allRaw else AreaCache.get(allRaw, tab, areaK) }

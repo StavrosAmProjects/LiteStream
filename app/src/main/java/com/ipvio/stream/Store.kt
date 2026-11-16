@@ -64,7 +64,7 @@ object AppSettings {
     var systemKeyboard by mutableStateOf(false)
     var seekStep by mutableIntStateOf(10)
     var autoNext by mutableStateOf(true)
-    var hideSec by mutableIntStateOf(4)
+    var hideSec by mutableIntStateOf(3)
     var showEndTime by mutableStateOf(true)
     /** Time zone for program times: 0 = Germany (Berlin), 1 = time zone of the device. Many TVs are set to UTC. */
     var tzMode by mutableIntStateOf(0)
@@ -111,7 +111,7 @@ object AppSettings {
         systemKeyboard = p.getBoolean("sys_kb", false)
         seekStep = p.getInt("seek_step", 10).coerceIn(5, 120)
         autoNext = p.getBoolean("auto_next", true)
-        hideSec = p.getInt("hide_sec", 4).coerceIn(3, 15)
+        hideSec = p.getInt("hide_sec", 3).coerceIn(3, 15)
         showEndTime = p.getBoolean("show_end", true)
         tzMode = p.getInt("tz_mode", 0).coerceIn(0, 1)
         autoSkipIntro = p.getBoolean("auto_skip", false)

@@ -1,6 +1,14 @@
 # Changelog
 
 ## Unreleased
+- Add phone-first provider setup with an expiring local QR session, TV confirmation, and TXT/JSON/URL import with a redacted preview; setup-only sessions reject all other phone routes and do not show the legacy pairing code.
+- Add country-first Live TV browsing with a D-pad country, group, and channel view; unclassified channels remain available.
+- Add provider-scoped ALL / NONE / CUSTOMIZE visibility for Live TV, movies, series, and search without deleting playlist data.
+- Keep optional Xtream backup-server fields collapsed during normal setup; saved entries remain available.
+- Set the playback-control auto-hide default to three seconds; saved user choices remain unchanged.
+- Give the fork LiteStream branding and a separate `com.litestream.tv` package; keep IPVIO data untouched and support backup-based transfer.
+- Disable upstream release checks and rename the release asset to `LiteStream-TV.apk` until a fork release address is configured.
+- Update README and third-party notices for LiteStream TV; list the declared dependency versions and mark unresolved transitive licenses.
 
 ## 1.4.3 (versionCode 9)
 - Live sync (Google Drive): favorites and history follow your devices automatically. Switch it on in Settings > Storage > Google Drive on each device; it is off by default. Upload a few seconds after a change, download when the app is in front (about every minute). Merged on the device, a safety copy is kept before each merge. Not device tested yet

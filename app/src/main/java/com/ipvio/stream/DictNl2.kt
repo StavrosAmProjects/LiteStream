@@ -73,7 +73,7 @@ PIN entfernen¦Pincode verwijderen
 Mit einer PIN lässt sich der Schutz nur nach Eingabe der PIN ändern. Die Erkennung arbeitet mit Stichwörtern in Kategorie- und Titelnamen und ist kein vollständiger Filter. Beim Zurücksetzen aller Einstellungen bleibt die PIN erhalten.¦Met een pincode kan de beveiliging alleen na invoer van de pincode worden gewijzigd. De herkenning werkt met trefwoorden in categorie- en titelnamen en is geen volledig filter. Bij het herstellen van alle instellingen blijft de pincode behouden.
 Start¦Start
 Beim Einschalten des Geräts öffnen¦Openen bij het inschakelen van het apparaat
-IPVIO Stream startet automatisch, sobald der Fernseher oder die Box hochgefahren ist.¦IPVIO Stream start automatisch zodra de tv of box is opgestart.
+LiteStream TV startet automatisch, sobald der Fernseher oder die Box hochgefahren ist.¦LiteStream TV start automatisch zodra de tv of box is opgestart.
 Berechtigung erteilt¦Toestemming verleend
 Berechtigung „Über anderen Apps einblenden“ fehlt¦Toestemming „Weergeven over andere apps” ontbreekt
 Einstellung öffnen¦Instelling openen
