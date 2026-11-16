@@ -88,4 +88,4 @@ The supplied IPVIO 1.4.2 APK has not yet been tested on the target TV. Device fe
 - Application code/build configuration: unchanged.
 - Checks performed: source inspection, Git history/status, public upstream release/commit verification.
 - Not run: Gradle, JUnit, APK build, Android TV/Fire TV device test, third-party licence review or legal opinion.
-- Status: **audit complete; T-027 through T-032 implemented in the working tree; build/device validation pending**.
+- Status: **audit complete; T-027 through T-032 implemented in commit `594d312`; build/device validation pending**.

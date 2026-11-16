@@ -15,4 +15,4 @@ Use a three-second default for playback-control auto-hide, matching the TV-first
 
 ## Status
 
-Implemented in the working tree on `codex/litestream-tv-fork`. No test was added because the changed behavior is the player UI timer, which requires an Android device; manual steps above cover it.
+Implemented and committed as `594d312` on `codex/litestream-tv-fork`. No test was added because the changed behavior is the player UI timer, which requires an Android device; manual steps above cover it.

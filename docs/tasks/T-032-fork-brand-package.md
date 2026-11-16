@@ -38,4 +38,4 @@ The audited Android source used application ID `com.ipvio.stream`, the IPVIO lau
 
 ## Status
 
-Implemented in the working tree on `codex/litestream-tv-fork`.
+Implemented and committed as `594d312` on `codex/litestream-tv-fork`.

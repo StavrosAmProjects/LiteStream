@@ -42,7 +42,7 @@ Extend IPVIO's existing phone setup and file import paths. Keep credentials loca
 
 ## Status
 
-Implemented on `codex/litestream-tv-fork`. `git diff --check` passed. Gradle/JUnit and Android TV checks were not run in this environment.
+Implemented and committed as `594d312` on `codex/litestream-tv-fork`. `git diff --check` passed. Gradle/JUnit and Android TV checks were not run in this environment.
 
 Manual checks for the maintainer:
 1. Open Add Playlist on Android TV; verify Set up from phone is immediately visible, opens a QR/address, and the phone page accepts either fields or a full Xtream/M3U URL.

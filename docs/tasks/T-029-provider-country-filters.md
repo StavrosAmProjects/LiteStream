@@ -27,7 +27,7 @@ New `CountryFilterLogic.kt`, `CountryFilterStore.kt`, `CountryFilterScreen.kt`, 
 
 ## Status
 
-Implemented in the working tree on `codex/litestream-tv-fork`. Xtream setup now offers ALL / NONE / CUSTOMIZE; filters live in profile-scoped `ipvio_live` preferences under a hashed provider URL key. The full provider catalogue stays intact. Normal Live TV, Home, and Search presentation apply the saved filter; favorites and underlying provider data remain available. Customization uses a draft and preserves an existing selection on Cancel. Tests were added; they were not run. `git diff --check` passed.
+Implemented and committed as `594d312` on `codex/litestream-tv-fork`. Xtream setup now offers ALL / NONE / CUSTOMIZE; filters live in profile-scoped `ipvio_live` preferences under a hashed provider URL key. The full provider catalogue stays intact. Normal Live TV, Home, and Search presentation apply the saved filter; favorites and underlying provider data remain available. Customization uses a draft and preserves an existing selection on Cancel. Tests were added; they were not run. `git diff --check` passed.
 
 Manual checks for the maintainer:
 1. Add an Xtream provider with each choice: ALL shows all content; NONE hides normal provider content; CUSTOMIZE saves the selected countries/groups.

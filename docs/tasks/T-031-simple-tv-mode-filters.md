@@ -27,4 +27,4 @@ Manual check: enable Boomer mode, select a provider country/group filter, verify
 
 ## Status
 
-Implemented in the working tree on `codex/litestream-tv-fork`.
+Implemented and committed as `594d312` on `codex/litestream-tv-fork`.
