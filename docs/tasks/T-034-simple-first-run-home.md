@@ -30,4 +30,4 @@ Make LiteStream TV's default Home easier to scan from a couch while retaining th
 
 ## Status
 
-Implemented on `codex/litestream-tv-fork`; the commit reference is recorded in `WORK_STATE.md`. `git diff --check` passed. Manual validation: on a fresh install, confirm the Home has the five retained blocks, open Settings > Customize home, enable a hidden row and confirm it appears, then import a backup with saved Home layout preferences, restart the app, and verify its choices remain unchanged.
+Implemented in `ae8ac2f` on `codex/litestream-tv-fork`. `git diff --check` passed. Manual validation: on a fresh install, confirm the Home has the five retained blocks, open Settings > Customize home, enable a hidden row and confirm it appears, then import a backup with saved Home layout preferences, restart the app, and verify its choices remain unchanged.
