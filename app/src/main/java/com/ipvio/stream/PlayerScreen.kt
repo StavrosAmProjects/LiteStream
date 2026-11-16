@@ -74,6 +74,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.media3.common.C
@@ -149,6 +151,29 @@ private fun findActivity(c: Context): ComponentActivity? =
 @Composable
 fun PlayerScreen(req: PlayReq, zapList: List<Item>, liveAll: List<Item>, seriesItem: Item? = null, onBack: () -> Unit) {
     val ctx = LocalContext.current
+    val activity = remember(ctx) { findActivity(ctx) }
+    DisposableEffect(activity) {
+        val window = activity?.window
+        val controller = window?.let { WindowInsetsControllerCompat(it, it.decorView) }
+        val systemBars = WindowInsetsCompat.Type.systemBars()
+        val insets = window?.decorView?.rootWindowInsets?.let { WindowInsetsCompat.toWindowInsetsCompat(it) }
+        val bars = WindowInsetsCompat.Type.statusBars() or WindowInsetsCompat.Type.navigationBars() or WindowInsetsCompat.Type.captionBar()
+        val visibleBefore = insets?.let { current ->
+            listOf(WindowInsetsCompat.Type.statusBars(), WindowInsetsCompat.Type.navigationBars(), WindowInsetsCompat.Type.captionBar())
+                .filter { current.isVisible(it) }.fold(0) { mask, type -> mask or type }
+        }
+        val previousBehavior = controller?.systemBarsBehavior
+        controller?.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        controller?.hide(systemBars)
+        onDispose {
+            if (controller != null) {
+                val wasVisible = visibleBefore ?: bars
+                controller.show(wasVisible)
+                controller.hide(bars and wasVisible.inv())
+                if (previousBehavior != null) controller.systemBarsBehavior = previousBehavior
+            }
+        }
+    }
     CatFavs.init(ctx)
     // Own HTTP settings: follows redirects even from http to https (many IPTV servers do that)
     // and gives up after 10 s connect time or 15 s read time instead of waiting forever.

@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Hide Android system bars during playback and restore their previous visibility when leaving the player.
 - Add a TV playback-error action to check the current stream response and distinguish DNS, TLS, timeout, HTTP, and HLS outcomes without showing or logging the URL.
 - Default fresh LiteStream TV installs to the English menu; an explicitly saved language choice remains unchanged.
 - Add **Edit on phone** for saved Xtream and M3U providers, with TV confirmation before replacing credentials.

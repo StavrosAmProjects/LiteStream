@@ -43,6 +43,7 @@ Manual checks on a device or Fire TV, for each release:
 | M4 | Remote focus and navigation | per release |
 | M5 | Update over the previous release: same signature, data kept | per release |
 | M6 | Playlist mode switch, favorite order, demo mode, settings reset (open in `docs/tasks/WORK_STATE.md`) | open |
+| M7 | Playback system-bar fullscreen and restore behavior (`docs/tasks/T-039-player-system-fullscreen.md`) | open |
 
 Not planned now: instrumented tests on an emulator in CI.
 
