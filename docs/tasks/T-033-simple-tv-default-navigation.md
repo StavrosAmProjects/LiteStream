@@ -23,4 +23,4 @@ Make first-run LiteStream TV navigation show only Home, Live TV, Movies, Series,
 
 ## Status
 
-Planned as part of the approved LiteStream objective. No saved preferences will be rewritten. Manual TV check: fresh install shows Home, Live TV, Movies, Series, Settings; Settings > Menu can reveal each advanced section; an imported backup with a custom menu keeps that menu.
+Implemented in `08a2c83`. New installs show Home, Live TV, Movies, Series, and Settings. The saved menu setting is still read as-is; the default applies only when it is absent. Pure logic tests were added but not run. Manual TV check remains: verify D-pad focus, reveal advanced sections under Settings > Menu, and import a backup with a custom menu to confirm it stays unchanged.

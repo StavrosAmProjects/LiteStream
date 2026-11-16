@@ -1,8 +1,8 @@
-Last update: 2026-11-16 (fork follow-up: About-page version translation). Read `AGENTS.md` first, then this file.
+Last update: 2026-11-16 (T-033 simple default TV navigation). Read `AGENTS.md` first, then this file.
 
 ## Current task
 
-Current task: approved fork implementation, tasks T-027 through T-032, on `codex/litestream-tv-fork` from `e55395a73ee8ee7b21e67a00a677581d90fa9529`. Implementation started at `594d312`; latest application-code change is `1ca26e9`.
+Current task: approved fork implementation, tasks T-027 through T-033, on `codex/litestream-tv-fork` from `e55395a73ee8ee7b21e67a00a677581d90fa9529`. Implementation started at `594d312`; latest application-code change is `08a2c83`.
 
 T-027 (phone provider setup and credential import): implemented in `594d312`; `a834d1e` adds an explicit unencrypted-local-transport warning to the phone page in supported languages and a source test for the warning. Added an opt-in token URL session, stage/confirm flow, local TXT/JSON/URL parsing, TV file picker preview, staged M3U phone upload, LiteStream-branded temporary phone pages, and rejection of all non-setup routes during pairing. Tests added; none run. Manual steps and risk are in `docs/tasks/T-027-phone-provider-setup.md`.
 T-028 (country-first Live TV browsing): implemented in `594d312`; `c133cb5` adds matching full country names within provider labels even when extra words follow the country name. Added country normalization and a three-pane D-pad view at Live TV > Countries; unknown content remains accessible and provider data is unchanged. Tests added; none run. Manual steps are in `docs/tasks/T-028-country-first-live-browse.md`.
@@ -11,6 +11,7 @@ T-029 (provider country/group filters): implemented in `594d312`; `cd7b444` ensu
 T-030 (playback overlay timeout): committed in `594d312`; the new-install default is three seconds and saved user choices stay intact. `PlayerScreen.kt` already auto-hides controls without recreating the player. Device-only validation steps are in `docs/tasks/T-030-player-overlay-timeout.md`; no device check run.
 T-031 (simple TV mode): committed in `594d312`; reused IPVIO's existing Boomer mode and applied provider visibility at its screen boundary. Manual device check and remaining risk are in `docs/tasks/T-031-simple-tv-mode-filters.md`.
 T-032 (fork identity and package): committed in `594d312`; set `com.litestream.tv`, LiteStream owner assets/labels, version `0.1.0`, backup migration docs, disabled upstream updates, and renamed the release artifact. Updated README and direct dependency license inventory with declared versions and test-only dependencies; transitive dependency resolution is still unverified. No build/device test. Details and remaining checks are in `docs/tasks/T-032-fork-brand-package.md`.
+T-033 (simple default TV navigation): `08a2c83` hides Search, EPG, Favorites, My List, History, and Sports only when no menu preference is saved. First-run sidebar shows Home, Live TV, Movies, Series, Settings; advanced sections remain available under Settings > Menu. Saved user and imported backup choices remain unchanged. Pure tests added; none run. TV focus/discoverability check is pending in `docs/tasks/T-033-simple-tv-default-navigation.md`.
 Branding documentation follow-up: README's TMDB API application-name example now uses LiteStream TV. `IPVIO` mentions retained in the app identify the source project, backup migration, compatibility storage, or explicit donations to the original project.
 T-032 follow-up `0c31608`: About-page version label now translates in the supported languages instead of falling back to the old IPVIO label. `git diff --check` passed; no build or UI test run.
 
@@ -76,4 +77,4 @@ Playlist mode switch fix (see Completed steps, 12 Nov 2026): implemented, **open
 
 ## Next step
 
-Continue the approved fork on `codex/litestream-tv-fork`: run the maintainer Gradle/JUnit and Android TV checks for T-027 through T-032; create/configure the fork's own release repository and OAuth client before any distribution; use TV feedback to decide whether Boomer should become the default simple home. Earlier IPVIO handoff notes above are historical context for this fork branch.
+Continue the approved fork on `codex/litestream-tv-fork`: run the maintainer Gradle/JUnit and Android TV checks for T-027 through T-033; create/configure the fork's own release repository and OAuth client before any distribution; use TV feedback to decide whether Boomer should become the default simple home. Earlier IPVIO handoff notes above are historical context for this fork branch.
