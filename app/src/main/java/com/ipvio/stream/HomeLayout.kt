@@ -99,7 +99,7 @@ private val HOME_BLOCKS = listOf(
 )
 
 /** Home screen: new blocks are hidden by default so it looks as before until someone switches them on. */
-object HomeLayout : BlockLayout("ipvio_homelayout", HOME_BLOCKS, setOf("favch", "hist"))
+object HomeLayout : BlockLayout("ipvio_homelayout", HOME_BLOCKS, HomeLayoutDefaults.DEFAULT_HIDDEN)
 
 private val BOOMER_BLOCKS = listOf(
     LayoutBlock("clock", "Große Uhr", "Uhrzeit und Datum, gut lesbar"),

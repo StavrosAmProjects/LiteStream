@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Simplify the default TV Home while keeping optional rows in Home customization.
 - Apply saved provider country/group filters to live channel surfing.
 - Clarify that the Jellyfin decoder declaration does not verify transitive or bundled native binary licenses.
 - Stop the setup-only phone server after submission or expiry; clear the expired QR on TV.
