@@ -16,12 +16,13 @@ Let the user choose ALL, NONE, or CUSTOMIZE after Xtream setup; retain the compl
 
 ## Affected files
 
-New `CountryFilterLogic.kt`, `CountryFilterStore.kt`, `CountryFilterScreen.kt`, `CountryFilterLogicTest.kt`; `AddPlaylistScreen.kt`, `LiveTab.kt`, `CountryBrowseScreen.kt`, `DictA.kt`, `WORK_STATE.md`, `CHANGELOG.md`.
+New `CountryFilterLogic.kt`, `CountryFilterStore.kt`, `CountryFilterScreen.kt`, `CountryFilterLogicTest.kt`; `AddPlaylistScreen.kt`, `LiveTab.kt`, `CountryBrowseScreen.kt`, `Profiles.kt`, `DictA.kt`, `WORK_STATE.md`, `CHANGELOG.md`.
 
 ## Risks and validation
 
 - A changed provider URL creates a new filter key; refresh of the same provider retains its selection. Hashing prevents credentials from appearing in preference key names.
 - NONE hides matching provider content from normal browsing while retaining the complete underlying catalogue; the provider remains editable in settings.
+- The existing profile deletion flow must clear `ipvio_live` data with the other profile-scoped preferences.
 - Check profile isolation, backup inclusion through existing `ipvio_live`, refresh retention, D-pad draft/cancel/done, and multi-provider isolation on device.
 - Add pure tests. Gradle/device checks remain maintainer steps.
 
@@ -39,5 +40,6 @@ Manual checks for the maintainer:
 6. Refresh the provider and verify the selection remains; use backup export/import to verify the existing `ipvio_live` backup coverage.
 7. With NONE selected, open Live TV > Countries and confirm there is a path to customize again.
 8. On a new Xtream provider, confirm backup-server fields are hidden until requested; resume a provider with saved backup entries and confirm they are visible.
+9. Create a secondary profile, save a non-default provider filter, delete that profile, and confirm its scoped preferences are cleared with the rest of the profile data.
 
-Not checked here: Gradle/JUnit, Android TV focus, profile/backup round trip, or refresh behavior on a device. Risk: country inference and URL identity depend on provider group labels and stable provider URLs.
+Not checked here: Gradle/JUnit, Android TV focus, profile deletion, profile/backup round trip, or refresh behavior on a device. Risk: country inference and URL identity depend on provider group labels and stable provider URLs.

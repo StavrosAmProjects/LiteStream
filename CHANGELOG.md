@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Clear provider country filters when their profile is deleted.
 - Tell phone setup users that local credential transfer is unencrypted.
 - Translate the LiteStream TV version label on the About page.
 - Add phone-first provider setup with an expiring local QR session, TV confirmation, and TXT/JSON/URL import with a redacted preview; setup-only sessions reject all other phone routes and do not show the legacy pairing code.
