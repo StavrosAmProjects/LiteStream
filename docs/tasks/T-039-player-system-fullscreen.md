@@ -6,12 +6,13 @@ Make fullscreen playback use the full display without Android status/navigation 
 
 ## Plan and implementation
 
-Reuse AndroidX Core's `WindowInsetsControllerCompat` already available through the existing Activity Compose dependency. `PlayerScreen` captures which system bars were visible and the prior transient-bar behavior, hides the bars for the lifetime of the player screen, and restores both when the screen leaves. No player instance or playback state is changed.
+Reuse AndroidX Core's `WindowInsetsControllerCompat` already available through the existing Activity Compose dependency on API 26 and newer. AndroidX documents that `hide()` has no effect below API 26, so API 24–25 use the platform's immersive sticky flags and restore the original view flags on exit. `PlayerScreen` captures which system bars were visible and the prior transient-bar behavior on newer versions, then restores them when the screen leaves. No player instance or playback state is changed.
 
 ## Acceptance criteria
 
 - [x] Status, navigation, and caption bars are hidden while the player screen is active.
 - [x] The previously visible system bars and bar behavior are restored when leaving playback.
+- [x] API 24–25 use a legacy fullscreen fallback compatible with the app's minimum SDK.
 - [x] No dependency or player lifecycle changes are introduced.
 - [x] Manual Android TV checks are documented; this behavior cannot be meaningfully verified by a JVM test.
 
@@ -25,7 +26,8 @@ Reuse AndroidX Core's `WindowInsetsControllerCompat` already available through t
 2. Press OK and use the D-pad to reveal and operate controls; confirm hiding system bars does not affect playback or focus.
 3. Press Back to leave playback. Confirm the prior app/system bar state returns and the app remains navigable.
 4. Repeat after showing transient system bars, where the TV exposes that behavior.
+5. If available, check a device on API 24 or 25 to verify the legacy fullscreen flags and restoration.
 
 ## Status
 
-Implemented and committed as `ed968ff`; not built or device-tested.
+Implemented in `ed968ff` with an API 24–25 compatibility follow-up; not built or device-tested.

@@ -4,8 +4,10 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.net.ConnectivityManager
 import android.net.Network
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
@@ -154,6 +156,8 @@ fun PlayerScreen(req: PlayReq, zapList: List<Item>, liveAll: List<Item>, seriesI
     val activity = remember(ctx) { findActivity(ctx) }
     DisposableEffect(activity) {
         val window = activity?.window
+        val legacyView = if (Build.VERSION.SDK_INT < 26) window?.decorView else null
+        val legacyVisibility = legacyView?.systemUiVisibility
         val controller = window?.let { WindowInsetsControllerCompat(it, it.decorView) }
         val systemBars = WindowInsetsCompat.Type.systemBars()
         val insets = window?.decorView?.rootWindowInsets?.let { WindowInsetsCompat.toWindowInsetsCompat(it) }
@@ -163,10 +167,17 @@ fun PlayerScreen(req: PlayReq, zapList: List<Item>, liveAll: List<Item>, seriesI
                 .filter { current.isVisible(it) }.fold(0) { mask, type -> mask or type }
         }
         val previousBehavior = controller?.systemBarsBehavior
-        controller?.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        controller?.hide(systemBars)
+        if (legacyView != null) {
+            legacyView.systemUiVisibility = legacyVisibility!! or View.SYSTEM_UI_FLAG_FULLSCREEN or
+                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+        } else {
+            controller?.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            controller?.hide(systemBars)
+        }
         onDispose {
-            if (controller != null) {
+            if (legacyView != null && legacyVisibility != null) {
+                legacyView.systemUiVisibility = legacyVisibility
+            } else if (controller != null) {
                 val wasVisible = visibleBefore ?: bars
                 controller.show(wasVisible)
                 controller.hide(bars and wasVisible.inv())
