@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Add a TV playback-error action to check the current stream response and distinguish DNS, TLS, timeout, HTTP, and HLS outcomes without showing or logging the URL.
 - Default fresh LiteStream TV installs to the English menu; an explicitly saved language choice remains unchanged.
 - Add **Edit on phone** for saved Xtream and M3U providers, with TV confirmation before replacing credentials.
 - Simplify the default TV Home while keeping optional rows in Home customization.

@@ -144,4 +144,14 @@ Schneller Start ohne Wartezeit¦Fast start without waiting¦Beklemeden hızlı b
 Bilder¦Images¦Görseller¦Slike¦Slike¦Slike¦Imágenes¦Images¦Immagini
 Zwischengespeicherte Cover und Hintergründe¦Cached covers and backgrounds¦Önbelleğe alınmış kapaklar ve arka planlar¦Spremljene naslovnice i pozadine¦Spremljene naslovnice i pozadine¦Sačuvane naslovnice i pozadine¦Carátulas y fondos en caché¦Jaquettes et arrière-plans en cache¦Copertine e sfondi in cache
 Einrichtungssitzung abgelaufen. Starte eine neue.¦Setup session expired. Start a new one.¦Kurulum oturumunun süresi doldu. Yeni bir oturum başlatın.¦Sesija podešavanja je istekla. Pokrenite novu.¦Sesija postavljanja je istekla. Pokrenite novu.¦Sesija podešavanja je istekla. Pokrenite novu.¦La sesión de configuración ha caducado. Inicia otra.¦La session de configuration a expiré. Démarrez-en une nouvelle.¦La sessione di configurazione è scaduta. Avviane una nuova.
+Verbindung testen¦Test stream connection
+Verbindung wird geprüft …¦Checking connection …
+DNS-Auflösung fehlgeschlagen. Prüfe das TV-Netzwerk oder den Server des Anbieters.¦DNS lookup failed. Check the TV network or provider host.
+TLS-Verbindung fehlgeschlagen. Zertifikat oder TLS-Einstellungen sind möglicherweise inkompatibel.¦TLS handshake failed. The server certificate or TLS settings may be incompatible.
+Zeitüberschreitung: Der Server hat nicht rechtzeitig geantwortet.¦The server did not respond before the check timed out.
+Netzwerkverbindung konnte nicht hergestellt werden.¦A network connection could not be established.
+Die Stream-Adresse ist ungültig.¦The stream address is invalid.
+Der Server antwortet mit HTTP {#0}. Prüfe die Antwort oder Zugangsdaten des Anbieters.¦The server returned HTTP {#0}. Check the provider response or credentials.
+HLS-Playlist erkannt. Wiedergabe kann trotzdem an Segmenten oder am Format scheitern.¦The server responded with an HLS playlist. Playback may still fail on a segment or format.
+Der Server antwortet (HTTP {#0}); das Stream-Format ist nicht bestätigt.¦The server responded (HTTP {#0}); the stream format is not confirmed.
 """

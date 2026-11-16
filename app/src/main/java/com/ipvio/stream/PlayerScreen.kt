@@ -180,6 +180,9 @@ fun PlayerScreen(req: PlayReq, zapList: List<Item>, liveAll: List<Item>, seriesI
     var pWhenReady by remember { mutableStateOf(true) }
     var pState by remember { mutableIntStateOf(Player.STATE_IDLE) }
     var pError by remember { mutableStateOf(false) }
+    var streamCheck by remember { mutableStateOf<StreamProbeLogic.Result?>(null) }
+    var streamChecking by remember { mutableStateOf(false) }
+    var streamCheckAttempt by remember { mutableIntStateOf(0) }
     var foreground by remember { mutableStateOf(true) }
     KeepScreenOn("player", AwakeLogic.playerNeedsScreen(pWhenReady, pState, pError, foreground))
     var cur by remember { mutableStateOf(req) }
@@ -853,6 +856,11 @@ fun PlayerScreen(req: PlayReq, zapList: List<Item>, liveAll: List<Item>, seriesI
         if (ScreenAwake.unavailable) { awakeWarn = true; delay(8000); awakeWarn = false }
     }
 
+    LaunchedEffect(cur.itemId, cur.url) {
+        streamCheckAttempt++
+        streamChecking = false
+        streamCheck = null
+    }
     LaunchedEffect(cur.url) {
         readyOnce = false; stalls = emptyList()
         retries = 0; msg = null; boomerFail = false; buffering = true; segs = emptyList(); pos = 0; dur = 0; buffered = 0
@@ -1223,6 +1231,29 @@ fun PlayerScreen(req: PlayReq, zapList: List<Item>, liveAll: List<Item>, seriesI
                     if (detail.isNotEmpty()) {
                         Text(detail, color = Color(0xCCFFFFFF), fontSize = 12.sp, raw = true, maxLines = 6,
                             modifier = Modifier.padding(top = 8.dp).widthIn(max = 720.dp))
+                    }
+                    if (pError && cur.archive == null && (resolvedUrl.startsWith("http") || cur.url.startsWith("http"))) {
+                        PillButton(if (streamChecking) "Verbindung wird geprüft …" else "Verbindung testen", light = true,
+                            modifier = Modifier.padding(top = 10.dp)) {
+                            if (!streamChecking) {
+                                val itemUrl = cur.url
+                                val itemId = cur.itemId
+                                val testUrl = resolvedUrl.ifBlank { cur.url }
+                                streamCheckAttempt++
+                                val attempt = streamCheckAttempt
+                                streamChecking = true
+                                scope.launch {
+                                    val result = StreamProbe.check(testUrl)
+                                    if (streamCheckAttempt == attempt && cur.url == itemUrl && cur.itemId == itemId) {
+                                        streamCheck = result
+                                        streamChecking = false
+                                        Diag.report("Stream check: ${result.kind.name}" + if (result.status > 0) " (HTTP ${result.status})" else "")
+                                    }
+                                }
+                            }
+                        }
+                        streamCheck?.let { Text(StreamProbeLogic.label(it), color = Color(0xCCFFFFFF), fontSize = 15.sp, lineHeight = 19.sp,
+                            modifier = Modifier.padding(top = 8.dp).widthIn(max = 720.dp)) }
                     }
                 }
             }
