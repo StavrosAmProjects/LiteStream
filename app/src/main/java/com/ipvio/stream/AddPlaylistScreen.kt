@@ -122,6 +122,16 @@ fun AddPlaylistScreen(onDone: () -> Unit) {
             serving = true
         }
     }
+    LaunchedEffect(setupPath) {
+        val path = setupPath ?: return@LaunchedEffect
+        delay(PhoneImport.SETUP_LIFETIME_MS)
+        if (setupPath == path && phonePending == null) {
+            receiver.stop()
+            setupPath = null
+            serving = false
+            PlaylistStore.error = Lang.tr("Einrichtungssitzung abgelaufen. Starte eine neue.")
+        }
+    }
     DisposableEffect(Unit) {
         // Round 20: upload a playlist file from the phone, read the crash report on the phone
         receiver.uploadDir = ImportFiles.tmpDir(ctx)

@@ -30,6 +30,7 @@ Extend IPVIO's existing phone setup and file import paths. Keep credentials loca
 
 - [x] Valid text/JSON/URL input normalizes into provider name and M3U or Xtream fields; malformed input is rejected without persistence.
 - [x] Setup QR uses a random token; expired and replayed submissions fail; setup-only session rejects legacy credential submission.
+- [x] TV closes the setup server and clears the expired QR after the ten-minute session lifetime.
 - [x] A valid phone submission only stages data; TV cancel discards staged phone M3U and closes the session; TV confirm starts the existing loader.
 - [x] Password is absent from the TV preview.
 - [x] Phone page clearly states that local credential transfer is unencrypted.
@@ -45,7 +46,7 @@ Extend IPVIO's existing phone setup and file import paths. Keep credentials loca
 
 ## Status
 
-Implemented in `594d312`, with transport disclosure follow-up `a834d1e`, on `codex/litestream-tv-fork`. Source review: `Net.base` has no HTTP logging interceptor; repository search found no analytics/crash-reporting SDK; `CrashLog` stores exception type and up to four app stack locations, not messages or URLs. Credential-specific logging search found no matches. A source test checks the warning in English and German; tests were not run. `git diff --check` passed. Gradle/JUnit and Android TV checks were not run in this environment.
+Implemented in `594d312`, with transport disclosure follow-up `a834d1e` and expiry UI follow-up pending commit, on `codex/litestream-tv-fork`. Source review: `Net.base` has no HTTP logging interceptor; repository search found no analytics/crash-reporting SDK; `CrashLog` stores exception type and up to four app stack locations, not messages or URLs. Credential-specific logging search found no matches. Source tests were added but not run. `git diff --check` passed. Gradle/JUnit and Android TV checks were not run in this environment.
 
 Manual checks for the maintainer:
 1. Open Add Playlist on Android TV; verify Set up from phone is immediately visible, opens a QR/address, and the phone page accepts either fields or a full Xtream/M3U URL.
@@ -53,7 +54,7 @@ Manual checks for the maintainer:
 2. Send Xtream details; verify the TV shows provider/server and no password, Cancel does not add it, and Confirm loads it.
 3. Repeat with a phone M3U file; Cancel removes the staged import and Confirm loads it.
 4. Import TXT credentials, JSON credentials, a complete Xtream URL, and an M3U URL from USB/Downloads; each should show the redacted preview before loading.
-5. Verify expiry/replay rejection and confirm existing backup/EPG/remote phone tools still work while Add Playlist is open.
+5. Verify expiry/replay rejection; after ten minutes, confirm the TV clears the stale QR and offers a new session. Confirm existing backup/EPG/remote phone tools still work outside setup.
 6. During setup, open the phone server root and `/crash`; both must return not found. After cancel/confirm/expiry, the token route must reject requests.
 
 Known risk: pairing remains plain HTTP on the local network, consistent with the existing server. The expiring random token gates the temporary setup route but does not encrypt traffic.

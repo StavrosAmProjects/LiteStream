@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Stop the setup-only phone server and clear its QR when the setup session expires.
 - Simplify first-run TV navigation to Home, Live TV, Movies, Series, and Settings; advanced sections remain available under Settings > Menu.
 - Use LiteStream TV as the example TMDB app name in the setup guide.
 - Clear provider country filters when their profile is deleted.

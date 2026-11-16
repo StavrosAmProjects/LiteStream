@@ -254,4 +254,5 @@ Hintergrund¦Achtergrond
 Rand¦Rand
 OK = nächster Wert. Die Vorschau zeigt das Ergebnis.¦OK = volgende waarde. Het voorbeeld toont het resultaat.
 Videoqualität¦Videokwaliteit
+Einrichtungssitzung abgelaufen. Starte eine neue.¦De instelsessie is verlopen. Start een nieuwe.
 """
