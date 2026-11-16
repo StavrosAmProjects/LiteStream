@@ -62,7 +62,7 @@ object PhoneImportLogic {
         fun t(a: String, b: String) = tr(li, a, b)
         return """<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>LiteStream TV setup</title><style>$CSS</style></head><body>
 <h1>${t("LiteStream TV einrichten", "Set up LiteStream TV")}</h1>
-<p>${t("Zugangsdaten werden direkt und nur an deinen Fernseher gesendet. Bestätige sie anschließend am Fernseher.", "Credentials are sent directly to your TV. Review and confirm them on the TV.")}</p>
+<p>${t("Zugangsdaten werden über dein lokales Netzwerk an den Fernseher gesendet. Die Verbindung ist unverschlüsselt; bestätige die Angaben danach am Fernseher.", "Credentials are sent to your TV over the local network. The connection is unencrypted; confirm the details on the TV afterward.")}</p>
 <form method="post" action="/setup/$token/send">
 <input name="name" maxlength="80" placeholder="${t("Name des Anbieters", "Provider name")}" autocomplete="organization">
 <textarea id="full-url" name="url" rows="3" placeholder="${t("Xtream- oder M3U-Adresse einfügen", "Paste complete Xtream or M3U URL")}" autocomplete="off"></textarea>

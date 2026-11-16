@@ -16,4 +16,5 @@ Untertitel konnte nicht geladen werden¦Ondertitel kon niet worden geladen
 Untertitel geladen¦Ondertitel geladen
 Kostenlos unter opensubtitles.com: Konto anlegen, dann unter „API consumers“ eine App anlegen und den API-Schlüssel eintragen. Ohne Anmeldung sind nur wenige Downloads pro Tag möglich.¦Gratis op opensubtitles.com: maak een account, maak daarna onder "API consumers" een app aan en vul de API-sleutel in. Zonder inloggen zijn maar enkele downloads per dag mogelijk.
 Kostenlos unter subdl.com > Konto > API. Im Player unter „Audio & Untertitel“ > „Untertitel online suchen“ werden beide Dienste gefragt.¦Gratis op subdl.com > Account > API. In de speler zoekt "Audio & ondertitels" > "Ondertitels online zoeken" bij beide diensten.
+Zugangsdaten werden über dein lokales Netzwerk an den Fernseher gesendet. Die Verbindung ist unverschlüsselt; bestätige die Angaben danach am Fernseher.¦Inloggegevens worden via je lokale netwerk naar de tv gestuurd. De verbinding is niet versleuteld; bevestig de gegevens daarna op de tv.
 """

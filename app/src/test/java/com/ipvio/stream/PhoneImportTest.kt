@@ -5,6 +5,13 @@ import org.junit.Test
 import java.net.Socket
 
 class PhoneImportTest {
+    @Test fun setupPageDisclosesUnencryptedLocalConnection() {
+        val page = PhoneImportLogic.setupPage(1, "a".repeat(64))
+        assertTrue(page.contains("over the local network"))
+        assertTrue(page.contains("connection is unencrypted"))
+        assertTrue(PhoneImportLogic.setupPage(0, "a".repeat(64)).contains("Verbindung ist unverschlüsselt"))
+    }
+
     @Test fun formWirdZerlegtUndDekodiert() {
         val f = PhoneImportLogic.parseForm("code=1234&url=http%3A%2F%2Fa.tld%2Fx.m3u%3Fu%3D1%26p%3D2")
         assertEquals("1234", f["code"])

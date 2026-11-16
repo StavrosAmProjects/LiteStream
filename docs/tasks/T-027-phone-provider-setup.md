@@ -22,6 +22,7 @@ Extend IPVIO's existing phone setup and file import paths. Keep credentials loca
 - QR encodes the token URL; show the address if QR/local IP fails. Reject malformed, expired, replayed, and oversized submissions.
 - Existing M3U/Xtream/Stalker entry, M3U upload, backup, remote search, and other phone routes continue working outside the setup-only session.
 - Never display a password in the TV preview or include credentials in logs/errors.
+- Tell phone users that the local credential transfer is unencrypted.
 - Provider files/URLs parse locally and flow through the existing `PlaylistStore` validation and persistence.
 - No app ID, secrets, manifest, provider schema, player, or dependency changes.
 
