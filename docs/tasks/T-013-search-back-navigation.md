@@ -19,6 +19,8 @@ In the search screen, pressing Back while a title in the result list is selected
 ## Cause (from reading the code, not reproduced on a device)
 
 - The Search entry (menu id 4) is hidden by default (`MenuLogic.DEFAULT_HIDDEN = "4,6"`).
+
+LiteStream fork follow-up: T-033 changes the first-run default to hide advanced sidebar sections as well (`4,6,7,8,9,10`). Saved menu preferences remain unchanged.
 - `Sidebar` attached the `activeFocus` requester (`sideFocus` in `SearchScreen.kt`) only to the entry of the active tab. With Search hidden, no entry carried it.
 - `sideFocus.requestFocus()` therefore failed and `runCatching` swallowed the error, so Back did nothing.
 

@@ -131,6 +131,12 @@ http://h/x
     // ---------------------------------------------------------------- Menu
     @Test fun menue_standard() = assertEquals(listOf(0, 3, 1, 2, 10, 6, 7, 8, 9, 4, 5), MenuLogic.parseOrder(null))
 
+    @Test fun litestreamDefaultMenuShowsPrimaryTvAreas() {
+        val hidden = MenuLogic.parseHidden(MenuLogic.DEFAULT_HIDDEN)
+        assertEquals(listOf(0, 3, 1, 2, 5), MenuLogic.visible(MenuLogic.DEFAULT_ORDER, hidden))
+        assertEquals(listOf(4, 6, 7, 8, 9, 10), hidden)
+    }
+
     @Test fun menue_alteReihenfolge_neueBereicheVorEinstellungen() {
         assertEquals(listOf(0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 5), MenuLogic.parseOrder("0,1,2,3,4,5"))
         assertEquals(listOf(6, 7, 8, 9, 10, 5, 0, 1, 2, 3, 4), MenuLogic.parseOrder("5,0,1,2,3,4"))

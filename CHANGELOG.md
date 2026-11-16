@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Simplify first-run TV navigation to Home, Live TV, Movies, Series, and Settings; advanced sections remain available under Settings > Menu.
 - Use LiteStream TV as the example TMDB app name in the setup guide.
 - Clear provider country filters when their profile is deleted.
 - Tell phone setup users that local credential transfer is unencrypted.
