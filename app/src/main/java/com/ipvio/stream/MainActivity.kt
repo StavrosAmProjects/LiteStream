@@ -262,7 +262,7 @@ private fun AppContent() {
     val simpleTvAll = remember(all, tvProviderFilters) {
         CountryFilterLogic.filterSources(all, tvProviderFilters)
     }
-    val liveAll = remember(all) { all.filter { it.kind == Kind.LIVE } }
+    val liveAll = remember(simpleTvAll) { simpleTvAll.filter { it.kind == Kind.LIVE } }
     // Do not fall into the screensaver while downloading and parsing the playlist
     KeepScreenOn("playlist", PlaylistStore.loading)
     // Genre detection in the background; restarts cleanly with every new list (reload, language filter, parental control)

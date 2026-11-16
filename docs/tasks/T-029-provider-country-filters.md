@@ -28,13 +28,13 @@ New `CountryFilterLogic.kt`, `CountryFilterStore.kt`, `CountryFilterScreen.kt`, 
 
 ## Status
 
-Implemented in `594d312`; profile cleanup follow-up committed as `1ca26e9` on `codex/litestream-tv-fork`. Xtream setup now offers ALL / NONE / CUSTOMIZE; filters live in profile-scoped `ipvio_live` preferences under a hashed provider URL key. The existing profile deletion flow now clears this preferences file with the others. The full provider catalogue stays intact. Normal Live TV, Home, and Search presentation apply the saved filter; favorites and underlying provider data remain available. Customization uses a draft and preserves an existing selection on Cancel. Pure logic tests were added but not run. Profile deletion uses Android SharedPreferences and has a manual device check instead of a JVM test. `git diff --check` passed.
+Implemented in `594d312`; profile cleanup follow-up committed as `1ca26e9` on `codex/litestream-tv-fork`. Xtream setup now offers ALL / NONE / CUSTOMIZE; filters live in profile-scoped `ipvio_live` preferences under a hashed provider URL key. The existing profile deletion flow now clears this preferences file with the others. The full provider catalogue stays intact. Normal Live TV, Home, Search, and player channel-surf lists apply the saved filter; favorites and underlying provider data remain available. Customization uses a draft and preserves an existing selection on Cancel. Pure logic tests were added but not run. Profile deletion uses Android SharedPreferences and has a manual device check instead of a JVM test. `git diff --check` passed.
 
 Manual checks for the maintainer:
 1. Add an Xtream provider with each choice: ALL shows all content; NONE hides normal provider content; CUSTOMIZE saves the selected countries/groups.
 2. On a new Xtream provider, choose CUSTOMIZE, change a selection, and press Cancel; verify the uncommitted filter is discarded and default ALL visibility remains. Repeat and press Done to commit the selected subset.
 3. Reopen CUSTOMIZE for an existing provider, change a selection, press Cancel, and verify its previous selection remains. Press Done and verify it updates.
-4. Verify filter behavior in Live TV, Movies, Series, and Search; favorites and the source catalogue remain intact.
+4. Verify filter behavior in Live TV, Movies, Series, and Search. Start live playback from Home, Search, and a Live TV group; Up/Down and media-next/previous must stay within the selected provider subset. Confirm favorites and source catalogue remain intact.
 5. Add a second provider and verify its filter is independent. Switch profile and verify filters are isolated.
    Add it while the existing provider has a nonzero saved-list index, then choose CUSTOMIZE and confirm the new provider's groups appear.
 6. Refresh the provider and verify the selection remains; use backup export/import to verify the existing `ipvio_live` backup coverage.
