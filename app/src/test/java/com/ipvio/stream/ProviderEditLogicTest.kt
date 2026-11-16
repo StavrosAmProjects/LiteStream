@@ -16,5 +16,6 @@ class ProviderEditLogicTest {
     @Test fun rejectsDifferentUrlsThatCollideInProviderStorageHash() {
         assertEquals("https://host/Aa".hashCode(), "https://host/BB".hashCode())
         assertFalse(ProviderEditLogic.canReplace(listOf("https://old.example/live", "https://host/Aa"), 0, "https://host/BB"))
+        assertFalse(ProviderEditLogic.canReplace(listOf("https://host/Aa"), 0, "https://host/BB"))
     }
 }

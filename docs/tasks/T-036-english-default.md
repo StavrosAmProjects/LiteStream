@@ -7,6 +7,7 @@ Start LiteStream TV with an English menu when no language preference exists, whi
 ## Affected files
 
 - `app/src/main/java/com/ipvio/stream/General.kt` — default only when the language preference key is absent.
+- `app/src/main/java/com/ipvio/stream/LanguageDefaultLogic.kt` and its JVM test — lock the missing-only default behavior.
 - `CHANGELOG.md` — record the behavior.
 - `docs/tasks/WORK_STATE.md` — handoff state.
 
@@ -22,4 +23,4 @@ No migration: existing stored values remain authoritative. Confirm on Android TV
 
 ## Status
 
-Implemented in the working tree; build and device checks pending.
+Implemented in the working tree; `LanguageDefaultLogicTest` was added but not run. Build and Android TV checks are pending.
