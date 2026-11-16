@@ -1,4 +1,4 @@
-Last update: 2026-11-16 (T-029 customization cancel fix). Read `AGENTS.md` first, then this file.
+Last update: 2026-11-16 (T-028 validation status clarified). Read `AGENTS.md` first, then this file.
 
 ## Current task
 

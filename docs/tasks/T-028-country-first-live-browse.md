@@ -23,7 +23,7 @@ New `CountryBrowseLogic.kt`, `CountryBrowseScreen.kt`, `CountryBrowseLogicTest.k
 
 ## Status
 
-Implemented and committed as `594d312` on `codex/litestream-tv-fork`. Added tested pure classification/projection source and a three-pane D-pad browse dialog launched from Live TV > Countries. Provider items and their groups remain untouched; unknown items stay visible. `git diff --check` passed. Gradle/JUnit and device checks were not run.
+Implemented and committed as `594d312` on `codex/litestream-tv-fork`. Added pure classification/projection source, its unit test file, and a three-pane D-pad browse dialog launched from Live TV > Countries. Provider items and their groups remain untouched; unknown items stay visible. `git diff --check` passed. The unit tests, Gradle build, and device checks were not run.
 
 Manual checks for the maintainer:
 1. Open Live TV > Countries and use only D-pad/OK to select a country, then provider group, then channel.
