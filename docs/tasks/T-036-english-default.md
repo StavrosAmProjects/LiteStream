@@ -23,4 +23,4 @@ No migration: existing stored values remain authoritative. Confirm on Android TV
 
 ## Status
 
-Implemented in the working tree; `LanguageDefaultLogicTest` was added but not run. Build and Android TV checks are pending.
+Implemented in `929fba6`; `LanguageDefaultLogicTest` was added but not run. Build and Android TV checks are pending.

@@ -41,4 +41,4 @@ A short OkHttp range request may negotiate differently from Media3 and can only 
 
 ## Status
 
-Implemented in the working tree. `StreamProbeLogicTest` was added but not run. The check makes one bounded HTTP range request (512-byte prefix, 4-second connect/read timeouts, 8-second overall timeout) only after a playback error and user action. It reports the observed network/HTTP/HLS response; it cannot prove Media3 can decode the stream. Android TV validation remains pending.
+Implemented in `3fc638e`. `StreamProbeLogicTest` was added but not run. The check makes one bounded HTTP range request (512-byte prefix, 4-second connect/read timeouts, 8-second overall timeout) only after a playback error and user action. It reports the observed network/HTTP/HLS response; it cannot prove Media3 can decode the stream. Android TV validation remains pending.

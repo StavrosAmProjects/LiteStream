@@ -51,4 +51,4 @@ Add an **Edit on phone** action to saved Xtream and M3U providers. Reuse the tem
 
 ## Status
 
-Implemented in the working tree. `ProviderEditLogicTest` was added but not run; Gradle and Android TV checks are unavailable here. The maintainer must run the manual checks above before release.
+Implemented in `929fba6`; the hash-collision guard follow-up is `82c2f32`. `ProviderEditLogicTest` was added but not run. The maintainer must run the manual checks above before release.
