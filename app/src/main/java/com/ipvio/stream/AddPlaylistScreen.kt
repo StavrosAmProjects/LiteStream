@@ -379,7 +379,7 @@ fun AddPlaylistScreen(onDone: () -> Unit) {
     customizeUrl?.let { providerUrl ->
         Dialog(onDismissRequest = { customizeUrl = null; onDone() }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
             CountryFilterScreen(
-                PlaylistStore.channels.filter { it.src == PlaylistStore.active }, CountryFilterStore.read(ctx, providerUrl),
+                PlaylistStore.channels.filter { it.src == 0 }, CountryFilterStore.read(ctx, providerUrl),
                 onCancel = { customizeUrl = null; onDone() },
                 onDone = { selection ->
                     CountryFilterStore.write(ctx, providerUrl, selection)

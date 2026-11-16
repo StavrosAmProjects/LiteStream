@@ -5,6 +5,7 @@
 - Add country-first Live TV browsing with a D-pad country, group, and channel view; unclassified channels remain available.
 - Match country names inside provider labels even when extra prefix/suffix words are present.
 - Add provider-scoped ALL / NONE / CUSTOMIZE visibility for Live TV, movies, series, and search without deleting playlist data.
+- Show the correct catalogue when customizing a newly added provider in a multi-provider profile.
 - Commit new provider filters only when CUSTOMIZE is confirmed; Cancel leaves default ALL visibility unchanged.
 - Keep optional Xtream backup-server fields collapsed during normal setup; saved entries remain available.
 - Set the playback-control auto-hide default to three seconds; saved user choices remain unchanged.

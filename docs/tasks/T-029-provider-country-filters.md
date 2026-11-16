@@ -35,6 +35,7 @@ Manual checks for the maintainer:
 3. Reopen CUSTOMIZE for an existing provider, change a selection, press Cancel, and verify its previous selection remains. Press Done and verify it updates.
 4. Verify filter behavior in Live TV, Movies, Series, and Search; favorites and the source catalogue remain intact.
 5. Add a second provider and verify its filter is independent. Switch profile and verify filters are isolated.
+   Add it while the existing provider has a nonzero saved-list index, then choose CUSTOMIZE and confirm the new provider's groups appear.
 6. Refresh the provider and verify the selection remains; use backup export/import to verify the existing `ipvio_live` backup coverage.
 7. With NONE selected, open Live TV > Countries and confirm there is a path to customize again.
 8. On a new Xtream provider, confirm backup-server fields are hidden until requested; resume a provider with saved backup entries and confirm they are visible.
