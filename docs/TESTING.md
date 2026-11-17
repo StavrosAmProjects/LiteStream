@@ -32,6 +32,7 @@ Automatic checks:
 | T9 | Phone remote: 4-digit access code and failed-attempt counter | partly (`RemoteLogicTest`); counter test open |
 | T10 | Backup JSON round trip (export, then import) | open |
 | T11 | Favorite order, playlist mode switch and settings reset logic | exists (`FavOrderLogicTest`, `AddFlowLogicTest`, `SettingsResetLogicTest`) |
+| T12 | Merged Live TV manual ordering and Greek smart-genre classification | added (`LiveChannelOrderLogicTest`); not run |
 
 Manual checks on a device or Fire TV, for each release:
 
@@ -44,6 +45,7 @@ Manual checks on a device or Fire TV, for each release:
 | M5 | Update over the previous release: same signature, data kept | per release |
 | M6 | Playlist mode switch, favorite order, demo mode, settings reset (open in `docs/tasks/WORK_STATE.md`) | open |
 | M7 | Playback system-bar fullscreen and restore behavior (`docs/tasks/T-039-player-system-fullscreen.md`) | open |
+| M8 | Phone Live TV flag navigation, full-width channel list, detail/Watch flow and merged reorder; Sports on TV tile to provider EPG match | open (T-048/T-049) |
 
 Not planned now: instrumented tests on an emulator in CI.
 

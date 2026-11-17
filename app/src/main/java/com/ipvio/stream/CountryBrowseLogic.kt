@@ -68,6 +68,11 @@ object CountryBrowseLogic {
 
     fun countryCode(item: Item): String = classify(item.group) ?: classify(item.title) ?: "?"
 
+    fun flagEmoji(code: String): String {
+        if (code.length != 2 || code.any { it !in 'A'..'Z' }) return "🌍"
+        return code.map { String(Character.toChars(0x1F1E6 + it.code - 'A'.code)) }.joinToString("")
+    }
+
     fun groupName(item: Item): String = item.group.ifBlank { "Other" }
 
     private fun normalize(text: String): String = words.replace(text.uppercase(Locale.ROOT), " ").trim().replace(Regex("\\s+"), " ")

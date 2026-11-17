@@ -4,6 +4,7 @@ import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -28,6 +29,7 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -106,17 +108,26 @@ fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: Li
     val plScope = rememberCoroutineScope()
     val srcK = if (LiveSource.k in srcNames.indices && srcNames.size > 1) LiveSource.k else -1
     val providerUrls = remember(PlaylistStore.shownUrl, srcNames) { listOfNotNull(PlaylistStore.shownUrl) + PlaylistStore.extraUrls(ctx) }
+    val orderPrefs = remember { ctx.applicationContext.getSharedPreferences("ipvio_live_order", android.content.Context.MODE_PRIVATE) }
+    var manualOrder by remember { mutableStateOf(runCatching {
+        val a = org.json.JSONArray(orderPrefs.getString("moves", "[]"))
+        List(a.length()) { i -> a.getJSONArray(i).let { LiveChannelOrderLogic.Move(it.getString(0), it.getInt(1)) } }
+    }.getOrDefault(emptyList())) }
+    val orderedSource = remember(liveAll, manualOrder) { LiveChannelOrderLogic.apply(liveAll, manualOrder) }
+    val orderRank = remember(orderedSource) { orderedSource.withIndex().associate { LiveChannelOrderLogic.key(it.value) to it.index } }
     var filterRevision by remember { mutableIntStateOf(0) }
     val savedFilters = remember(providerUrls, filterRevision) { providerUrls.map { CountryFilterStore.read(ctx, it) } }
     val allProvidersUnfiltered = savedFilters.all { it == null }
-    val filteredAll = remember(liveAll, savedFilters) { CountryFilterLogic.filterSources(liveAll, savedFilters) }
+    val filteredAll = remember(orderedSource, savedFilters) { CountryFilterLogic.filterSources(orderedSource, savedFilters) }
     val live = remember(filteredAll, srcK) { if (srcK < 0) filteredAll else filteredAll.filter { it.src == srcK } }
-    val groups = remember(groupsAll, srcK, allProvidersUnfiltered, savedFilters) {
-        if (srcK < 0 && allProvidersUnfiltered) groupsAll else LinkedHashMap<String, List<Item>>().also { m ->
+    val groups = remember(groupsAll, srcK, allProvidersUnfiltered, savedFilters, orderRank) {
+        if (srcK < 0 && allProvidersUnfiltered) LinkedHashMap<String, List<Item>>().also { m ->
+            groupsAll.forEach { (g, entries) -> m[g] = entries.sortedBy { orderRank[LiveChannelOrderLogic.key(it)] ?: Int.MAX_VALUE } }
+        } else LinkedHashMap<String, List<Item>>().also { m ->
             for ((g, entries) in groupsAll) {
                 val sourceEntries = if (srcK < 0) entries else entries.filter { it.src == srcK }
                 val visible = if (allProvidersUnfiltered) sourceEntries else CountryFilterLogic.filterSources(sourceEntries, savedFilters)
-                if (visible.isNotEmpty()) m[g] = visible
+                if (visible.isNotEmpty()) m[g] = visible.sortedBy { orderRank[LiveChannelOrderLogic.key(it)] ?: Int.MAX_VALUE }
             }
         }
     }
@@ -136,6 +147,10 @@ fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: Li
     var query by remember { mutableStateOf("") }
     var showMulti by remember { mutableStateOf(false) }
     var countryBrowse by remember { mutableStateOf(false) }
+    var phoneNavOpen by remember { mutableStateOf(false) }
+    var phoneSelected by remember { mutableStateOf<Item?>(null) }
+    var channelOrderMenu by remember { mutableStateOf(false) }
+    var lastChannel by remember { mutableStateOf<Item?>(null) }
     var countryFilterEditor by remember { mutableStateOf(false) }
     if (showMulti) MultiViewScreen(live) { showMulti = false }
     val searchReq = remember { FocusRequester() }
@@ -275,6 +290,20 @@ fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: Li
     // Round 17b: the selected channel determines the background and the big display on the right ("What is on now")
     // Kept as State and read only in FocusedBackdrop / FocusedNowPanel (see there)
     val focusedState = remember { mutableStateOf<Item?>(null) }
+    val config = LocalConfiguration.current
+    val phoneUi = config.screenWidthDp < 900 || config.screenHeightDp > config.screenWidthDp
+    val flagChannel = lastChannel ?: focusedState.value ?: list.firstOrNull()
+    val activeFlag = flagChannel?.let { CountryBrowseLogic.flagEmoji(CountryBrowseLogic.countryCode(it)) } ?: "🌍"
+    fun saveMovedChannel(item: Item, delta: Int) {
+        manualOrder = LiveChannelOrderLogic.move(liveAll, manualOrder, LiveChannelOrderLogic.key(item), delta)
+        val encoded = org.json.JSONArray().apply { manualOrder.forEach { put(org.json.JSONArray().put(it.key).put(it.delta)) } }
+        orderPrefs.edit().putString("moves", encoded.toString()).apply()
+    }
+    fun openLiveChannel(item: Item, rememberSelection: String = sel) {
+        lastChannel = item
+        LiveMemory.setSel(ctx, rememberSelection)
+        if (phoneUi) phoneSelected = item else onOpen(item)
+    }
     // 17c: switch only after a short dwell (no loading of logo and program while paging quickly)
     var focusTarget by remember { mutableStateOf<Item?>(null) }
     // snapshotFlow instead of LaunchedEffect(focusTarget): reading the state in composition would recompose the whole tab on every focus move
@@ -285,7 +314,18 @@ fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: Li
     Box(Modifier.fillMaxSize()) {
         FocusedBackdrop(focusedState, Modifier.fillMaxSize())
         Row(Modifier.fillMaxSize().padding(top = 20.dp)) {
-            LazyColumn(Modifier.width(270.dp).fillMaxHeight().padding(start = 24.dp, end = 8.dp), state = catState, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            if (phoneUi) {
+                Column(Modifier.width(50.dp).fillMaxHeight().padding(start = 4.dp, top = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Box(Modifier.size(42.dp).clip(RoundedCornerShape(14.dp)).background(Color(0x20FFFFFF))
+                        .combinedClickable(onClick = { phoneNavOpen = true }, onLongClick = { channelOrderMenu = true }), contentAlignment = Alignment.Center) {
+                        androidx.compose.material.Text(activeFlag, fontSize = 23.sp)
+                    }
+                    if (channelOrderMenu) OptionPopup(listOf("Move channel up", "Move channel down"), -1, { channelOrderMenu = false }) { move ->
+                        channelOrderMenu = false
+                        flagChannel?.let { saveMovedChannel(it, if (move == 0) -1 else 1) }
+                    }
+                }
+            } else LazyColumn(Modifier.width(270.dp).fillMaxHeight().padding(start = 24.dp, end = 8.dp), state = catState, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 // Stable keys: after moving a category, focus and menu state move with the row (duplicates get an index suffix)
                 itemsIndexed(names, key = { i, n -> catKeys.getOrElse(i) { "$n#$i" } }) { _, n ->
                     val ml = ChannelLists.byKey(n)
@@ -464,9 +504,9 @@ fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: Li
             }
             // With no live channels at all the plain list shows the hint instead of an empty home
             if (sel == "HOME" && live.isNotEmpty()) Box(Modifier.weight(2f).fillMaxHeight().padding(end = 24.dp)) {
-                LiveHome(live, genres.filterKeys { it !in HiddenCats.list }, favs, firstChan, onOpen = { ch, l -> ZapContext.list = l; ZapContext.key = "ALL"; onOpen(ch) })
+                LiveHome(live, genres.filterKeys { it !in HiddenCats.list }, favs, firstChan, onOpen = { ch, l -> ZapContext.list = l; ZapContext.key = "ALL"; openLiveChannel(ch) })
             } else {
-            Column(Modifier.weight(0.9f).fillMaxHeight().padding(end = 24.dp)) {
+            Column(Modifier.weight(if (phoneUi) 1f else 0.9f).fillMaxHeight().padding(end = if (phoneUi) 8.dp else 24.dp)) {
                 // Own list: rename and delete clearly visible above the channels (before only via long OK on the list)
                 if (curList != null) Row(
                     Modifier.fillMaxWidth().padding(bottom = 12.dp),
@@ -526,23 +566,23 @@ fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: Li
                                 // Favorites: the focus follows a channel that was just moved
                                 .then(if (sel == FAV_CAT) Modifier.followFav(ch.id) else Modifier), curList,
                             onNewList = { newList(ch.id) },
-                            onFocus = { focusTarget = ch; inChannels = true; plScope.launch { holdJump(chanState, i) } },
+                            onFocus = { focusTarget = ch; lastChannel = ch; inChannels = true; plScope.launch { holdJump(chanState, i) } },
                             variants = variantsOf[ch.id].orEmpty(),
                             favShown = if (sel == FAV_CAT) list else null,
-                            onVariant = { v -> ZapContext.list = list; ZapContext.key = sel; LiveMemory.setSel(ctx, sel); onOpen(v) }
+                            onVariant = { v -> ZapContext.list = list; ZapContext.key = sel; LiveMemory.setSel(ctx, sel); openLiveChannel(v) }
                         ) {
                             if (addList != null) {
                                 val has = ch.id in addList.ids
                                 if (has) ChannelLists.remove(ctx, addList.id, ch.id) else ChannelLists.add(ctx, addList.id, ch.id)
                                 Toast.makeText(ctx, (if (has) Lang.tr("Entfernt: ") else Lang.tr("Hinzugefügt: ")) + ch.title, Toast.LENGTH_SHORT).show()
                             } else if (sel == "REC") onPlayNow(ch)   // Recording: play like a movie (seekable)
-                            else { ZapContext.list = list; ZapContext.key = sel; LiveMemory.setSel(ctx, sel); onOpen(ch) }
+                            else { ZapContext.list = list; ZapContext.key = sel; openLiveChannel(ch) }
                         }
                     }
                 }
             }
             // Right: what is on the selected channel
-            Box(Modifier.weight(1.1f).fillMaxHeight().padding(start = dpx(30), end = dpx(60), top = dpx(if (sel == "SEARCH") 70 else 150))) {
+            if (!phoneUi) Box(Modifier.weight(1.1f).fillMaxHeight().padding(start = dpx(30), end = dpx(60), top = dpx(if (sel == "SEARCH") 70 else 150))) {
                 if (sel == "SEARCH") Column(Modifier.fillMaxSize()) {
                     // Compact info on top, then the input field directly above the keyboard (the field has room, the info is smaller)
                     Box(Modifier.weight(1f).fillMaxWidth()) { FocusedNowPanel(focusedState, list.firstOrNull(), compact = true) }
@@ -576,10 +616,52 @@ fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: Li
         if (countryBrowse) Dialog(onDismissRequest = { countryBrowse = false }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
             CountryBrowseScreen(live, onExit = { countryBrowse = false }, onCustomize = if (filterUrl == null) null else ({ countryFilterEditor = true }),
                 onPin = { code, group -> HomeCountryShortcuts.add(ctx, code, group) }) { item, channels, group ->
+                countryBrowse = false
                 ZapContext.list = channels
                 ZapContext.key = group
-                LiveMemory.setSel(ctx, "ALL")
-                onOpen(item)
+                openLiveChannel(item, "ALL")
+            }
+        }
+        if (phoneNavOpen) Dialog(onDismissRequest = { phoneNavOpen = false }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+            androidx.activity.compose.BackHandler { phoneNavOpen = false }
+            Column(Modifier.fillMaxSize().background(Color(0xFF10141C)).padding(24.dp)) {
+                Text("Browse Live TV", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(12.dp))
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    itemsIndexed(names, key = { i, n -> "phone-$i-$n" }) { _, name ->
+                        val label = when {
+                            name == "COUNTRIES" -> "Countries"
+                            name == "HOME" -> "Live TV home"
+                            name == "ALL" -> "All channels"
+                            name == FAV_CAT -> "Favourites"
+                            LiveGenre.isGenreKey(name) -> LiveGenre.byKey(name)?.label ?: name
+                            else -> name
+                        }
+                        Text(label, color = Color.White, fontSize = 18.sp, modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
+                            .background(Color(0x1FFFFFFF)).clickable {
+                                phoneNavOpen = false
+                                if (name == "COUNTRIES") countryBrowse = true else tapCategory(name)
+                            }.padding(16.dp))
+                    }
+                }
+            }
+        }
+        phoneSelected?.let { channel ->
+            Dialog(onDismissRequest = { phoneSelected = null }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+                androidx.activity.compose.BackHandler { phoneSelected = null }
+                Column(Modifier.fillMaxSize().background(Color(0xFF10141C)).padding(24.dp)) {
+                    Text("${CountryBrowseLogic.flagEmoji(CountryBrowseLogic.countryCode(channel))}  ${channel.title}", color = Color.White, fontSize = 25.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Text(channel.group, color = Muted, fontSize = 15.sp, modifier = Modifier.padding(top = 6.dp, bottom = 18.dp))
+                    LiveNowPanel(channel, Modifier.weight(1f), compact = true)
+                    Spacer(Modifier.height(16.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        PillButton("Back", icon = AIcon.Left) { phoneSelected = null }
+                        PillButton("Watch", light = true, icon = AIcon.Play) {
+                            phoneSelected = null
+                            onOpen(channel)
+                        }
+                    }
+                }
             }
         }
         if (countryFilterEditor && filterUrl != null) Dialog(

@@ -1,5 +1,7 @@
 package com.ipvio.stream
 
+import java.text.Normalizer
+
 /**
  * Sports (round 20): detects sports channels by category or channel name and sports shows by title in the TV guide.
  * Without Android, testable. No data from outside – everything comes from your playlist and its TV program.
@@ -10,7 +12,7 @@ object SportLogic {
         """\b(sports?|spor|sportklub|sportdigital|deportes?|esportes?|sportivo)\b|eurosport|dazn|espn|bein\s?sports?|sky\s?sports?|supersport|""" +
             """ziggo\s?sport|setanta|\btsn\d?\b|arena\s?sport|nova\s?sport|polsat\s?sport|eleven\s?sports?|\bfox\s?sports?\b|""" +
             """laliga|bundesliga|premier\s?league|champions\s?league|\b(nba|nfl|nhl|mlb|ufc|wwe|f1|motogp|ppv)\b|formula\s?1|formel\s?1|""" +
-            """\b(tennis|golf|rugby|cricket|racing|fight|fußball|fussball|football|soccer|futbol|calcio|darts|snooker)\b""",
+            """\b(tennis|golf|rugby|cricket|racing|fight|fußball|fussball|football|soccer|futbol|calcio|darts|snooker)\b|σπορ|αθλητικ|ποδοσφαιρ|μπασκετ|καλαθοσφαιρ|τενις|βολλεϊ|αγωνες""",
         RegexOption.IGNORE_CASE
     )
     // Show titles that are almost always sports (for shows on general channels)
@@ -23,7 +25,10 @@ object SportLogic {
         RegexOption.IGNORE_CASE
     )
 
-    fun isSportChannel(i: Item): Boolean = i.kind == Kind.LIVE && (CHANNEL.containsMatchIn(i.group) || CHANNEL.containsMatchIn(i.title))
+    fun isSportChannel(i: Item): Boolean {
+        val text = normalize(i.group + " " + i.title)
+        return i.kind == Kind.LIVE && CHANNEL.containsMatchIn(text)
+    }
 
     fun isSportEvent(title: String): Boolean = EVENT.containsMatchIn(title)
 
@@ -65,14 +70,14 @@ object SportLogic {
     /** Order matters: "American Football" before "Football", because both contain "football". */
     val CATS: List<Cat> = listOf(
         Cat("American Football", rx("""\b(nfl|american\s?football|super\s?bowl|ncaa\s?football|college\s?football|ncaaf)\b""")),
-        Cat("Basketball", rx("""\b(nba|wnba|basketball|euroleague|bbl|ncaa\s?basketball|acb)\b""")),
+        Cat("Basketball", rx("""\b(nba|wnba|basketball|euroleague|bbl|ncaa\s?basketball|acb)\b|μπασκετ|καλαθοσφαιρ""")),
         Cat("Eishockey", rx("""\b(nhl|eishockey|ice\s?hockey|khl|del2?)\b""")),
-        Cat("Fußball", rx("""\b(fußball|fussball|football|soccer|futbol|fútbol|calcio|fudbal|nogomet|bundesliga|champions\s?league|europa\s?league|conference\s?league|premier\s?league|la\s?liga|laliga|serie\s?a|ligue\s?1|eredivisie|s[üu]per\s?lig|dfb[-\s]?pokal|fa\s?cup|copa|em\s?20\d\d|wm\s?20\d\d|world\s?cup|euro\s?20\d\d|mls)\b""")),
-        Cat("Tennis", rx("""\b(tennis|wimbledon|roland\s?garros|us\s?open|australian\s?open|atp|wta)\b""")),
+        Cat("Fußball", rx("""\b(fußball|fussball|football|soccer|futbol|fútbol|calcio|fudbal|nogomet|bundesliga|champions\s?league|europa\s?league|conference\s?league|premier\s?league|la\s?liga|laliga|serie\s?a|ligue\s?1|eredivisie|s[üu]per\s?lig|dfb[-\s]?pokal|fa\s?cup|copa|em\s?20\d\d|wm\s?20\d\d|world\s?cup|euro\s?20\d\d|mls)\b|ποδοσφαιρ""")),
+        Cat("Tennis", rx("""\b(tennis|wimbledon|roland\s?garros|us\s?open|australian\s?open|atp|wta)\b|τενις""")),
         Cat("Motorsport", rx("""\b(formel\s?1|formula\s?1|f1|motogp|moto2|moto3|grand\s?prix|nascar|indycar|dtm|rallye|rally|wrc|motorsport|superbike)\b""")),
         Cat("Kampfsport", rx("""\b(ufc|boxen|boxing|wwe|mma|wrestling|kickbox\w*|fight\w*|ppv)\b""")),
         Cat("Golf", rx("""\b(golf|pga|masters)\b""")),
-        Cat("Handball & Volleyball", rx("""\b(handball|volleyball|rukomet|odbojka)\b""")),
+        Cat("Handball & Volleyball", rx("""\b(handball|volleyball|rukomet|odbojka)\b|χειροσφαιρ|βολει""")),
         Cat("Rugby & Cricket", rx("""\b(rugby|cricket)\b""")),
         Cat("Radsport", rx("""\b(tour\s?de\s?france|radsport|giro|vuelta|cycling|ciclismo)\b""")),
         Cat("Wintersport", rx("""\b(biathlon|ski\w*|skispringen|rodeln|bob|langlauf|wintersport|snowboard)\b""")),
@@ -80,16 +85,27 @@ object SportLogic {
         Cat("Baseball", rx("""\b(mlb|baseball)\b"""))
     )
     /** Number of a sport by name (-1 if it does not exist). */
-    fun catIndex(name: String): Int = CATS.indexOfFirst { it.name == name }
+    fun catIndex(name: String): Int = CATS.indexOfFirst { it.name.equals(name, true) || displayName(it.name).equals(name, true) }
     val OTHER: Int get() = CATS.size
-    fun catName(i: Int): String = CATS.getOrNull(i)?.name ?: "Sonstige"
+    fun catName(i: Int): String = CATS.getOrNull(i)?.name?.let(::displayName) ?: "Other"
+
+    private fun displayName(name: String): String = when (name) {
+        "Eishockey" -> "Ice Hockey"
+        "Fußball" -> "Football"
+        "Kampfsport" -> "Combat Sports"
+        "Radsport" -> "Cycling"
+        "Wintersport" -> "Winter Sports"
+        else -> name
+    }
 
     /** Sport: first the show title, then channel name and category of the channel; otherwise "Other". */
     fun categoryOf(title: String, chText: String): Int {
-        for ((i, c) in CATS.withIndex()) if (c.re.containsMatchIn(title)) return i
-        for ((i, c) in CATS.withIndex()) if (c.re.containsMatchIn(chText)) return i
+        for ((i, c) in CATS.withIndex()) if (c.re.containsMatchIn(normalize(title))) return i
+        for ((i, c) in CATS.withIndex()) if (c.re.containsMatchIn(normalize(chText))) return i
         return OTHER
     }
+
+    private fun normalize(text: String) = Normalizer.normalize(text, Normalizer.Form.NFD).replace(Regex("\\p{Mn}+"), "")
 
     /** Time window: 0 = next 3 hours, 1 = today, 2 = tomorrow (by local time of the chosen time zone). */
     fun startsIn(win: Int, start: Long, nowSec: Long, tz: java.util.TimeZone): Boolean {

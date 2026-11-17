@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+- Make phone Live TV browsing a full-width channel list with flag-led navigation and a channel detail page before Watch; add device-wide merged channel ordering and Greek smart-playlist matching.
+- Add a Home shortcut to the existing Sports hub, which matches fixtures to channels using the user's IPTV channel list and EPG.
 - Fix touch selection of Live TV categories: tapping now switches to the tapped category before opening its channels.
 - Make country/group browsing preview update as focus moves; add per-profile Move Up/Down ordering for countries.
 - Force app and local phone setup pages to English, regardless of the saved/device language; provider-supplied names remain unchanged.

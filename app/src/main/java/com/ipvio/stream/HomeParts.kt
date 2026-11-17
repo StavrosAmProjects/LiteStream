@@ -333,7 +333,7 @@ class QuickTile(
     val onClick: () -> Unit
 )
 
-/** Five equally wide tiles across the whole row. */
+/** Equally sized quick-access tiles across the row. */
 @Composable
 fun QuickTiles(tiles: List<QuickTile>) {
     Row(
