@@ -318,7 +318,7 @@ fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: Li
                 Column(Modifier.width(50.dp).fillMaxHeight().padding(start = 4.dp, top = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Box(Modifier.size(42.dp).clip(RoundedCornerShape(14.dp)).background(Color(0x20FFFFFF))
                         .combinedClickable(onClick = { phoneNavOpen = true }, onLongClick = { channelOrderMenu = true }), contentAlignment = Alignment.Center) {
-                        androidx.compose.material.Text(activeFlag, fontSize = 23.sp)
+                        Text(raw = true, text = activeFlag, color = Color.White, fontSize = 23.sp)
                     }
                     if (channelOrderMenu) OptionPopup(listOf("Move channel up", "Move channel down"), -1, { channelOrderMenu = false }) { move ->
                         channelOrderMenu = false

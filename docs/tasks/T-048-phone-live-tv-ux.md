@@ -6,4 +6,4 @@
 - **Risks:** The compact move history uses stable `(source index, item id)` keys; changing playlist source numbering can make an old move unavailable. Moves replay over refreshed provider order, so new channels retain their provider position unless moved. The history is held in a device-wide preference file and does not change provider records or profile data.
 - **Documentation:** `CHANGELOG.md`, `docs/tasks/WORK_STATE.md`.
 - **Tests:** JVM test added for order and Greek classification; not run here. Manual: open Live TV on phone; confirm thin flag rail and full-width rows; tap channel, Back, then Watch; long-press flag and move channel across groups; switch profile and confirm order remains; inspect Greek Sports/Movies categories. TV D-pad regression check remains required.
-- **Status:** Implemented; build/device check pending.
+- **Status:** Implemented; debug build succeeded and APK installed/launched on the phone. Feature interaction checks and Android TV checks remain pending.
