@@ -1498,6 +1498,7 @@ private fun ApiKeysPage(ctx: Context) {
 private fun ApiKeysPhoneEntry(ctx: Context, onKeys: (Map<String, String>) -> Unit) {
     var serving by remember { mutableStateOf(false) }
     var received by remember { mutableStateOf(false) }
+    var permissionDenied by remember { mutableStateOf(false) }
     val ip = remember { PhoneImport.localIp() }
     val latest by rememberUpdatedState(onKeys)
     val server = remember {
@@ -1508,10 +1509,15 @@ private fun ApiKeysPhoneEntry(ctx: Context, onKeys: (Map<String, String>) -> Uni
         }
     }
     DisposableEffect(Unit) { onDispose { server.stop() } }
+    val requestServer = rememberLocalNetworkAccess(
+        { received = false; permissionDenied = false; serving = server.start() },
+        { permissionDenied = true }
+    )
     // One button for both states, so it keeps the focus (swapping it for another block lost the focus and opened the sidebar)
     PillButton(if (serving) "Eingabe am Handy beenden" else "Am Handy eingeben", icon = AIcon.Phone) {
-        if (serving) { server.stop(); serving = false } else { received = false; serving = server.start() }
+        if (serving) { server.stop(); serving = false } else requestServer()
     }
+    if (permissionDenied) Text("Local network access is needed to connect your phone.", color = Color(0xFFFFB86B), fontSize = 15.sp)
     if (serving) {
         Column(
             Modifier.clip(RoundedCornerShape(DS.RadiusM)).background(Color(0x14FFFFFF)).padding(16.dp),

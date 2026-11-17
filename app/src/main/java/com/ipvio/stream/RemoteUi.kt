@@ -47,9 +47,15 @@ fun RemoteOverlay(modifier: Modifier = Modifier) {
     val ctx = LocalContext.current
     val focus = remember { FocusRequester() }
     val ip = remember { PhoneImport.localIp() }
-    val server = remember { RemoteHub.start(ctx) }
+    var server by remember { mutableStateOf<PhoneImport?>(null) }
+    var permissionDenied by remember { mutableStateOf(false) }
+    val requestServer = rememberLocalNetworkAccess(
+        { permissionDenied = false; server = RemoteHub.start(ctx) },
+        { permissionDenied = true }
+    )
     fun close() { RemoteUi.show = false }
     BackHandler { close() }
+    LaunchedEffect(Unit) { requestServer() }
     LaunchedEffect(Unit) { delay(150); runCatching { focus.requestFocus() } }
     androidx.compose.foundation.layout.Box(
         modifier.fillMaxSize().background(Color(0xCC000000))
@@ -67,6 +73,7 @@ fun RemoteOverlay(modifier: Modifier = Modifier) {
         ) {
             Text("Mit dem Handy suchen", color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold)
             if (ip == null) Text("Das Gerät ist nicht mit einem WLAN verbunden.", color = Color(0xFFFFB86B), fontSize = 17.sp)
+            else if (permissionDenied) Text("Local network access is needed to connect your phone.", color = Color(0xFFFFB86B), fontSize = 17.sp)
             else if (server == null) Text("Der Server konnte nicht gestartet werden.", color = Color(0xFFFFB86B), fontSize = 17.sp)
             else {
                 val addr = "http://$ip:${server.port}/r?code=${server.code}"

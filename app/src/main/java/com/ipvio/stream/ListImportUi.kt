@@ -44,6 +44,7 @@ internal fun ListImportPage(ctx: Context) {
     if (noPicker) Text("Auf diesem Gerät gibt es keine Dateiauswahl. Nutze den Import im WLAN.", color = Color(0xFFFFB86B), fontSize = 15.sp)
 
     var serving by remember { mutableStateOf(false) }
+    var permissionDenied by remember { mutableStateOf(false) }
     val ip = remember { PhoneImport.localIp() }
     val server = remember {
         PhoneImport { }.apply {
@@ -52,7 +53,11 @@ internal fun ListImportPage(ctx: Context) {
         }
     }
     DisposableEffect(Unit) { onDispose { server.stop() } }
-    if (!serving) PillButton("Import im WLAN starten", icon = AIcon.Phone) { serving = server.start() }
+    val requestServer = rememberLocalNetworkAccess(
+        { permissionDenied = false; serving = server.start() },
+        { permissionDenied = true }
+    )
+    if (!serving) PillButton("Import im WLAN starten", icon = AIcon.Phone, onClick = requestServer)
     else {
         Column(
             Modifier.clip(RoundedCornerShape(DS.RadiusM)).background(Color(0x14FFFFFF)).padding(16.dp),
@@ -73,4 +78,5 @@ internal fun ListImportPage(ctx: Context) {
             PillButton("Import beenden") { server.stop(); serving = false }
         }
     }
+    if (permissionDenied) Text("Local network access is needed to connect your phone.", color = Color(0xFFFFB86B), fontSize = 15.sp)
 }

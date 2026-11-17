@@ -44,6 +44,7 @@ internal fun TransferSection(ctx: Context) {
     SectionTitle("Auf ein anderes Gerät übertragen")
     Hint("Verlauf, Weiterschauen, Favoriten, Listen und Einstellungen mitnehmen – z. B. vom Fire TV auf das Handy. Auf Wunsch auch die Playlists mit Zugangsdaten.")
     var serving by remember { mutableStateOf(false) }
+    var permissionDenied by remember { mutableStateOf(false) }
     val ip = remember { PhoneImport.localIp() }
     val server = remember {
         PhoneImport { }.apply {
@@ -58,6 +59,10 @@ internal fun TransferSection(ctx: Context) {
         }
     }
     DisposableEffect(Unit) { onDispose { server.stop() } }
+    val requestServer = rememberLocalNetworkAccess(
+        { permissionDenied = false; serving = server.start() },
+        { permissionDenied = true }
+    )
     // Issue 11: the start button is replaced by the block below; give its stop button the focus so the focus is not lost
     // (it went to the sidebar) and the page scrolls the address and QR code into view
     val stopReq = remember { FocusRequester() }
@@ -69,7 +74,7 @@ internal fun TransferSection(ctx: Context) {
         kotlinx.coroutines.delay(50)
         runCatching { (if (serving) stopReq else startReq).requestFocus() }
     }
-    if (!serving) PillButton("Übertragung im WLAN starten", Modifier.focusRequester(startReq), icon = AIcon.Phone) { serving = server.start() }
+    if (!serving) PillButton("Übertragung im WLAN starten", Modifier.focusRequester(startReq), icon = AIcon.Phone, onClick = requestServer)
     else {
         Column(
             Modifier.clip(RoundedCornerShape(DS.RadiusM)).background(Color(0x14FFFFFF)).padding(16.dp),
@@ -90,6 +95,7 @@ internal fun TransferSection(ctx: Context) {
             PillButton("Übertragung beenden", Modifier.focusRequester(stopReq)) { server.stop(); serving = false }
         }
     }
+    if (permissionDenied) Text("Local network access is needed to connect your phone.", color = Color(0xFFFFB86B), fontSize = 15.sp)
     UndoRestoreRow(ctx)
     if (DriveSync.available()) DriveSection(ctx)
 }

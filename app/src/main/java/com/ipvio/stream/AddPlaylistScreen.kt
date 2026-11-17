@@ -123,17 +123,8 @@ fun AddPlaylistScreen(editProviderIndex: Int = -1, onDone: () -> Unit) {
             serving = true
         }
     }
-    val localNetworkPermission = "android.permission.ACCESS_LOCAL_NETWORK"
-    val requestLocalNetworkPermission = androidx.activity.compose.rememberLauncherForActivityResult(
-        androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (granted) startPhoneSetup()
-        else PlaylistStore.error = "Local network access is needed to set up this provider from your phone."
-    }
-    fun requestPhoneSetup() {
-        if (android.os.Build.VERSION.SDK_INT >= 37 &&
-            androidx.core.content.ContextCompat.checkSelfPermission(ctx, localNetworkPermission) != android.content.pm.PackageManager.PERMISSION_GRANTED
-        ) requestLocalNetworkPermission.launch(localNetworkPermission) else startPhoneSetup()
+    val requestPhoneSetup = rememberLocalNetworkAccess(::startPhoneSetup) {
+        PlaylistStore.error = "Local network access is needed to set up this provider from your phone."
     }
     LaunchedEffect(editProviderIndex) { if (editTarget != null) requestPhoneSetup() }
     LaunchedEffect(setupPath) {
