@@ -43,7 +43,7 @@ class MainActivity : ComponentActivity() {
         if (!pick) AppSettings.init(this)
         General.init(this)
         Boomer.init(this)
-        HomeLayout.init(this); HomeCountryShortcuts.init(this); BoomerLayout.init(this)
+        HomeLayout.init(this); HomeCountryShortcuts.init(this); CountryBrowseOrder.init(this); BoomerLayout.init(this)
         SidebarPrefs.init(this)
         Config.init(this)
         Config.initSubs(this)
@@ -159,7 +159,7 @@ fun App(pick: Boolean = false) {
     ) {
         val c = LocalContext.current
         var picked by remember { mutableStateOf(!pick) }
-        if (!picked) ProfilePicker { id -> Profiles.select(c, id); AppSettings.init(c); Parental.init(c); LangFilter.init(c); Boomer.init(c); HomeLayout.init(c); HomeCountryShortcuts.init(c); BoomerLayout.init(c); picked = true }
+        if (!picked) ProfilePicker { id -> Profiles.select(c, id); AppSettings.init(c); Parental.init(c); LangFilter.init(c); Boomer.init(c); HomeLayout.init(c); HomeCountryShortcuts.init(c); CountryBrowseOrder.init(c); BoomerLayout.init(c); picked = true }
         else {
             LaunchedEffect(Unit) { delay(10_000); runCatching { SportAlerts.run(c.applicationContext) } }   // after the start: the playlist and the home screen come first
             Box(Modifier.fillMaxSize()) { AppContent(); SportAlertHost() }

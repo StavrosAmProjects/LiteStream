@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Make country/group browsing preview update as focus moves; add per-profile Move Up/Down ordering for countries.
 - Force app and local phone setup pages to English, regardless of the saved/device language; provider-supplied names remain unchanged.
 - Add copyable Xtream text-file instructions and a downloadable blank provider TXT template to phone setup.
 - Let users pin country or country/group shortcuts from Live TV to Home; shortcuts open the selected country/group browser and persist per profile.

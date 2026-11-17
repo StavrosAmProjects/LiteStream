@@ -56,7 +56,10 @@ fun CountryFilterScreen(items: List<Item>, initial: Set<String>?, onCancel: () -
                             if (event.type == KeyEventType.KeyDown && event.key == Key.DirectionRight) runCatching { groupFocus.requestFocus() }.getOrDefault(false) else false
                         }
                         FilterRow(filterCountryLabel(value), value.groups.sumOf { it.channels.size },
-                            CountryFilterLogic.isCountrySelected(draft, value), CountryFilterLogic.isCountryPartial(draft, value), modifier, onFocus = { activePane = 0 }) {
+                            CountryFilterLogic.isCountrySelected(draft, value), CountryFilterLogic.isCountryPartial(draft, value), modifier, onFocus = {
+                                activePane = 0
+                                if (countryCode != value.code) { countryCode = value.code; groupName = value.groups.firstOrNull()?.name }
+                            }) {
                             draft = CountryFilterLogic.toggleCountry(draft, value, countries)
                             countryCode = value.code
                             groupName = value.groups.firstOrNull()?.name
@@ -73,7 +76,7 @@ fun CountryFilterScreen(items: List<Item>, initial: Set<String>?, onCancel: () -
                             else false
                         }
                         FilterRow(value.name, value.channels.size,
-                            CountryFilterLogic.isGroupSelected(draft, country.code, value.name), false, modifier, onFocus = { activePane = 1 }) {
+                            CountryFilterLogic.isGroupSelected(draft, country.code, value.name), false, modifier, onFocus = { activePane = 1; groupName = value.name }) {
                             draft = CountryFilterLogic.toggleGroup(draft, country.code, value.name, countries)
                             groupName = value.name
                         }
