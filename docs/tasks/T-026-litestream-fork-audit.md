@@ -58,7 +58,7 @@ This section records the source-based recommendation as it stood during the audi
 | Non-destructive, profile-scoped country/group filters | SMALL ADAPTATION; implemented in T-029 | `CountryFilterStore.kt` uses existing `ipvio_live` prefs; verify refresh, profile and backup behavior on device. |
 | Phone pairing and provider-file/URL import | SUBSTANTIAL ADAPTATION; implemented in T-027 | Token, expiry, one-use stage, TV confirmation and setup-only route isolation; plain HTTP remains visible to LAN observers. |
 | ALL / NONE / CUSTOMIZE and three-pane draft editing | SMALL ADAPTATION; implemented in T-029 | Xtream setup choice and draft country/group/content editor; verify TV focus and cancellation. |
-| Simple TV home | ALREADY EQUIVALENT FEATURE; default status unresolved | Existing Boomer mode now respects filters. Its opt-in/PIN behavior remains; target-TV feedback decides whether it should become the default. |
+| Simple TV home | SMALL ADAPTATION; implemented in T-033/T-034 | Fresh installs use the simplified Home, Live TV, Movies, Series, Settings navigation and LiteStream-first home layout; advanced sections remain available. Device focus/navigation check remains. |
 | Fullscreen and live zapping | ALREADY BETTER IN IPVIO with timeout adaptation | Existing Media3 controls and live Up/Down zapping remain; default overlay timeout changed to 3 seconds. Verify key mappings and live/timeshift seek on device. |
 | Independent LiteStream identity | SMALL ADAPTATION; implemented in T-032 | App ID `com.litestream.tv`, owner-provided assets, and no upstream updater default. New release repository/OAuth configuration and install test remain. |
 | Licensing and notices | NOT READY FOR DISTRIBUTION | IPVIO GPL notices retained; review the combined source/dependency notices before any public distribution. |
@@ -88,4 +88,4 @@ The supplied IPVIO 1.4.2 APK has not yet been tested on the target TV. Device fe
 - Application code/build configuration: unchanged.
 - Checks performed: source inspection, Git history/status, public upstream release/commit verification.
 - Not run: Gradle, JUnit, APK build, Android TV/Fire TV device test, third-party licence review or legal opinion.
-- Status: **audit complete; T-027 through T-037 implemented on `codex/litestream-tv-fork`; T-038 source audit complete. Build/JVM/device validation and release gates remain pending.**
+- Status: **audit complete; T-027 through T-040 implemented or source-audited on `codex/litestream-tv-fork`. Commits are pushed. Build/JVM/device validation and release gates remain pending.**
