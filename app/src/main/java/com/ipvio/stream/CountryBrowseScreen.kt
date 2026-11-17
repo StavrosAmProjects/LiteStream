@@ -68,12 +68,12 @@ fun CountryBrowseScreen(items: List<Item>, onExit: () -> Unit, onCustomize: (() 
                     }
                 }
                 if (country != null) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FocusButton("Move up", compact = true) { CountryBrowseOrder.move(context, countries.map { it.code }, country.code, -1) }
-                        FocusButton("Move down", compact = true) { CountryBrowseOrder.move(context, countries.map { it.code }, country.code, 1) }
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        FocusButton("↑ Move up", compact = true) { CountryBrowseOrder.move(context, countries.map { it.code }, country.code, -1) }
+                        FocusButton("↓ Move down", compact = true) { CountryBrowseOrder.move(context, countries.map { it.code }, country.code, 1) }
                     }
                 }
-                if (country != null && onPin != null) FocusButton("Pin ${countryLabel(country)} to Home", compact = true) { onPin(country.code, null) }
+                if (country != null && onPin != null) FocusButton("Pin country to Home", compact = true) { onPin(country.code, null) }
             }
         }
         CountryPane("Kategorien", groupName, Modifier.weight(1.15f)) {
@@ -90,7 +90,7 @@ fun CountryBrowseScreen(items: List<Item>, onExit: () -> Unit, onCustomize: (() 
                         onFocus = { groupName = item.name }) { groupName = item.name }
                 }
             }
-            if (country != null && group != null && onPin != null) FocusButton("Pin ${countryLabel(country)} · ${group.name} to Home", compact = true) { onPin(country.code, group.name) }
+            if (country != null && group != null && onPin != null) FocusButton("Pin group to Home", compact = true) { onPin(country.code, group.name) }
         }
         CountryPane("Sender", null, Modifier.weight(1.5f)) {
             if (group == null) BrowseHint("Kategorie auswählen") else LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {

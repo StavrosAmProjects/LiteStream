@@ -219,6 +219,18 @@ fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: Li
             repeat(10) { kotlinx.coroutines.delay(30); if (focusOk(firstChan)) return@launch }
         }
     }
+    fun tapCategory(name: String) {
+        if (name == "COUNTRIES") { countryBrowse = true; return }
+        if (name == sel) { enterChannels(); return }
+        sel = name
+        LiveMemory.setSel(ctx, name)
+        inChannels = true
+        plScope.launch {
+            kotlinx.coroutines.delay(80)
+            runCatching { chanState.scrollToItem(0) }
+            repeat(15) { kotlinx.coroutines.delay(50); if (focusOk(firstChan)) return@launch }
+        }
+    }
     // Issue 14: Left from the channel list goes back to the chosen category, not to whatever row is next to the focused channel.
     // The chosen row may be scrolled out of the category column: bring it into view first. False = let the default handle it.
     fun backToCategory(): Boolean {
@@ -409,7 +421,7 @@ fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: Li
                             onFav = { if (ml != null) listMenu = true else if (plainCat) catMenu = true else if (LiveGenre.isGenreKey(n)) genMenu = true else if (n != FAV_CAT && n != "ALL" && n != "REC" && !LiveGenre.isGenreKey(n)) CatFavs.toggle(ctx, n) },
                             icon = icon, raw = ml != null,
                             floating = plainCat && floatingCat == n
-                        ) { if (floatingCat == null) { if (n == "COUNTRIES") countryBrowse = true else enterChannels() } }
+                        ) { if (floatingCat == null) tapCategory(n) }
                         // Menu of a provider category: favorite on/off, hide, move, sorting of all categories
                         var sortMenu by remember { mutableStateOf(false) }
                         // Menu of a genre category (Sports, Movies, ...): hide
