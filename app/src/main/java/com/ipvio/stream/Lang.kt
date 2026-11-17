@@ -26,12 +26,11 @@ object Lang {
         I18nCore.loadColumn(I18nCore.CODES.indexOf("nl"), DictNl1, DictNl2, DictNl3, DictNl4, DictNl5, DictNl6)
     }
 
-    /** Index in I18nCore.CODES. Reads the state so texts are redrawn on switching. */
+    /** LiteStream TV presents its app chrome in English; provider content stays raw. */
     val index: Int
         get() {
             ensureLoaded()
-            val c = General.lang
-            return if (c.isBlank()) I18nCore.indexForSystem(Locale.getDefault().language) else I18nCore.CODES.indexOf(c).coerceAtLeast(0)
+            return I18nCore.CODES.indexOf("en")
         }
 
     fun code(): String = I18nCore.CODES[index]

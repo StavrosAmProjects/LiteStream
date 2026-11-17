@@ -22,13 +22,12 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
-import java.util.Locale
 
 @Composable
-fun CountryBrowseScreen(items: List<Item>, onExit: () -> Unit, onCustomize: (() -> Unit)? = null, onOpen: (Item, List<Item>, String) -> Unit) {
+fun CountryBrowseScreen(items: List<Item>, onExit: () -> Unit, onCustomize: (() -> Unit)? = null, initialCountryCode: String? = null, initialGroupName: String? = null, onPin: ((String, String?) -> Unit)? = null, onOpen: (Item, List<Item>, String) -> Unit) {
     val countries = remember(items) { CountryBrowseLogic.project(items) }
-    var countryCode by remember { mutableStateOf<String?>(null) }
-    var groupName by remember { mutableStateOf<String?>(null) }
+    var countryCode by remember(initialCountryCode) { mutableStateOf(initialCountryCode) }
+    var groupName by remember(initialCountryCode, initialGroupName) { mutableStateOf(initialGroupName) }
     val country = countries.firstOrNull { it.code == countryCode }
     val groups = country?.groups.orEmpty()
     val group = groups.firstOrNull { it.name == groupName }
@@ -70,6 +69,7 @@ fun CountryBrowseScreen(items: List<Item>, onExit: () -> Unit, onCustomize: (() 
                         }
                     }
                 }
+                if (country != null && onPin != null) FocusButton("Pin ${countryLabel(country)} to Home", compact = true) { onPin(country.code, null) }
             }
         }
         CountryPane("Kategorien", groupName, Modifier.weight(1.15f)) {
@@ -85,6 +85,7 @@ fun CountryBrowseScreen(items: List<Item>, onExit: () -> Unit, onCustomize: (() 
                     BrowseRow(item.name, item.channels.size, item.name == groupName, modifier) { groupName = item.name }
                 }
             }
+            if (country != null && group != null && onPin != null) FocusButton("Pin ${countryLabel(country)} · ${group.name} to Home", compact = true) { onPin(country.code, group.name) }
         }
         CountryPane("Sender", null, Modifier.weight(1.5f)) {
             if (group == null) BrowseHint("Kategorie auswählen") else LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -101,8 +102,7 @@ fun CountryBrowseScreen(items: List<Item>, onExit: () -> Unit, onCustomize: (() 
     }
 }
 
-private fun countryLabel(country: BrowseCountry): String = if (country.code == "?") Lang.tr("Sonstige")
-else Locale("", country.code).getDisplayCountry(Lang.locale()).ifBlank { country.name }
+private fun countryLabel(country: BrowseCountry): String = country.name
 
 @Composable
 private fun CountryPane(title: String, selected: String?, modifier: Modifier, content: @Composable ColumnScope.() -> Unit) {

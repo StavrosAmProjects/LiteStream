@@ -71,6 +71,13 @@ object PhoneImportLogic {
 <input id="username" name="user" placeholder="${t("Benutzername", "Username")}" autocapitalize="off" autocomplete="username">
 <input id="password" name="pass" type="password" placeholder="${t("Passwort", "Password")}" autocomplete="current-password">
 <button type="submit">${t("An den Fernseher senden", "Send to TV")}</button></form>
+<h2>Provider text file</h2><p>Copy this example into a text file, replace the values, then import the .txt file on the TV.</p>
+<pre id="provider-example">name=My Provider
+server=https://provider.example:8080
+username=YOUR_USERNAME
+password=YOUR_PASSWORD</pre>
+<button type="button" onclick="navigator.clipboard.writeText(document.getElementById('provider-example').textContent)">Copy example</button>
+<button type="button" onclick="var a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['name=My Provider\\nserver=https://provider.example:8080\\nusername=\\npassword=\\n'],{type:'text/plain'}));a.download='provider-template.txt';a.click();URL.revokeObjectURL(a.href)">Download blank TXT</button>
 <h2>${t("M3U-Datei senden", "Send an M3U file")}</h2>
 <input id="provider-file" type="file" accept=".m3u,.m3u8,audio/x-mpegurl,application/vnd.apple.mpegurl">
 <button type="button" onclick="uploadProvider()">${t("Datei an den Fernseher senden", "Send file to TV")}</button><p id="provider-status"></p>
@@ -419,7 +426,7 @@ class PhoneImport(private val onReceive: (PhoneInput) -> Unit, private val setup
         s.soTimeout = 15000
         val ins = s.getInputStream()
         val h = readHead(ins) ?: return
-        val li = PhoneImportLogic.langIndex(h.lang)
+        val li = I18nCore.CODES.indexOf("en")
         val feats = PhoneImportLogic.Features(saveUpload != null, backup != null, crash != null, onEpg != null, onList != null, onKeys != null)
         val r: Reply = if (setupOnly && !SETUP_PATH.matches(h.path)) {
             html(404, PhoneImportLogic.message(li, "bad"))

@@ -80,14 +80,6 @@ internal object RemoteMore {
             if (!ok) "{\"ok\":false,\"wait\":" + Parental.lockSec() + "}"
             else { post { Parental.setHide(c, on) }; OK }
         }
-        // ───── App language (issue 18)
-        "langs" -> "{\"c\":" + RemoteLogic.q(General.lang) + ",\"l\":" + RemoteLogic.arr(I18nCore.CODES.mapIndexed { i, code ->
-            "{\"c\":" + RemoteLogic.q(code) + ",\"n\":" + RemoteLogic.q(I18nCore.NATIVE.getOrElse(i) { code }) + "}"
-        }) + "}"
-        "setlang" -> {
-            val code = q["c"].orEmpty()
-            if (code.isNotEmpty() && code !in I18nCore.CODES) null else { post { General.setLang(c, code) }; OK }
-        }
         // ───── Sports Hub (issue 21)
         "sport" -> sport(q["v"].orEmpty(), c)
         "sleagues" -> {

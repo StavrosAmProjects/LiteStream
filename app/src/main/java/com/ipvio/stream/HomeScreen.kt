@@ -313,6 +313,7 @@ fun HomeScreen(
 
     // Header (search, reminders, profile) and quick access as in the design
     var picker by remember { mutableStateOf(false) }
+    var countryShortcut by remember { mutableStateOf<HomeCountryShortcut?>(null) }
     val ready = remember { mutableStateListOf<Item>() }
     // Also use the sizes of movies/series as a key: if the computed home screen arrives only after the list (and without trend titles,
     // i.e. the same empty trend list), the selection stayed empty and the big picture was missing.
@@ -642,6 +643,13 @@ fun HomeScreen(
                             }
                             if (ready.isNotEmpty() && HomeLayout.shown("hero")) item(key = "hero") { Hero(ready.toList(), heroH, true, onOpen, onPlayNow, header, { heroScroll(states[0]) }) { scope.launch { states[0].animateScrollToItem(0) } } }
                             else item(key = "top") { header(Modifier) }
+                            if (HomeCountryShortcuts.items.isNotEmpty()) item(key = "countryShortcuts") {
+                                LazyRow(Modifier.fillMaxWidth().padding(start = RowPadX, top = 12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    items(HomeCountryShortcuts.items, key = { it.code + "|" + it.group.orEmpty() }) { shortcut ->
+                                        FocusButton("⚑ ${shortcut.label}", compact = true) { countryShortcut = shortcut }
+                                    }
+                                }
+                            }
                             val wl = wlVod
                             for (blockId in HomeLayout.order) {
                                 if (blockId == "hero") continue
@@ -826,6 +834,17 @@ fun HomeScreen(
             { id -> scope.launch { states.getOrNull(id)?.scrollToItem(0) }; onTab(id) },
             Modifier.align(SidebarPrefs.align()), sideFocus
         ) { inSidebar = it }
+        countryShortcut?.let { shortcut ->
+            androidx.compose.ui.window.Dialog(onDismissRequest = { countryShortcut = null }, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
+                CountryBrowseScreen(allRaw, onExit = { countryShortcut = null }, initialCountryCode = shortcut.code, initialGroupName = shortcut.group,
+                    onPin = { code, group -> HomeCountryShortcuts.add(ctx, code, group) }) { item, channels, group ->
+                    countryShortcut = null
+                    ZapContext.list = channels
+                    ZapContext.key = group
+                    onPlayNow(item)
+                }
+            }
+        }
     }
 }
 

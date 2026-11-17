@@ -143,7 +143,7 @@ catHint:'${js(t("Die Pfeile verschieben eine Kategorie, „Ausblenden“ blendet
 up:'${js(t("Hoch", "Up"))}',down:'${js(t("Runter", "Down"))}',top:'${js(t("Anfang", "Top"))}',bottom:'${js(t("Ende", "Bottom"))}',hide:'${js(t("Ausblenden", "Hide"))}',showC:'${js(t("Einblenden", "Show"))}',
 adult:'${js(t("Jugendschutz", "Parental control"))}',adultOn:'${js(t("Inhalte für Erwachsene sind ausgeblendet.", "Adult content is hidden."))}',adultOff:'${js(t("Inhalte für Erwachsene werden angezeigt.", "Adult content is shown."))}',
 adultHide:'${js(t("Ausblenden", "Hide"))}',adultShow:'${js(t("Anzeigen (PIN nötig)", "Show (PIN needed)"))}',adultShow0:'${js(t("Anzeigen", "Show"))}',pinQ:'${js(t("PIN vom Fernseher:", "PIN from the TV:"))}',pinBad:'${js(t("Falsche PIN.", "Wrong PIN."))}',
-lang:'${js(t("Sprache der App", "App language"))}',auto:'${js(t("Automatisch (Gerät)", "Automatic (device)"))}',done:'${js(t("Gespeichert.", "Saved."))}',
+done:'${js(t("Gespeichert.", "Saved."))}',
 today:'${js(t("Heute", "Today"))}',sfav:'${js(t("Favoriten", "Favorites"))}',mine:'${js(t("Meine Liste", "My list"))}',teams:'${js(t("Lieblingsteams", "Favorite teams"))}',
 watch:'${js(t("Ansehen", "Watch"))}',pin:'${js(t("Merken", "Keep"))}',pinned:'${js(t("Gemerkt", "Kept"))}',live:'LIVE',
 noGames:'${js(t("Keine Spiele gefunden.", "No games found."))}',noFav:'${js(t("Noch keine Lieblingsteams. Wähle sie unter „Lieblingsteams“.", "No favorite teams yet. Choose them under “Favorite teams”."))}',
@@ -201,7 +201,7 @@ function head(title,backFn){list.innerHTML='';var bk=el('button','back','< '+L.b
 function fail(e){if(e!==0)toast(L.err)}
 function settings(){head(L.set,show);
  [[L.pls,plView],[L.cLive,function(){catView('live')}],[L.cMov,function(){catView('movie')}],[L.cSer,function(){catView('series')}],
-  [L.imp,importList],[L.teams,function(){teamsView(false)}],[L.adult,adultView],[L.lang,langView]].forEach(function(x){list.appendChild(row(x[0],null,null,x[1]))})}
+  [L.imp,importList],[L.teams,function(){teamsView(false)}],[L.adult,adultView]].forEach(function(x){list.appendChild(row(x[0],null,null,x[1]))})}
 function plView(){msg(L.load);api('pls').then(function(a){head(L.pls,settings);
  a.forEach(function(p){var c=card(p.n,p.h,p.a?L.main:null),acts=el('div','acts');
   if(!p.a)acts.appendChild(sb(L.mkMain,function(){api('plmain',{i:p.i}).then(function(){toast(L.done);setTimeout(plView,800)}).catch(fail)}));
@@ -235,8 +235,6 @@ function adultView(){msg(L.load);api('adult').then(function(d){head(L.adult,sett
   api('adultset',{v:0,pin:p||''}).then(function(r){if(r.ok===false){toast(L.pinBad);return}toast(L.done);setTimeout(adultView,300)}).catch(fail)}));
  else acts.appendChild(sb(L.adultHide,function(){api('adultset',{v:1}).then(function(){toast(L.done);setTimeout(adultView,300)}).catch(fail)},true));
  c.appendChild(acts);list.appendChild(c)}).catch(function(e){if(e!==0)msg(L.err)})}
-function langView(){msg(L.load);api('langs').then(function(d){head(L.lang,settings);
- [{c:'',n:L.auto}].concat(d.l).forEach(function(x){list.appendChild(row(x.n,null,x.c==d.c?'✓':null,function(){api('setlang',{c:x.c}).then(function(){toast(L.done);setTimeout(langView,300)}).catch(fail)}))})}).catch(function(e){if(e!==0)msg(L.err)})}
 var sub='today',sdata={},stime={};
 function day(s){var d=new Date(s*1000),n=new Date();if(d.toDateString()==n.toDateString())return hm(s);return d.getDate()+'.'+(d.getMonth()+1)+'. '+hm(s)}
 function subBar(){var b=el('div','sub');[['today',L.today],['fav',L.sfav],['mine',L.mine],['teams',L.teams]].forEach(function(x){var t=el('button',x[0]==sub?'on':null,x[1]);

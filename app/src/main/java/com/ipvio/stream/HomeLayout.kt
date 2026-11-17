@@ -101,6 +101,19 @@ private val HOME_BLOCKS = listOf(
 /** Home screen: new blocks are hidden by default so it looks as before until someone switches them on. */
 object HomeLayout : BlockLayout("ipvio_homelayout", HOME_BLOCKS, HomeLayoutDefaults.DEFAULT_HIDDEN)
 
+object HomeCountryShortcuts {
+    var items by mutableStateOf<List<HomeCountryShortcut>>(emptyList())
+        private set
+    fun init(ctx: Context) {
+        items = HomeCountryShortcutLogic.decode(Profiles.sp(ctx, "ipvio_homelayout").getString("country_shortcuts", "").orEmpty())
+    }
+    fun add(ctx: Context, code: String, group: String?) {
+        if (code.length != 2) return
+        items = (items + HomeCountryShortcut(code, group)).distinct().takeLast(12)
+        Profiles.sp(ctx, "ipvio_homelayout").edit().putString("country_shortcuts", HomeCountryShortcutLogic.encode(items)).apply()
+    }
+}
+
 private val BOOMER_BLOCKS = listOf(
     LayoutBlock("clock", "Große Uhr", "Uhrzeit und Datum, gut lesbar"),
     LayoutBlock("ch", "Meine Sender", "Die Sender, die du ausgewählt hast (sonst die Live-Favoriten)"),

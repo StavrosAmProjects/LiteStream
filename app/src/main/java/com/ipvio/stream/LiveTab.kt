@@ -562,14 +562,15 @@ fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: Li
         val filterSource = if (srcK >= 0) srcK else if (providerUrls.size == 1) 0 else null
         val filterUrl = filterSource?.let(providerUrls::getOrNull)
         if (countryBrowse) Dialog(onDismissRequest = { countryBrowse = false }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-            CountryBrowseScreen(live, onExit = { countryBrowse = false }, onCustomize = if (filterUrl == null) null else ({ countryFilterEditor = true })) { item, channels, group ->
+            CountryBrowseScreen(live, onExit = { countryBrowse = false }, onCustomize = if (filterUrl == null) null else ({ countryFilterEditor = true }),
+                onPin = { code, group -> HomeCountryShortcuts.add(ctx, code, group) }) { item, channels, group ->
                 ZapContext.list = channels
                 ZapContext.key = group
                 LiveMemory.setSel(ctx, "ALL")
                 onOpen(item)
             }
         }
-        if (countryFilterEditor && filterUrl != null && filterSource != null) Dialog(
+        if (countryFilterEditor && filterUrl != null) Dialog(
             onDismissRequest = { countryFilterEditor = false }, properties = DialogProperties(usePlatformDefaultWidth = false)
         ) {
             CountryFilterScreen(

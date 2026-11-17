@@ -12,6 +12,14 @@ class PhoneImportTest {
         assertTrue(PhoneImportLogic.setupPage(0, "a".repeat(64)).contains("Verbindung ist unverschlüsselt"))
     }
 
+    @Test fun setupPageIncludesCopyableAndDownloadableTextTemplate() {
+        val page = PhoneImportLogic.setupPage(1, "a".repeat(64))
+        assertTrue(page.contains("id=\"provider-example\""))
+        assertTrue(page.contains("navigator.clipboard.writeText"))
+        assertTrue(page.contains("provider-template.txt"))
+        assertTrue(page.contains("server=https://provider.example:8080"))
+    }
+
     @Test fun formWirdZerlegtUndDekodiert() {
         val f = PhoneImportLogic.parseForm("code=1234&url=http%3A%2F%2Fa.tld%2Fx.m3u%3Fu%3D1%26p%3D2")
         assertEquals("1234", f["code"])

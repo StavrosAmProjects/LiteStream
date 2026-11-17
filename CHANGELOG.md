@@ -1,6 +1,9 @@
 # Changelog
 
 ## Unreleased
+- Force app and local phone setup pages to English, regardless of the saved/device language; provider-supplied names remain unchanged.
+- Add copyable Xtream text-file instructions and a downloadable blank provider TXT template to phone setup.
+- Let users pin country or country/group shortcuts from Live TV to Home; shortcuts open the selected country/group browser and persist per profile.
 - Fix debug compilation for phone-service constructors, stream diagnostics, and nullable phone-remote state.
 - Give new provider setup initial TV focus on **Set up from phone**.
 - Request Android 17 local-network access before opening any temporary phone service.
