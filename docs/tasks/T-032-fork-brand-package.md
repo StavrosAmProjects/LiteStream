@@ -38,7 +38,7 @@ The audited Android source used application ID `com.ipvio.stream`, the IPVIO lau
 
 ## Risks and validation
 
-`git diff --check` is the only validation run. No Gradle dependency resolution, build, tests, APK, or device validation. The direct dependency inventory is documented. Maven Central metadata for the Jellyfin FFmpeg decoder declares GPL-3.0; this does not establish every license for native libraries inside the resolved artifact. Transitive dependency and bundled native notices remain unverified until the exact release graph and APK are available. The new application ID means data is separate; users must export/import a backup. Google Drive needs a LiteStream OAuth configuration; the code keeps the legacy Drive folder name and file prefixes for compatibility. The release repository is not configured, so update checking remains off until its URL is entered.
+`git diff --check` was run during implementation. T-042 later resolved Gradle dependencies and built/verified a debug APK, but no release dependency/native-license audit, unit tests, or device validation has been completed. The direct dependency inventory is documented. Maven Central metadata for the Jellyfin FFmpeg decoder declares GPL-3.0; this does not establish every license for native libraries inside the resolved artifact. Transitive dependency and bundled native notices still need review. The new application ID means data is separate; users must export/import a backup. Google Drive needs a LiteStream OAuth configuration; the code keeps the legacy Drive folder name and file prefixes for compatibility. The release repository is not configured, so update checking remains off until its URL is entered.
 
 ## Status
 

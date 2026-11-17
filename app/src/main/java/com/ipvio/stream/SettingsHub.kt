@@ -1502,7 +1502,7 @@ private fun ApiKeysPhoneEntry(ctx: Context, onKeys: (Map<String, String>) -> Uni
     val ip = remember { PhoneImport.localIp() }
     val latest by rememberUpdatedState(onKeys)
     val server = remember {
-        PhoneImport { }.apply {
+        PhoneImport(onReceive = {}).apply {
             this.onKeys = { keys ->
                 android.os.Handler(android.os.Looper.getMainLooper()).post { latest(keys); received = true }
             }

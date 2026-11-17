@@ -47,7 +47,7 @@ internal fun ListImportPage(ctx: Context) {
     var permissionDenied by remember { mutableStateOf(false) }
     val ip = remember { PhoneImport.localIp() }
     val server = remember {
-        PhoneImport { }.apply {
+        PhoneImport(onReceive = {}).apply {
             uploadDir = ImportFiles.tmpDir(ctx)
             onList = { name, bytes -> Handler(Looper.getMainLooper()).post { ListImportApply.run(ctx, name, bytes) } }
         }

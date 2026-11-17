@@ -47,7 +47,7 @@ internal fun TransferSection(ctx: Context) {
     var permissionDenied by remember { mutableStateOf(false) }
     val ip = remember { PhoneImport.localIp() }
     val server = remember {
-        PhoneImport { }.apply {
+        PhoneImport(onReceive = {}).apply {
             backup = { pl -> Backup.exportText(ctx, pl) }
             restore = { t ->
                 val ok = Backup.restoreText(ctx, t) >= 0

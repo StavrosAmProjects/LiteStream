@@ -15,4 +15,4 @@ Use this focused run to verify the fork on the target Android TV/Google TV after
 
 Record TV model/Android version and pass/fail for each numbered check. For failures, note the step and visible result; do not include provider credentials or full URLs in screenshots or logs.
 
-No build, unit test, or device result is recorded by this checklist. It is a manual validation plan.
+The debug APK is built under T-042. No unit test or device result is recorded by this checklist. It is a manual validation plan.

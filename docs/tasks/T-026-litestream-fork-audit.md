@@ -71,7 +71,7 @@ The supplied IPVIO 1.4.2 APK has not yet been tested on the target TV. Device fe
 - **Phone security:** the fork's temporary setup route now uses a random short-lived token, one-use staging and TV confirmation. Local HTTP is still unencrypted, so another device on the same network may observe credentials.
 - **Data model:** provider category identifiers and refresh stability need inspection before designing persisted country/group filters. No migrations or key names should be chosen in this audit.
 - **Device behaviour:** no APK was installed or tested in this audit. Focus, QR reliability, player overlay timing and key mappings remain unverified on the user's TV.
-- **Test/build limitation:** Gradle/Android SDK are unavailable per project rules; no build, unit tests or device checks were run.
+- **Test/build limitation:** At audit time, Gradle/Android SDK were unavailable; T-042 later installed the minimum build tools and produced a verified debug APK. JVM tests, Android TV checks and release gates remain open.
 
 ## Acceptance criteria / result
 
@@ -88,4 +88,4 @@ The supplied IPVIO 1.4.2 APK has not yet been tested on the target TV. Device fe
 - Application code/build configuration: unchanged.
 - Checks performed: source inspection, Git history/status, public upstream release/commit verification.
 - Not run: Gradle, JUnit, APK build, Android TV/Fire TV device test, third-party licence review or legal opinion.
-- Status: **audit complete; T-027 through T-040 implemented or source-audited on `codex/litestream-tv-fork`. Commits are pushed. Build/JVM/device validation and release gates remain pending.**
+- Status: **audit complete; T-027 through T-041 implemented or source-audited on `codex/litestream-tv-fork`. Commits are pushed. T-042 debug build succeeds; JVM/device validation and release gates remain pending.**

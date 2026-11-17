@@ -48,6 +48,7 @@ fun RemoteOverlay(modifier: Modifier = Modifier) {
     val focus = remember { FocusRequester() }
     val ip = remember { PhoneImport.localIp() }
     var server by remember { mutableStateOf<PhoneImport?>(null) }
+    val activeServer = server
     var permissionDenied by remember { mutableStateOf(false) }
     val requestServer = rememberLocalNetworkAccess(
         { permissionDenied = false; server = RemoteHub.start(ctx) },
@@ -74,15 +75,15 @@ fun RemoteOverlay(modifier: Modifier = Modifier) {
             Text("Mit dem Handy suchen", color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold)
             if (ip == null) Text("Das Gerät ist nicht mit einem WLAN verbunden.", color = Color(0xFFFFB86B), fontSize = 17.sp)
             else if (permissionDenied) Text("Local network access is needed to connect your phone.", color = Color(0xFFFFB86B), fontSize = 17.sp)
-            else if (server == null) Text("Der Server konnte nicht gestartet werden.", color = Color(0xFFFFB86B), fontSize = 17.sp)
+            else if (activeServer == null) Text("Der Server konnte nicht gestartet werden.", color = Color(0xFFFFB86B), fontSize = 17.sp)
             else {
-                val addr = "http://$ip:${server.port}/r?code=${server.code}"
+                val addr = "http://$ip:${activeServer.port}/r?code=${activeServer.code}"
                 QrImage(addr, 280.dp)
                 Text("Mit der Handy-Kamera scannen", color = Muted, fontSize = 16.sp)
-                Text("http://$ip:${server.port}/r", color = Accent2, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, raw = true)
+                Text("http://$ip:${activeServer.port}/r", color = Accent2, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, raw = true)
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text("Code", color = Muted, fontSize = 16.sp)
-                    Text(server.code, color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, raw = true)
+                    Text(activeServer.code, color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, raw = true)
                 }
                 Text(
                     "Suche und starte Filme, Serien und Sender am Handy. Handy und Fernseher müssen im selben WLAN sein.",

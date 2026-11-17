@@ -3,7 +3,7 @@ package com.ipvio.stream
 import java.net.ConnectException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
-import java.net.ssl.SSLException
+import javax.net.ssl.SSLException
 
 /** Only reports what a small response check observed; it does not claim the player can decode the stream. */
 object StreamProbeLogic {

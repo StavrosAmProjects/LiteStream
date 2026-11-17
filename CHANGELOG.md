@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Fix debug compilation for phone-service constructors, stream diagnostics, and nullable phone-remote state.
 - Give new provider setup initial TV focus on **Set up from phone**.
 - Request Android 17 local-network access before opening any temporary phone service.
 - Hide Android system bars during playback and restore their previous visibility when leaving the player.

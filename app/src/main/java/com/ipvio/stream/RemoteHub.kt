@@ -44,13 +44,13 @@ object RemoteHub {
         appCtx = ctx.applicationContext
         server?.let { if (active) return it }
         // Playlist sent from the phone settings (issue 18): added like "Add playlist" on the TV
-        val s = PhoneImport { inp ->
+        val s = PhoneImport(onReceive = { inp ->
             main.post {
                 val c = appCtx ?: return@post
                 val u = if (inp.isXtream) PlaylistStore.xtreamUrl(inp.host, inp.user, inp.pass) else inp.url
                 if (u != null) PlaylistStore.addAsync(c, u)
             }
-        }
+        })
         s.onList = { name, bytes -> main.post { appCtx?.let { ListImportApply.run(it, name, bytes) } } }
         s.api = { name, q ->
             // The phone opened the page or used it: close the QR card on the TV (it would otherwise stay in front of the player).
