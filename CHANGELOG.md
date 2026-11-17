@@ -2,6 +2,7 @@
 
 ## Unreleased
 - Give new provider setup initial TV focus on **Set up from phone**.
+- Request Android 17 local-network access before opening the temporary phone provider-setup session.
 - Hide Android system bars during playback and restore their previous visibility when leaving the player.
 - Add a TV playback-error action to check the current stream response and distinguish DNS, TLS, timeout, HTTP, and HLS outcomes without showing or logging the URL.
 - Default fresh LiteStream TV installs to the English menu; an explicitly saved language choice remains unchanged.

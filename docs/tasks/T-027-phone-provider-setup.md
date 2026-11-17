@@ -14,7 +14,7 @@ Extend IPVIO's existing phone setup and file import paths. Keep credentials loca
 
 ## Affected files
 
-`PhoneImport.kt`, `AddPlaylistScreen.kt`, `ImportFiles.kt`, `DictA.kt`, new `ProviderImportLogic.kt`, `PhoneImportTest.kt`, `ProviderImportLogicTest.kt`, `docs/tasks/WORK_STATE.md`, `CHANGELOG.md`.
+`PhoneImport.kt`, `AddPlaylistScreen.kt`, `AndroidManifest.xml`, `ImportFiles.kt`, `DictA.kt`, new `ProviderImportLogic.kt`, `PhoneImportTest.kt`, `ProviderImportLogicTest.kt`, `docs/tasks/WORK_STATE.md`, `CHANGELOG.md`.
 
 ## Required and preserved behaviour
 
@@ -23,8 +23,9 @@ Extend IPVIO's existing phone setup and file import paths. Keep credentials loca
 - Existing M3U/Xtream/Stalker entry, M3U upload, backup, remote search, and other phone routes continue working outside the setup-only session.
 - Never display a password in the TV preview or include credentials in logs/errors.
 - Tell phone users that the local credential transfer is unencrypted.
+- On Android 17 (API 37+), request local-network permission before opening the temporary setup server; older Android versions keep the existing flow.
 - Provider files/URLs parse locally and flow through the existing `PlaylistStore` validation and persistence.
-- No app ID, secrets, manifest, provider schema, player, or dependency changes.
+- No app ID, secrets, provider schema, player, or dependency changes.
 
 ## Acceptance criteria
 

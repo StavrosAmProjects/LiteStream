@@ -123,7 +123,19 @@ fun AddPlaylistScreen(editProviderIndex: Int = -1, onDone: () -> Unit) {
             serving = true
         }
     }
-    LaunchedEffect(editProviderIndex) { if (editTarget != null) startPhoneSetup() }
+    val localNetworkPermission = "android.permission.ACCESS_LOCAL_NETWORK"
+    val requestLocalNetworkPermission = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) startPhoneSetup()
+        else PlaylistStore.error = "Local network access is needed to set up this provider from your phone."
+    }
+    fun requestPhoneSetup() {
+        if (android.os.Build.VERSION.SDK_INT >= 37 &&
+            androidx.core.content.ContextCompat.checkSelfPermission(ctx, localNetworkPermission) != android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) requestLocalNetworkPermission.launch(localNetworkPermission) else startPhoneSetup()
+    }
+    LaunchedEffect(editProviderIndex) { if (editTarget != null) requestPhoneSetup() }
     LaunchedEffect(setupPath) {
         val path = setupPath ?: return@LaunchedEffect
         delay(PhoneImport.SETUP_LIFETIME_MS)
@@ -251,7 +263,7 @@ fun AddPlaylistScreen(editProviderIndex: Int = -1, onDone: () -> Unit) {
             }
             if (editTarget == null) {
             Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 8.dp, vertical = 5.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                FocusButton(Lang.tr("Am Handy einrichten").uppercase(Lang.locale()), Modifier.focusRequester(startFocus), primary = true, compact = true, onClick = { startPhoneSetup() })
+                FocusButton(Lang.tr("Am Handy einrichten").uppercase(Lang.locale()), Modifier.focusRequester(startFocus), primary = true, compact = true, onClick = { requestPhoneSetup() })
                 FocusButton(Lang.tr("Anbieterdaten-Datei importieren").uppercase(Lang.locale()), compact = true) {
                     try { pickProviderFile.launch(arrayOf("text/*", "application/json", "application/octet-stream")) }
                     catch (e: Exception) { PlaylistStore.error = "Auf diesem Gerät gibt es keine Dateiauswahl." }
