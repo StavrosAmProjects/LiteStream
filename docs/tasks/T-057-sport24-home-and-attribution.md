@@ -32,4 +32,4 @@ GitHub Actions excludes ordinary pushes to `codex/litestream-tv-fork`. Build/PR 
 
 ## Status
 
-Implemented in the working tree. Not built, run, pushed, or installed. GitHub access was unavailable during this session.
+Implemented and pushed on `codex/litestream-tv-fork` in commit `95e2cb8`. YAML and shell syntax checks passed; no Gradle build, test run, or device install was done. Date selection remains open because no supported date-specific endpoint was established.

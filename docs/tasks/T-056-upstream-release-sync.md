@@ -36,4 +36,4 @@ Automatically bring new stable IPVIO source releases to the LiteStream repositor
 
 ## Status
 
-Implemented in the working tree; not committed, pushed, merged, or run in GitHub Actions.
+Implemented and pushed on `codex/litestream-tv-fork` in commit `95e2cb8`. It becomes schedulable after merge to the repository's default branch. Not yet run in GitHub Actions; repository permissions and the live upstream endpoint remain unverified.

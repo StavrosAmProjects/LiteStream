@@ -2,11 +2,11 @@ Last update: 2026-11-19. Read `AGENTS.md` first, then this file.
 
 ## Current task
 
-T-057 (19 Nov 2026): Added a Home tile that enters the Sport24 TV tab in the existing Sports hub. The supplied parser matches the day's broadcasts against the installed live catalogue and stores manual channel mappings per profile; profile deletion clears those mappings. README credits LiteStream's fork-specific work to Stavros Ambizas & Co LLC and thanks Emrodev/IPVIO contributors. PR checks now run only when opened, reopened, or marked ready; later pushes to the work branch do not trigger them. YAML/source-level checks only; no Gradle build or device test. GitHub was unreachable, so nothing was pushed. Date selection remains open because no supported date endpoint was established. See `docs/tasks/T-057-sport24-home-and-attribution.md`.
+T-057 (19 Nov 2026): Added a Home tile that enters the Sport24 TV tab in the existing Sports hub. The supplied parser matches the day's broadcasts against the installed live catalogue and stores manual channel mappings per profile; profile deletion clears those mappings. README credits LiteStream's fork-specific work to Stavros Ambizas & Co LLC and thanks Emrodev/IPVIO contributors. PR checks now run only when opened, reopened, or marked ready; later pushes to the work branch do not trigger them. YAML/shell checks passed; no Gradle build or device test. Commit `95e2cb8` is pushed to `codex/litestream-tv-fork`. Date selection remains open because no supported date endpoint was established. See `docs/tasks/T-057-sport24-home-and-attribution.md`.
 
 ## Previous task
 
-T-056 (19 Nov 2026): Added a daily and manually triggered GitHub Actions workflow that merges the latest stable IPVIO release source into a bot branch and opens/updates a review PR into `dev`. It never auto-merges and does not publish the upstream APK. `git diff --check` passed. GitHub was unreachable here, so the workflow was not run or verified against remote branches/settings. Not committed, pushed, or merged. See `docs/tasks/T-056-upstream-release-sync.md`.
+T-056 (19 Nov 2026): Added a daily and manually triggered GitHub Actions workflow that merges the latest stable IPVIO release source into a bot branch and opens/updates a review PR into `dev`. It never auto-merges and does not publish the upstream APK. The workflow is pushed in commit `95e2cb8` but will not run until the workflow is merged to the repository's default branch. The live workflow, release endpoint, and Actions pull-request permission have not been verified. See `docs/tasks/T-056-upstream-release-sync.md`.
 
 ## Previous task
 
