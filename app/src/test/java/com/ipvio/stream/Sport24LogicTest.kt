@@ -17,6 +17,17 @@ class Sport24LogicTest {
         assertTrue(Sport24Logic.channelsFor("Cosmote Sport 7", pool, null).isEmpty())
     }
 
+    @Test fun spacingAndBrandsDontMatter() {
+        assertEquals("3", Sport24Logic.channelsFor("Novasports Prime", pool, null).first().id)
+        assertEquals("3", Sport24Logic.channelsFor("Nova Sport Prime", pool, null).first().id)
+        val l2 = listOf(ch("9", "NOVASPORTS PRIME"), ch("8", "Magenta Sport 1 FHD"), ch("7", "Cosmote Sports 2"))
+        val p2 = Sport24Logic.Pool(l2)
+        assertEquals("9", Sport24Logic.channelsFor("Nova Sports Prime", p2, null).first().id)
+        assertEquals("8", Sport24Logic.channelsFor("Cosmote Sport 1", p2, null).first().id)
+        assertEquals("7", Sport24Logic.channelsFor("Magenta Sport 2", p2, null).first().id)
+        assertTrue(Sport24Logic.channelsFor("Cosmote Sport 1", Sport24Logic.Pool(listOf(ch("5", "Cosmote Sport 12"))), null).isEmpty())
+    }
+
     @Test fun handChoiceWins() {
         assertEquals("4", Sport24Logic.channelsFor("Cosmote Sport 1", pool, "4").first().id)
     }

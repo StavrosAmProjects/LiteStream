@@ -100,41 +100,61 @@ object Sport24Logic {
         return c.timeInMillis / 1000
     }
 
-    /** Words that identify a broadcaster: "COSMOTE SPORT 1 HD" -> [cosmote, sport, 1]. */
-    private fun words(s: String) = norm(s).split(' ').filter { it.isNotEmpty() }
+    // Same channel, different spelling/brand: applied on the compact form (no spaces), so "Nova Sports" = "NovaSports".
+    private val ALIASES = listOf(
+        "magentatv" to "cosmote", "magenta" to "cosmote", "cosmotetv" to "cosmote", "sports" to "sport"
+    )
+    private val RUNS = Regex("""\d+""")
 
-    /** Playlist channels with their words, computed once per playlist (not per lookup). */
+    /** "GR| NovaSports Prime FHD" -> "novasportprime"; "Magenta Sport 1" -> "cosmotesport1". */
+    fun canon(s: String): String {
+        var w = norm(s).split(' ').filter { it.isNotEmpty() }
+        if (w.size > 1 && w[0].length <= 2 && w[0].all(Char::isLetter)) w = w.drop(1)
+        var c = w.joinToString("")
+        for ((from, to) in ALIASES) if (from != to) c = c.replace(from, to)
+        return c
+    }
+
+    /** Playlist channels in compact form, computed once per playlist (not per lookup). */
     class Pool(live: List<Item>) {
-        val all: List<Pair<List<String>, Item>> = live.map { words(it.title) to it }.filter { it.first.isNotEmpty() }
-        private val first = HashSet<String>().also { s -> all.forEach { s.add(it.first[0]) } }
-        fun mayMatch(text: String): Boolean = words(text).let { it.isNotEmpty() && it[0] in first }
+        val all: List<Pair<String, Item>> = live.map { canon(it.title) to it }.filter { it.first.length >= 3 }
+        private val prefix = HashSet<String>().also { s -> all.forEach { s.add(it.first.take(4)) } }
+        fun mayMatch(text: String): Boolean = canon(text).let { it.length >= 3 && it.take(4) in prefix }
     }
 
     /**
-     * Channels of your playlist that show this broadcaster, best first. Numbers must match exactly
-     * ("Sport 1" never matches "Sport 2"); a hand-made choice ([fixed] = channel ID) always wins.
+     * Match broadcaster and playlist names despite spaces, HD tags and known branding variants.
+     * Numbers must match exactly ("Sport 1" never matches "Sport 2"); a manual choice always wins.
      */
     fun channelsFor(name: String, pool: Pool, fixed: String?): List<Item> {
         val out = ArrayList<Item>()
         if (fixed != null) pool.all.firstOrNull { it.second.id == fixed }?.let { out.add(it.second) }
-        val w = words(name)
-        if (w.isEmpty()) return out
-        val nums = w.filter { it.all(Char::isDigit) }.toSet()
-        val n = w.joinToString(" ")
+        val n = canon(name)
+        if (n.length < 3) return out
+        val nums = RUNS.findAll(n).map { it.value }.toList()
         val scored = ArrayList<Pair<Int, Item>>()
-        for ((cw, c) in pool.all) {
-            if (cw.filter { it.all(Char::isDigit) }.toSet() != nums) continue
-            val cn = cw.joinToString(" ")
+        for ((cn, c) in pool.all) {
             val score = when {
                 cn == n -> 0
-                (" $cn ").contains(" $n ") -> 1
-                w.all { it in cw } -> 2
+                cn.contains(n) && boundaryOk(cn, n) && RUNS.findAll(cn).map { it.value }.toList() == nums -> 1
+                n.contains(cn) && boundaryOk(n, cn) && RUNS.findAll(cn).map { it.value }.toList() == nums && cn.length >= 6 -> 2
                 else -> continue
             }
             scored.add(score to c)
         }
         scored.sortedWith(compareBy({ it.first }, { it.second.title.length })).forEach { out.add(it.second) }
         return out.distinctBy { it.id }
+    }
+
+    /** [inner] inside [outer] must not cut a number ("sport1" must not match inside "sport12"). */
+    private fun boundaryOk(outer: String, inner: String): Boolean {
+        var i = outer.indexOf(inner)
+        while (i >= 0) {
+            val after = outer.getOrNull(i + inner.length)
+            if (after == null || !after.isDigit() || !inner.last().isDigit()) return true
+            i = outer.indexOf(inner, i + 1)
+        }
+        return false
     }
 
     /** Is this text one of the playlist's channel names (used to find the broadcaster line in HTML)? */

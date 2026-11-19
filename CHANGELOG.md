@@ -1,9 +1,10 @@
 # Changelog
 
 ## Unreleased
+- Match Sport24 broadcaster names across common spacing, HD-tag, Nova Sports, and Magenta/Cosmote variations while keeping channel numbers exact.
 - Keep build and PR checks off ordinary work-branch pushes; retain checks when a PR opens and preserve manual builds and release triggers.
 - Add a Home shortcut to Sport24's daily Greek sports TV schedule, with automatic and manual playlist-channel matching.
-- Credit Stavros Ambizas & Co LLC for LiteStream's fork-specific product and UX work, while thanking Emrodev and IPVIO contributors and retaining upstream notices.
+- Credit `@StavrosAmProjects` for LiteStream's fork-specific product and UX work, while thanking Emrodev and IPVIO contributors and retaining upstream notices.
 - Add a daily/manual IPVIO stable-release source sync that opens a review pull request into `dev` without auto-merging or distributing upstream APKs.
 - Put Home's personal TV shortcuts and primary navigation before a shorter, movable VOD hero; make the banner movable and hideable, and focus the first favourite shortcut (or Live TV) on entry.
 - Move saved Live TV category favourites directly under the playlist selector; show them as country-flag shortcuts on Home and make country browsing more compact with page scrolling.

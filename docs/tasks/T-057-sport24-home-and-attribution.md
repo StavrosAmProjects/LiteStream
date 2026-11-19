@@ -9,7 +9,7 @@ Open Sport24's daily sports TV schedule directly from Home and show clear credit
 - Add a Sport24 TV page to the existing Sports hub and route the Home tile directly to it.
 - Reuse current playlist channels and allow manual broadcaster-to-channel mappings per profile.
 - Keep mappings inside the existing profile preference pattern and clear them when that profile is deleted.
-- Add README and changelog credit for Stavros Ambizas & Co LLC, with thanks to Emrodev and IPVIO contributors; retain GPL and copyright notices.
+- Add README and changelog credit for `@StavrosAmProjects`, with thanks to Emrodev and IPVIO contributors; retain GPL and copyright notices.
 
 ## Affected files
 

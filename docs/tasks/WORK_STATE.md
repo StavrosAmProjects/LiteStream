@@ -2,7 +2,11 @@ Last update: 2026-11-19. Read `AGENTS.md` first, then this file.
 
 ## Current task
 
-T-057 (19 Nov 2026): Added a Home tile that enters the Sport24 TV tab in the existing Sports hub. The supplied parser matches the day's broadcasts against the installed live catalogue and stores manual channel mappings per profile; profile deletion clears those mappings. README credits LiteStream's fork-specific work to Stavros Ambizas & Co LLC and thanks Emrodev/IPVIO contributors. PR checks now run only when opened, reopened, or marked ready; later pushes to the work branch do not trigger them. YAML/shell checks passed; no Gradle build or device test. Commit `95e2cb8` is pushed to `codex/litestream-tv-fork`. Date selection remains open because no supported date endpoint was established. See `docs/tasks/T-057-sport24-home-and-attribution.md`.
+T-058 (19 Nov 2026): Applied the supplied Sport24 matching changes: canonical broadcaster aliases handle spacing, Nova Sports, Magenta/Cosmote, and HD variants while preserving exact channel-number matching. Updated public author credit to `@StavrosAmProjects`. `git diff --check` passed. New alias tests were added but not run; no Gradle build/device check. Not pushed yet. See `docs/tasks/T-058-sport24-channel-aliases.md`.
+
+## Previous task
+
+T-057 (19 Nov 2026): Added a Home tile that enters the Sport24 TV tab in the existing Sports hub. The supplied parser matches the day's broadcasts against the installed live catalogue and stores manual channel mappings per profile; profile deletion clears those mappings. README credits LiteStream's fork-specific work to `@StavrosAmProjects` and thanks Emrodev/IPVIO contributors. PR checks now run only when opened, reopened, or marked ready; later pushes to the work branch do not trigger them. YAML/shell checks passed; no Gradle build or device test. Commit `95e2cb8` is pushed to `codex/litestream-tv-fork`. Date selection remains open because no supported date endpoint was established. See `docs/tasks/T-057-sport24-home-and-attribution.md`.
 
 ## Previous task
 

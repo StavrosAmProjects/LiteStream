@@ -10,7 +10,7 @@ This fork is based on [IPVIO Stream](https://github.com/Emrodev/IPVIO-Stream). I
 
 ## Project authorship and upstream thanks
 
-LiteStream TV's product direction, LiteStream branding, TV-first user experience, and fork-specific improvements are led and maintained by **[Stavros Ambizas & Co LLC](https://github.com/StavrosAmProjects)**. This work builds on the mature IPTV and playback foundation created by **[Emrodev](https://github.com/Emrodev) and the IPVIO contributors**; we are deeply grateful for their original work. The inherited code remains under GPL-3.0, with upstream copyright and license notices preserved.
+LiteStream TV's product direction, branding, TV-first experience, and fork-specific improvements are by **[@StavrosAmProjects](https://github.com/StavrosAmProjects)**. This work builds on the mature IPTV and playback foundation created by **[Emrodev](https://github.com/Emrodev) and the IPVIO contributors**; I am deeply grateful for their original work. The inherited code remains under GPL-3.0, with upstream copyright and license notices preserved.
 
 ## Install
 
@@ -146,7 +146,7 @@ IPVIO Stream stays free, ad-free and open source. Donations are voluntary and do
 ## License
 
 Copyright (C) 2026 IPVIO Stream contributors
-Copyright (C) 2026 Stavros Ambizas & Co LLC (LiteStream-specific branding, product direction, and modifications)
+Copyright (C) 2026 @StavrosAmProjects (LiteStream-specific branding, product direction, and modifications)
 
 LiteStream TV is distributed under the **GNU General Public License version 3** (see [LICENSE](LICENSE)), preserving IPVIO's license and notices. The declared Jellyfin Media3 FFmpeg decoder dependency is GPL-3.0; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for the direct dependency and font inventory. Transitive dependency licenses still need verification from the resolved release build.
 
