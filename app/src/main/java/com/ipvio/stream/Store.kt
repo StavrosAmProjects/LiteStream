@@ -93,6 +93,10 @@ object AppSettings {
         val p = prefs(c)
         // Default: provider categories; automatic genres only if chosen (setting or view "Categories")
         ipvioFilter = p.getBoolean("ipvio_filter", false)
+        if (!p.getBoolean("automatic_genres_disabled_v1", false)) {
+            ipvioFilter = false
+            p.edit().putBoolean("ipvio_filter", false).putBoolean("automatic_genres_disabled_v1", true).apply()
+        }
         gridCols = p.getInt("grid_cols", 6).coerceIn(3, 10)
         gridRows = p.getInt("grid_rows", 3).coerceIn(2, 8)
         cardW = p.getInt("card_w", 150).coerceIn(110, 220)

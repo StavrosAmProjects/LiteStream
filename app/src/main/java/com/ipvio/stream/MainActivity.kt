@@ -229,9 +229,12 @@ private fun AppContent() {
         withContext(Dispatchers.IO) { General.cleanupLegacy(ctx) }
         if (resumeAdd) return@LaunchedEffect
         PlaylistStore.savedUrl(ctx)?.let { u ->
+            val alreadyLoaded = PlaylistStore.shownUrl == u && PlaylistStore.channels.isNotEmpty()
             val skip = !SettingsLogic.refreshDue(General.plan(), General.lastRefresh, System.currentTimeMillis(), General.zone())
-            val ok = PlaylistStore.load(ctx, u, false, skip)
-            if (ok && !skip) General.markRefreshed(ctx)
+            if (!alreadyLoaded || !skip) {
+                val ok = PlaylistStore.load(ctx, u, false, skip)
+                if (ok && !skip) General.markRefreshed(ctx)
+            }
         }
     }
 
@@ -267,7 +270,7 @@ private fun AppContent() {
     // Do not fall into the screensaver while downloading and parsing the playlist
     KeepScreenOn("playlist", PlaylistStore.loading)
     // Genre detection in the background; restarts cleanly with every new list (reload, language filter, parental control)
-    LaunchedEffect(all) { kotlinx.coroutines.delay(8_000); if (!DemoMode.active) Classifier.restart(ctx, all) }   // after the first screen is up, and debounced while the list is still changing
+    LaunchedEffect(all) { kotlinx.coroutines.delay(8_000); if (!DemoMode.active && AppSettings.ipvioFilter) Classifier.restart(ctx, all) }   // automatic genres are opt-in; don't scan every title otherwise
 
     fun start(item: Item, title: String, url: String, startMs: Long = 0L) {
         if (DemoMode.active) return   // sample entries have no stream address

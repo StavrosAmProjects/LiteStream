@@ -1,0 +1,8 @@
+# T-064: Faster startup, optional genres, and TV channel keys
+
+- **Goal:** Reuse an already loaded playlist on app reopen, stop automatic genre scanning by default, and let Android TV Channel/Program Up/Down zap live channels.
+- **Affected files:** `MainActivity.kt`, `General.kt`, `Store.kt`, `HomeScreen.kt`, `PlayerScreen.kt`, `CHANGELOG.md`, `docs/tasks/WORK_STATE.md`.
+- **Acceptance criteria:** Reopening Home with the same loaded playlist and no scheduled refresh does not reload it. Existing “at every start” refresh preferences are migrated to daily once. Automatic TMDB genre scans and genre Home rows are disabled on upgrade; provider categories remain available. Android `KEYCODE_CHANNEL_UP/DOWN` changes live channels, including held presses, when no channel/guide panel is open.
+- **Risk:** The one-time preference migration changes refresh-at-every-start to daily and disables a previously enabled automatic genre setting; users can change the refresh schedule and genre preference afterward. Android remote firmware may map the Hitachi buttons differently from standard channel key codes.
+- **Tests:** Manual TV checks: open app twice and confirm cached list appears without a refresh; confirm provider categories remain and genre progress stops; during Live TV press and hold Program Up/Down and confirm channel surfing in both directions. Build and install results recorded below.
+- **Status:** Implemented. `:app:assembleDebug` and `git diff --check` passed; installed and launched on Android TV at `192.168.1.2:5555`. Physical remote mapping and startup timing were not observed. Unit tests not run.

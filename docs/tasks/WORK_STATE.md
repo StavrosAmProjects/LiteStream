@@ -2,6 +2,8 @@ Last update: 2026-11-19. Read `AGENTS.md` first, then this file.
 
 ## Current task
 
+T-064 (19 Nov 2026): Startup now skips reloading a playlist already present in memory when no scheduled refresh is due. Existing every-start refresh plans migrate to daily; the automatic genre preference is switched off once and classifier work is opt-in. TV Channel Up/Down keys zap live channels, including repeat events. `:app:assembleDebug` and `git diff --check` pass; installed and launched on Android TV at `192.168.1.2:5555`. Physical Hitachi button mapping and startup time require maintainer confirmation. Unit tests not run. See `docs/tasks/T-064-startup-cache-genres-and-channel-keys.md`.
+
 T-063 (19 Nov 2026): Removed the separate pinned country/group shortcut row above Home tiles and its initial-focus priority. Favourite Categories remains intact as the Home category shortcut section. Saved old shortcut values remain stored but are no longer rendered. `:app:assembleDebug` and `git diff --check` pass; installed and launched on Android TV at `192.168.1.2:5555`. Visual confirmation remains with the maintainer. See `docs/tasks/T-063-home-shortcut-row.md`.
 
 T-062 (19 Nov 2026): Country and category rows in the country browser now open Move Up/Down and Pin/Unpin Home actions on long press. TV Channel Up/Down reorder the focused country, category, or channel using existing saved ordering. `:app:assembleDebug` and `git diff --check` pass. Installed and launched on Android TV at `192.168.1.2:5555`; long-press and remote behavior still needs hands-on confirmation. See `docs/tasks/T-062-country-row-actions.md`.

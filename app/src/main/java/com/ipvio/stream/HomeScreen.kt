@@ -117,7 +117,7 @@ private fun buildHome(all: List<Item>, ipvioWanted: Boolean, trend: Set<String>,
     for (i in all) when (i.kind) { Kind.LIVE -> live.add(i); Kind.MOVIE -> movies0.add(i); Kind.SERIES -> series.add(i) }
     // Show the same movie in several versions (HD, 4K, …) only once; the version is chosen on the detail page (source)
     val movies = PlaylistLogic.firstPerKey(movies0) { it.mk + "|" + it.lang }
-    val genresOk = MetaRepo.enabled() && Classifier.supported(movies.size + series.size)
+    val genresOk = ipvioWanted && MetaRepo.enabled() && Classifier.supported(movies.size + series.size)
     val ipvio = ipvioWanted && genresOk
     val movieP = providerGroups(movies)
     val seriesP = providerGroups(series)
@@ -699,10 +699,10 @@ fun HomeScreen(
                                     "tops" -> { if (topS.size >= 8) item(key = "tops") {
                                         ItemsRow("Top bewertet · Serien", topS, cardW, onOpen) { onBrowse(BrowseReq("Top bewertet · Serien", topS, SORT_RATING)) }
                                     } }
-                                    "sg" -> { seriesG.entries.take(3).forEach { (g, l) ->
+                                    "sg" -> { if (AppSettings.ipvioFilter) seriesG.entries.take(3).forEach { (g, l) ->
                                         item(key = "s$g") { ItemsRow("Serien · $g", l, cardW, onOpen) { onBrowse(BrowseReq("Serien · $g", l, SORT_NEW)) } }
                                     } }
-                                    "mg" -> { movieG.entries.take(3).forEach { (g, l) ->
+                                    "mg" -> { if (AppSettings.ipvioFilter) movieG.entries.take(3).forEach { (g, l) ->
                                         item(key = "m$g") { ItemsRow("Filme · $g", l, cardW, onOpen) { onBrowse(BrowseReq("Filme · $g", l, SORT_NEW)) } }
                                     } }
                                 }

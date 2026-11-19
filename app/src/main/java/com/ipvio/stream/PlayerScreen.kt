@@ -1086,10 +1086,20 @@ fun PlayerScreen(req: PlayReq, zapList: List<Item>, liveAll: List<Item>, seriesI
                 if (e.type != KeyEventType.KeyDown) return@onKeyEvent false
                 val k = e.key
                 if (e.nativeKeyEvent.repeatCount > 0) {
+                    if (cur.live && cur.archive == null && panel == Panel.NONE && !showChannels && !showGuide &&
+                        (k == Key.ChannelUp || k == Key.ChannelDown)) {
+                        zap(if (k == Key.ChannelUp) -1 else 1)
+                        return@onKeyEvent true
+                    }
                     if ((k == Key.DirectionLeft || k == Key.DirectionRight) && !cur.live && !controls && panel == Panel.NONE && !showChannels && !showGuide) {
                         repeatSeek(if (k == Key.DirectionRight) 1 else -1)
                     }
                     return@onKeyEvent (k == Key.DirectionLeft || k == Key.DirectionRight)
+                }
+                if (cur.live && cur.archive == null && panel == Panel.NONE && !showChannels && !showGuide &&
+                    (k == Key.ChannelUp || k == Key.ChannelDown)) {
+                    zap(if (k == Key.ChannelUp) -1 else 1)
+                    return@onKeyEvent true
                 }
                 // Boomer mode: only left/right (switch channel); everything else does nothing, no menu opens
                 if (Boomer.enabled && cur.live && cur.archive == null) {

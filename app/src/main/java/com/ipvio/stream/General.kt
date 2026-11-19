@@ -136,6 +136,12 @@ object General {
             if (p.getInt("refresh_mode", DEFAULT_REFRESH_MODE) == 0) e.putInt("refresh_mode", DEFAULT_REFRESH_MODE)
             e.apply()
         }
+        // Existing installs that kept "at every start" still redownloaded on every app launch. Respect the maintainer's request to use the saved copy and refresh daily.
+        if (!p.getBoolean("refresh_daily_v3", false)) {
+            val e = p.edit().putBoolean("refresh_daily_v3", true)
+            if (p.getInt("refresh_mode", DEFAULT_REFRESH_MODE) == 0) e.putInt("refresh_mode", DEFAULT_REFRESH_MODE)
+            e.apply()
+        }
         refreshMode = p.getInt("refresh_mode", DEFAULT_REFRESH_MODE).coerceIn(0, 4)
         refreshInterval = p.getInt("refresh_interval", 12).coerceIn(1, 168)
         refreshHour = p.getInt("refresh_hour", 4).coerceIn(0, 23)
