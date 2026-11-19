@@ -9,6 +9,13 @@ data class HomeCountryShortcut(val code: String, val group: String? = null) {
 }
 
 object HomeCountryShortcutLogic {
+    fun favoriteGroups(favorites: List<String>, groups: Map<String, List<Item>>): List<HomeCountryShortcut> =
+        favorites.distinct().mapNotNull { group ->
+            val code = CountryBrowseLogic.classify(group)
+                ?: groups[group]?.firstOrNull()?.let(CountryBrowseLogic::countryCode)
+            if (code.isNullOrBlank() || code == "?") null else HomeCountryShortcut(code, group)
+        }
+
     fun decode(value: String): List<HomeCountryShortcut> = value.lineSequence().mapNotNull { line ->
         val pair = line.split('|', limit = 2)
         if (pair.size != 2 || !pair[0].matches(Regex("[A-Z]{2}"))) null

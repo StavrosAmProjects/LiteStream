@@ -18,6 +18,7 @@ secrets.properties
 *.keystore
 keystore.properties
 *.apk
+provider-template.txt
 
 # Full-size screenshot originals (the repository uses the smaller .jpg copies)
 docs/screenshots/*.png

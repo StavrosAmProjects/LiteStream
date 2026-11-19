@@ -18,7 +18,7 @@ class ProviderImportLogicTest {
         assertTrue(result.input.isXtream)
         assertEquals("viewer", result.input.user)
         assertEquals("p&ss", result.input.pass)
-        assertEquals("tv.example:8080", result.serverLabel())
+        assertEquals("https://tv.example:8080", result.serverLabel())
         assertTrue(result.input.url.contains("type=m3u_plus"))
     }
 

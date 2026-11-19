@@ -335,13 +335,15 @@ class QuickTile(
 
 /** Equally sized quick-access tiles across the row. */
 @Composable
-fun QuickTiles(tiles: List<QuickTile>) {
+fun QuickTiles(tiles: List<QuickTile>, firstFocus: FocusRequester? = null) {
     Row(
         Modifier.fillMaxWidth().padding(start = RowPadX + dpx(2), end = RowPadX, top = dpx(18))
             .onFocusChanged { if (it.hasFocus) Billboard.cardFocus = false },
         horizontalArrangement = Arrangement.spacedBy(dpx(16))
     ) {
-        tiles.forEach { t -> QuickTileCard(t, Modifier.weight(1f)) }
+        tiles.forEachIndexed { index, t ->
+            QuickTileCard(t, Modifier.weight(1f).then(if (index == 0 && firstFocus != null) Modifier.focusRequester(firstFocus) else Modifier))
+        }
     }
 }
 

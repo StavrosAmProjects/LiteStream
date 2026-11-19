@@ -1,0 +1,67 @@
+name: Sync IPVIO release
+
+on:
+  schedule:
+    - cron: '17 8 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: sync-ipvio-release
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: dev
+          fetch-depth: 0
+
+      - name: Merge the latest stable IPVIO release into a review branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          set -euo pipefail
+
+          tag="$(gh api repos/Emrodev/IPVIO-Stream/releases/latest --jq '.tag_name')"
+          if [ -z "$tag" ] || ! git check-ref-format "refs/tags/$tag"; then
+            echo "::error::The upstream release did not provide a valid Git tag."
+            exit 1
+          fi
+
+          git fetch --no-tags https://github.com/Emrodev/IPVIO-Stream.git \
+            "refs/tags/$tag:refs/tags/ipvio/$tag"
+          upstream_commit="$(git rev-parse "refs/tags/ipvio/$tag^{commit}")"
+
+          if git merge-base --is-ancestor "$upstream_commit" origin/dev; then
+            echo "IPVIO $tag is already included in dev."
+            exit 0
+          fi
+
+          branch="automation/ipvio-release-sync"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch --create "$branch" origin/dev
+          git merge --no-ff --no-edit "$upstream_commit"
+          git push --force origin "HEAD:refs/heads/$branch"
+
+          body="$(printf '%s\n\n%s\n\n%s' \
+            "This pull request brings the source history through the stable IPVIO release **$tag** into LiteStream's development branch." \
+            "Review the upstream changes for conflicts with LiteStream's TV UX, branding, package identity, update feed, and local provider flows. Resolve any conflicts and run the project checks before merging. This workflow does not merge the pull request automatically." \
+            "[Upstream release notes](https://github.com/Emrodev/IPVIO-Stream/releases/tag/$tag)")"
+          number="$(gh pr list --base dev --head "$OWNER:$branch" --state all --json number --jq '.[0].number // empty')"
+          if [ -n "$number" ]; then
+            state="$(gh pr view "$number" --json state --jq '.state')"
+            if [ "$state" = "CLOSED" ]; then gh pr reopen "$number"; fi
+            gh pr edit "$number" --title "Sync IPVIO release $tag" --body "$body"
+          else
+            gh pr create --repo "$REPOSITORY" --base dev --head "$branch" \
+              --title "Sync IPVIO release $tag" --body "$body"
+          fi

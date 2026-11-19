@@ -554,6 +554,8 @@ class PhoneImport(private val onReceive: (PhoneInput) -> Unit, private val setup
                 } else html(404, PhoneImportLogic.message(li, "bad"))
             }
         }
+        // A rejected POST may still have unread body bytes; discard them so closing the one-request connection preserves the HTTP reply.
+        runCatching { s.shutdownInput() }
         val out = s.getOutputStream()
         val reason = when (r.status) { 200 -> "OK"; 400 -> "Bad Request"; 403 -> "Forbidden"; 404 -> "Not Found"; 409 -> "Conflict"; 410 -> "Gone"; 413 -> "Payload Too Large"; 429 -> "Too Many Requests"; else -> "Error" }
         out.write(("HTTP/1.1 ${r.status} $reason\r\nContent-Type: ${r.type}\r\nCache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\n" +

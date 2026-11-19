@@ -10,16 +10,16 @@ class Round22Test {
     private fun name(title: String, ch: String = "") = SportLogic.catName(SportLogic.categoryOf(title, ch))
 
     @Test fun sportarten() {
-        assertEquals("Fußball", name("Bundesliga live: Bayern – Dortmund"))
+        assertEquals("Football", name("Bundesliga live: Bayern – Dortmund"))
         assertEquals("American Football", name("NFL Sunday Night Football"))
         assertEquals("Basketball", name("NBA: Lakers vs Celtics"))
-        assertEquals("Eishockey", name("NHL Highlights"))
+        assertEquals("Ice Hockey", name("NHL Highlights"))
         assertEquals("Tennis", name("Wimbledon Finale"))
         assertEquals("Motorsport", name("Formel 1: Großer Preis von Brasilien"))
-        assertEquals("Kampfsport", name("UFC 300"))
-        assertEquals("Sonstige", name("Livesport", "Sport 1"))
+        assertEquals("Combat Sports", name("UFC 300"))
+        assertEquals("Other", name("Livesport", "Sport 1"))
         // the channel name decides if the title gives nothing away
-        assertEquals("Fußball", name("Live", "Sky Sport Bundesliga"))
+        assertEquals("Football", name("Live", "Sky Sport Bundesliga"))
         // the title takes precedence over the channel
         assertEquals("Basketball", name("NBA live", "Sky Sport Bundesliga"))
     }

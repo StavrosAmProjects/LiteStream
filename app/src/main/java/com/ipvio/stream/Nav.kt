@@ -58,7 +58,7 @@ object DetailReturn {
 }
 
 object HomeFlags {
-    var heroDone = false
+    var initialFocusDone = false
 }
 
 object NavState {

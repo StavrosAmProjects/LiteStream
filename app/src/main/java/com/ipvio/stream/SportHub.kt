@@ -99,7 +99,10 @@ private object HubMemory {
     var day = 0
 }
 
-private val HUB_TABS = listOf("Übersicht", "Live", "Spielplan", "Ligen", "Teams", "Favoriten", "Sender")
+private val HUB_TABS = listOf("Übersicht", "Live", "Spielplan", "Ligen", "Teams", "Favoriten", "Sender", "Sport24 TV")
+
+/** Select the Sport24 schedule before opening the hub from its Home shortcut. */
+fun openSport24Tab() { HubMemory.tab = HUB_TABS.lastIndex }
 
 /**
  * Sports Hub: Overview, Live, Schedule, Leagues, Teams, Favorites and the channel area (previous sports page).
@@ -169,14 +172,14 @@ fun SportHub(live: List<Item>, onPlay: (Item, List<Item>) -> Unit) {
             item(key = "scoreov") { FilterPill("Score-Overlay", SportAlerts.miniOn, aicon = AIcon.Live) { scoreDlg = true } }
             itemsIndexed(HUB_TABS) { i, t ->
                 // The chosen tab is where the focus lands when coming from the sidebar (the channel tab has its own target)
-                val base = if (i == tab && tab != 6) Modifier.focusRequester(ContentFocus.req) else Modifier.trackFocus()
+                val base = if (i == tab && tab < 6) Modifier.focusRequester(ContentFocus.req) else Modifier.trackFocus()
                 // Live tab: Down goes to the sport filter first (not to the competition row below it)
                 FilterPill(t, tab == i, if (tab == 1) base.focusProperties { down = sportReq } else base) {
                     tab = i; HubMemory.tab = i
                 }
             }
         }
-        if (!General.sportLive && tab != 6) {
+        if (!General.sportLive && tab < 6) {
             HubEmpty(AIcon.Live, "Live-Ergebnisse sind aus", "Ergebnisse, Tabellen und Spielpläne kommen von ESPN (inoffizielle Quelle). Schalte sie ein, um den Sports Hub zu nutzen.",
                 "Einschalten") { General.setSportLive(ctx, true) }
         } else when (tab) {
@@ -186,7 +189,8 @@ fun SportHub(live: List<Item>, onPlay: (Item, List<Item>) -> Unit) {
             3 -> HubLeagues(hub)
             4 -> HubTeams(hub)
             5 -> HubFavorites(feed, hub)
-            else -> SportTab(live, onPlay)
+            6 -> SportTab(live, onPlay)
+            else -> Sport24Tab(hub)
         }
     }
     HubFocusRestore(nav)

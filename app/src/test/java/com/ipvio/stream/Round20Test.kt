@@ -214,7 +214,7 @@ class PhoneTransferTest {
         var got: PhoneInput? = null
         var savedText: String? = null
         var restored: String? = null
-        val pi = PhoneImport { got = it }
+        val pi = PhoneImport(onReceive = { got = it })
         pi.uploadDir = dir
         pi.saveUpload = { name, f -> savedText = f.readText(); "file:///x/imports/$name" }
         pi.backup = { pl -> "{\"v\":1,\"pl\":$pl}" }

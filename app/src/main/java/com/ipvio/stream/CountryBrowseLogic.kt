@@ -9,7 +9,7 @@ data class BrowseCountry(val code: String, val name: String, val groups: List<Br
 object CountryBrowseLogic {
     private val separators = Regex("[|/:;,_\\-]+")
     private val words = Regex("[^\\p{L}\\p{N}]+")
-    private val flags = Regex("(?:\\uD83C[\\uDDE6-\\uDDFF]){2}")
+    private val flags = Regex("[\\x{1F1E6}-\\x{1F1FF}]{2}")
     private val shortCodes = setOf("CY", "GR", "UK", "GB")
     private val aliases: Map<String, String> by lazy {
         val result = HashMap<String, String>()
@@ -84,7 +84,7 @@ object CountryBrowseLogic {
     }
 
     private fun flagCode(flag: String): String? {
-        if (flag.length != 4) return null
+        if (flag.codePointCount(0, flag.length) != 2) return null
         val a = Character.codePointAt(flag, 0)
         val b = Character.codePointAt(flag, Character.charCount(a))
         if (a !in 0x1F1E6..0x1F1FF || b !in 0x1F1E6..0x1F1FF) return null

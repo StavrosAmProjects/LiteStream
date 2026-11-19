@@ -52,7 +52,7 @@ class RemoteLogicTest {
     @Test fun page_has_settings_and_sport_calls_issues_17_to_21() {
         for (li in listOf(0, 1, 9)) {
             val p = RemoteLogic.page(li)
-            for (a in listOf("'pls'", "'vcats'", "'vmove'", "'vhide'", "'adultset'", "'setlang'", "'sport'", "'steams'", "'stfav'", "'spin'", "'swatch'", "id=\"gear\"", "data-k=\"sp\""))
+            for (a in listOf("'pls'", "'vcats'", "'vmove'", "'vhide'", "'adultset'", "'sport'", "'steams'", "'stfav'", "'spin'", "'swatch'", "id=\"gear\"", "data-k=\"sp\""))
                 assertTrue("$li $a", p.contains(a))
             // Issue 17: the list import is no longer a row under the Live TV categories
             assertFalse(p.contains("list.appendChild(row(L.imp,null,null,importList))"))

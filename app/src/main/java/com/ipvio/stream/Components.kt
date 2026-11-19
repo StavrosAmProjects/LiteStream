@@ -218,7 +218,7 @@ fun PosterCard(
 }
 
 @Composable
-fun LiveCard(item: Item, onClick: () -> Unit, modifier: Modifier = Modifier, onLong: (() -> Unit)? = null) {
+fun LiveCard(item: Item, onClick: () -> Unit, modifier: Modifier = Modifier, onLong: (() -> Unit)? = null, compact: Boolean = false) {
     val ctx = LocalContext.current
     var f by remember { mutableStateOf(false) }
     val s by animateFloatAsState(if (f) focusScale(1.08f) else 1f, label = "live")
@@ -235,7 +235,7 @@ fun LiveCard(item: Item, onClick: () -> Unit, modifier: Modifier = Modifier, onL
             .clickable(onClick = onClick)
     ) {
         Box(
-            Modifier.fillMaxWidth().height(110.dp)
+            Modifier.fillMaxWidth().height(if (compact) 76.dp else 110.dp)
                 .background(Brush.linearGradient(listOf(colorFor(item).copy(alpha = .8f), Surf2))),
             contentAlignment = Alignment.Center
         ) {
@@ -248,9 +248,9 @@ fun LiveCard(item: Item, onClick: () -> Unit, modifier: Modifier = Modifier, onL
             else qualityOf(item)?.let { Box(Modifier.align(Alignment.TopEnd).padding(8.dp)) { QualityBadge(it) } }
             if (DeadLinks.isDead(item.url)) AppIcon(AIcon.Warning, DS.Gold, Modifier.align(Alignment.BottomEnd).padding(8.dp), 20.dp)
         }
-        Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
-            Text(raw = true, text = item.title, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(raw = true, text = item.group, color = Muted, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Column(Modifier.padding(horizontal = if (compact) 10.dp else 14.dp, vertical = if (compact) 6.dp else 10.dp)) {
+            Text(raw = true, text = item.title, color = Color.White, fontSize = if (compact) 14.sp else 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(raw = true, text = item.group, color = Muted, fontSize = if (compact) 12.sp else 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }

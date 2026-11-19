@@ -8,6 +8,10 @@ LiteStream TV is a TV-first fork of IPVIO Stream for **Android TV, Google TV and
 
 This fork is based on [IPVIO Stream](https://github.com/Emrodev/IPVIO-Stream). It preserves the upstream GPL-3.0 notices and third-party notices.
 
+## Project authorship and upstream thanks
+
+LiteStream TV's product direction, LiteStream branding, TV-first user experience, and fork-specific improvements are led and maintained by **[Stavros Ambizas & Co LLC](https://github.com/StavrosAmProjects)**. This work builds on the mature IPTV and playback foundation created by **[Emrodev](https://github.com/Emrodev) and the IPVIO contributors**; we are deeply grateful for their original work. The inherited code remains under GPL-3.0, with upstream copyright and license notices preserved.
+
 ## Install
 
 **LiteStream TV APK release is not configured yet.** The IPVIO release APK is a different app and must not be installed as this fork.
@@ -37,7 +41,7 @@ This fork is based on [IPVIO Stream](https://github.com/Emrodev/IPVIO-Stream). I
 - Categories, favourites and your own channel lists
 - TV guide, catch-up/archive ("from the beginning"), reminders with notification
 - Rewind live TV with an on-device buffer, record the current show (internal storage or USB)
-- Sports section: sports on now and coming up, all sports channels
+- Sports section: live sports, fixtures matched to your playlist and EPG, plus the Sport24.gr TV schedule when available; channel matches can be corrected manually
 
 **Player** (Media3 / ExoPlayer)
 - Audio and subtitle selection (remembered per title), preferred languages, subtitle style
@@ -142,6 +146,7 @@ IPVIO Stream stays free, ad-free and open source. Donations are voluntary and do
 ## License
 
 Copyright (C) 2026 IPVIO Stream contributors
+Copyright (C) 2026 Stavros Ambizas & Co LLC (LiteStream-specific branding, product direction, and modifications)
 
 LiteStream TV is distributed under the **GNU General Public License version 3** (see [LICENSE](LICENSE)), preserving IPVIO's license and notices. The declared Jellyfin Media3 FFmpeg decoder dependency is GPL-3.0; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for the direct dependency and font inventory. Transitive dependency licenses still need verification from the resolved release build.
 

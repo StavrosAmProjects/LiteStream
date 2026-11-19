@@ -81,11 +81,11 @@ open class BlockLayout(private val prefName: String, val blocks: List<LayoutBloc
 }
 
 private val HOME_BLOCKS = listOf(
-    LayoutBlock("hero", "Große Slideshow", "Großes Bild oben mit aktuellen Filmen und Serien", fixed = true),
     LayoutBlock("tiles", "Kacheln", "Live TV, Filme, Serien, Favoriten und Meine Liste"),
-    LayoutBlock("resume", "Weiterschauen", "Dort weitermachen, wo du aufgehört hast"),
     LayoutBlock("favch", "Meine Sender", "Deine Live-Favoriten als Reihe"),
     LayoutBlock("chnow", "Live TV gerade", "Was jetzt auf deinen Sendern läuft"),
+    LayoutBlock("hero", "Große Slideshow", "Großes Bild mit aktuellen Filmen und Serien"),
+    LayoutBlock("resume", "Weiterschauen", "Dort weitermachen, wo du aufgehört hast"),
     LayoutBlock("trend", "Top 10 heute", "Die beliebtesten Titel des Tages"),
     LayoutBlock("because", "Weil du etwas geschaut hast", "Ähnliche Titel zu deinem letzten Film oder deiner letzten Serie"),
     LayoutBlock("wl", "Meine Liste", "Titel, die du dir gemerkt hast"),

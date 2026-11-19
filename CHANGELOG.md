@@ -1,6 +1,16 @@
 # Changelog
 
 ## Unreleased
+- Keep build and PR checks off ordinary work-branch pushes; retain checks when a PR opens and preserve manual builds and release triggers.
+- Add a Home shortcut to Sport24's daily Greek sports TV schedule, with automatic and manual playlist-channel matching.
+- Credit Stavros Ambizas & Co LLC for LiteStream's fork-specific product and UX work, while thanking Emrodev and IPVIO contributors and retaining upstream notices.
+- Add a daily/manual IPVIO stable-release source sync that opens a review pull request into `dev` without auto-merging or distributing upstream APKs.
+- Put Home's personal TV shortcuts and primary navigation before a shorter, movable VOD hero; make the banner movable and hideable, and focus the first favourite shortcut (or Live TV) on entry.
+- Move saved Live TV category favourites directly under the playlist selector; show them as country-flag shortcuts on Home and make country browsing more compact with page scrolling.
+- Put provider channel groups ahead of automatically detected smart playlists in the Live TV category list.
+- Recognize country flag emoji in provider labels and return clean HTTP responses for rejected local setup/upload requests.
+- Add a saved Cards/List choice to the Live TV start view, reduce Live TV card size, and shorten the Home featured area so more useful choices are visible sooner.
+- Replace the phone Live TV globe-only rail with a scrollable country-flag rail that filters the merged channel list; retain the detailed country browser and show confirmation when pinning a country or group to Home.
 - Make phone Live TV browsing a full-width channel list with flag-led navigation and a channel detail page before Watch; add device-wide merged channel ordering and Greek smart-playlist matching.
 - Add a Home shortcut to the existing Sports hub, which matches fixtures to channels using the user's IPTV channel list and EPG.
 - Fix touch selection of Live TV categories: tapping now switches to the tapped category before opening its channels.

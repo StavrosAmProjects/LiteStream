@@ -2,9 +2,9 @@
 
 ## Current state
 
-LiteStream TV uses package ID `com.litestream.tv` and starts at version `0.1.0` / version code `1`. It installs beside IPVIO Stream, so its app data is separate. It does not query IPVIO's GitHub releases. In-app updates stay off until a LiteStream TV `update.json` address is entered under Settings > About > App update.
+LiteStream TV uses package ID `com.litestream.tv` and starts at version `0.1.0` / version code `1`. It installs beside IPVIO Stream, so its app data is separate. The `Sync IPVIO release` workflow checks for upstream stable releases daily and on demand, then opens or updates a review pull request into `dev`. It never merges upstream changes automatically. This is source synchronization for maintainers; it does not install upstream IPVIO APKs on LiteStream TVs.
 
-The GitHub release repository for this fork has not been configured in this checkout. Do not use the upstream IPVIO APK or release URL for LiteStream TV.
+In-app updates must use signed LiteStream TV releases from this repository. Do not use the upstream IPVIO APK or release URL: its package ID and signing identity do not match LiteStream TV. The app's update URL remains disabled until the LiteStream release feed is configured and the first signed release is available.
 
 ## Move data from IPVIO Stream
 
@@ -30,7 +30,7 @@ keyPassword=...
 
 The release workflow expects signing values in repository secrets. The workflow must run only in the new fork repository and publish `LiteStream-TV.apk` with `update.json`.
 
-## Configure updates after the repository exists
+## Configure updates after the first LiteStream release
 
 1. Build a signed release with a version code higher than the previous LiteStream TV release.
 2. Publish `LiteStream-TV.apk` and `update.json` in the same GitHub release.
@@ -51,7 +51,11 @@ Example:
 }
 ```
 
-The app verifies the downloaded package name, version and signer before opening Android's installer. Keep the update address blank until the fork has its own release; a blank address disables update checks.
+The app verifies the downloaded package name, version and signer before opening Android's installer. Keep the update address blank until the fork has its own release; a blank address disables update checks. The currently installed debug build uses package ID `com.litestream.tv.test`, so Android cannot update it in place with the production package `com.litestream.tv`; install the first production release separately, then use in-app updates for later releases.
+
+## Upstream source synchronization
+
+The scheduled workflow reads the latest non-prerelease release tag from `Emrodev/IPVIO-Stream`, merges that tag into a bot branch based on `dev`, and opens or updates a pull request. A merge conflict stops the workflow before the branch is pushed. Review every upstream change for LiteStream-specific behavior, run the normal PR checks, and merge manually. The workflow preserves upstream Git history and does not copy or publish the upstream APK.
 
 ## Google Drive
 

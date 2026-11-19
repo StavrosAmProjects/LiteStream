@@ -61,7 +61,7 @@ class PhoneImportTest {
 
     @Test fun serverNimmtNurMitRichtigemCodeAn() {
         var got: PhoneInput? = null
-        val pi = PhoneImport { got = it }
+        val pi = PhoneImport(onReceive = { got = it })
         assertTrue(pi.start())
         try {
             assertTrue(post(pi.port, "code=0000&url=http%3A%2F%2Fa%2Fb.m3u").startsWith("HTTP/1.1 403"))
@@ -74,7 +74,7 @@ class PhoneImportTest {
     @Test fun setupTokenStagesCredentialsAndRejectsReplay() {
         val received = java.util.concurrent.CountDownLatch(1)
         var got: PhoneInput? = null
-        val pi = PhoneImport { }
+        val pi = PhoneImport(onReceive = {})
         pi.onSetupReceive = { got = it; received.countDown() }
         val route = pi.startSetup()!!
         try {
@@ -122,7 +122,7 @@ class PhoneImportTest {
     }
 
     @Test fun sperreNachFuenfFehlversuchen() {
-        val pi = PhoneImport { }
+        val pi = PhoneImport(onReceive = {})
         assertTrue(pi.start())
         try {
             repeat(5) { post(pi.port, "code=x&url=http%3A%2F%2Fa") }
@@ -141,7 +141,7 @@ class PhoneImportTest {
 
     /** Server like the phone search: [PhoneImport.api] is set, which must not bypass the code any more. */
     private fun listServer(received: MutableList<Pair<String, ByteArray>>): PhoneImport {
-        val pi = PhoneImport { }
+        val pi = PhoneImport(onReceive = {})
         pi.onList = { name, bytes -> received.add(name to bytes) }
         pi.api = { _, _ -> null }
         return pi

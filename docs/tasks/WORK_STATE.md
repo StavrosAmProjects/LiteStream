@@ -1,6 +1,32 @@
-Last update: 2026-11-17. Read `AGENTS.md` first, then this file.
+Last update: 2026-11-19. Read `AGENTS.md` first, then this file.
 
 ## Current task
+
+T-057 (19 Nov 2026): Added a Home tile that enters the Sport24 TV tab in the existing Sports hub. The supplied parser matches the day's broadcasts against the installed live catalogue and stores manual channel mappings per profile; profile deletion clears those mappings. README credits LiteStream's fork-specific work to Stavros Ambizas & Co LLC and thanks Emrodev/IPVIO contributors. PR checks now run only when opened, reopened, or marked ready; later pushes to the work branch do not trigger them. YAML/source-level checks only; no Gradle build or device test. GitHub was unreachable, so nothing was pushed. Date selection remains open because no supported date endpoint was established. See `docs/tasks/T-057-sport24-home-and-attribution.md`.
+
+## Previous task
+
+T-056 (19 Nov 2026): Added a daily and manually triggered GitHub Actions workflow that merges the latest stable IPVIO release source into a bot branch and opens/updates a review PR into `dev`. It never auto-merges and does not publish the upstream APK. `git diff --check` passed. GitHub was unreachable here, so the workflow was not run or verified against remote branches/settings. Not committed, pushed, or merged. See `docs/tasks/T-056-upstream-release-sync.md`.
+
+## Previous task
+
+T-055 (17 Nov 2026): Reordered Home so personal TV shortcuts and primary navigation appear before a shorter, movable VOD hero; initial focus goes to the first favourite category, otherwise pinned country, otherwise Live TV. Existing saved Home row order remains authoritative. Source and docs updated; `git diff --check` passes. No build/device validation was run. See `docs/tasks/T-055-home-tv-priority.md`.
+
+T-054 (17 Nov 2026): Moved saved category favourites immediately below the provider selector, exposed them as ordered country-flag group shortcuts on Home, added country flags to the country-first browser, and compact/page-scroll its category column. Full JVM suite (433 tests) and debug build passed; installed on the Android TV over wireless ADB. On TV, Home showed GR|Sports and GR|General flag shortcuts, and Live TV showed both favourites immediately below the playlist selector. Country browser flags were visually confirmed. Local `secrets.properties` contains the TMDB and OMDB keys, is ignored by Git, and Gradle embedded the configured keys into the installed build. The app uses the TMDB API key; it does not use the TMDB read access token. See `docs/tasks/T-054-category-favourites-and-country-browse.md`.
+
+T-053 (17 Nov 2026): Provider channel groups were moved ahead of automatically detected smart playlists in Live TV, keeping the provider selector at the top. See `docs/tasks/T-053-live-category-order-and-home-favourites.md`.
+
+T-052 (17 Nov 2026): Verified install readiness. Fixed country-flag classification and HTTP reset behavior on rejected local setup/upload requests; refreshed stale test constructor and English-label expectations. `git diff --check` passed; all 432 JVM tests passed; debug APK assembled and v2 signature verified. Package `com.litestream.tv.test`, version `0.1.0`, min API 24, target API 37, includes Leanback launcher. Installed/launched on connected phone `0fe02816` and TV; TV launcher tile was visible. TV playback was observed on Nova Sports Prime. See `docs/tasks/T-052-tv-install-readiness.md`.
+
+## Previous task
+
+T-051 (17 Nov 2026): Added a profile-saved Cards/List choice to the Live TV start view, compacted its cards, and shortened the featured area on Home and title tabs so more choices appear sooner. List mode reuses `ChannelLine` and shows the visible merged live catalogue. Playback and provider records are unchanged. `git diff --check`, all 432 JVM tests, and `:app:assembleDebug` passed. Android TV focus/layout checks remain open. See `docs/tasks/T-051-live-home-density.md`.
+
+## Previous task
+
+T-050 (17 Nov 2026): Replaced the phone Live TV globe-only rail with a scrollable country flag rail using the existing country classifier and saved ordering. Selecting a flag filters the merged channel list; the globe opens the existing country/category browser and All restores the full list. Pin country/group actions now show confirmation. No provider catalogue or saved filter data changes. `git diff --check` and `:app:assembleDebug` passed; APK installed and launched on phone `0fe02816`. ADB disconnected before the Live TV visual check, so phone interaction and Android TV D-pad checks remain open. See `docs/tasks/T-050-live-country-flag-rail.md`.
+
+## Earlier work
 
 T-048/T-049 (17 Nov 2026): Implemented phone Live TV layout with a 50dp flag rail, channel-first full-width browsing, full-screen details before Watch, category/country picker, and a long-press flag menu for moving the selected channel in the merged order. Compact move operations are saved in the new unscoped `ipvio_live_order` preference so they are shared across profiles; provider records and profile selections are untouched. Existing country/group rows are sorted through the resulting order. Smart genre matching now folds accents and recognizes Greek sports, movies, documentaries, kids, news and music terms. Added a Sports on TV Home quick tile that opens the existing Sports hub; that hub already combines fixtures with the user's channel names and EPG. Sport24 page is readable in browser search, but direct app-style request returned HTTP 403 and no documented feed was found, so this build does not scrape it; sport matching depends on the installed provider's EPG. Tests added for global ordering and Greek labels, not run. Debug build succeeded and was installed/launched on the USB-connected OnePlus AC2003; home screen visible. Live TV detail flow, reorder gesture, Sports hub mapping and Android TV D-pad checks remain pending. See `docs/tasks/T-048-phone-live-tv-ux.md` and `docs/tasks/T-049-sports-on-tv-home-tile.md`.
 

@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -38,6 +39,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import coil.compose.AsyncImage
 
 object ZapContext {
@@ -149,6 +152,7 @@ fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: Li
     var countryBrowse by remember { mutableStateOf(false) }
     var phoneNavOpen by remember { mutableStateOf(false) }
     var phoneSelected by remember { mutableStateOf<Item?>(null) }
+    var phoneCountry by remember { mutableStateOf<String?>(null) }
     var channelOrderMenu by remember { mutableStateOf(false) }
     var lastChannel by remember { mutableStateOf<Item?>(null) }
     var countryFilterEditor by remember { mutableStateOf(false) }
@@ -167,7 +171,7 @@ fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: Li
         value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { Recorder.list(ctx).map { Recorder.itemOf(it) } }
         LiveRecCache.items = value
     }
-    val names = (if (PlaylistStore.lists.size > 1) listOf("PL") else emptyList()) + listOf("COUNTRIES", "HOME", "GUIDE", "SEARCH", "MULTI", FAV_CAT) + (if (recs.isNotEmpty()) listOf("REC") else emptyList()) + myLists.map { ChannelListLogic.key(it) } + listOf("NEW", "ALL") + genres.keys.filter { it !in HiddenCats.list } + favCats + CatOrder.sorted(CatOrder.LIVE, groups.keys.toList()).filter { it !in favCats && it !in HiddenCats.list } + (if (HiddenCats.list.any { it in groups || it in genres }) listOf("HIDDEN") else emptyList())
+    val names = (if (PlaylistStore.lists.size > 1) listOf("PL") else emptyList()) + favCats + listOf("COUNTRIES", "HOME", "GUIDE", "SEARCH", "MULTI", FAV_CAT) + (if (recs.isNotEmpty()) listOf("REC") else emptyList()) + myLists.map { ChannelListLogic.key(it) } + listOf("NEW", "ALL") + CatOrder.sorted(CatOrder.LIVE, groups.keys.toList()).filter { it !in favCats && it !in HiddenCats.list } + genres.keys.filter { it !in HiddenCats.list } + (if (HiddenCats.list.any { it in groups || it in genres }) listOf("HIDDEN") else emptyList())
     val catKeys = remember(names) { val seen = HashSet<String>(); names.mapIndexed { i, n -> if (seen.add(n)) n else "$n#$i" } }
     val curList = ChannelLists.byKey(sel)
     // Own list currently being filled (OK on a channel adds it); declared early because bundling depends on it
@@ -184,7 +188,11 @@ fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: Li
         value = if (addTo != null && query.isBlank()) live
             else kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) { ChannelSearch.filter(live, query) }
     }
+    val phoneCountryChannels = remember(live, phoneCountry) {
+        phoneCountry?.let { code -> live.filter { CountryBrowseLogic.countryCode(it) == code } }
+    }
     val rawList = when {
+        phoneCountryChannels != null -> phoneCountryChannels
         sel == FAV_CAT -> favs
         sel == "ALL" -> live
         sel == "SEARCH" -> searchRes
@@ -293,7 +301,6 @@ fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: Li
     val config = LocalConfiguration.current
     val phoneUi = config.screenWidthDp < 900 || config.screenHeightDp > config.screenWidthDp
     val flagChannel = lastChannel ?: focusedState.value ?: list.firstOrNull()
-    val activeFlag = flagChannel?.let { CountryBrowseLogic.flagEmoji(CountryBrowseLogic.countryCode(it)) } ?: "🌍"
     fun saveMovedChannel(item: Item, delta: Int) {
         manualOrder = LiveChannelOrderLogic.move(liveAll, manualOrder, LiveChannelOrderLogic.key(item), delta)
         val encoded = org.json.JSONArray().apply { manualOrder.forEach { put(org.json.JSONArray().put(it.key).put(it.delta)) } }
@@ -315,15 +322,27 @@ fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: Li
         FocusedBackdrop(focusedState, Modifier.fillMaxSize())
         Row(Modifier.fillMaxSize().padding(top = 20.dp)) {
             if (phoneUi) {
-                Column(Modifier.width(50.dp).fillMaxHeight().padding(start = 4.dp, top = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Box(Modifier.size(42.dp).clip(RoundedCornerShape(14.dp)).background(Color(0x20FFFFFF))
-                        .combinedClickable(onClick = { phoneNavOpen = true }, onLongClick = { channelOrderMenu = true }), contentAlignment = Alignment.Center) {
-                        Text(raw = true, text = activeFlag, color = Color.White, fontSize = 23.sp)
+                val countries = remember(live, CountryBrowseOrder.version) { CountryBrowseOrder.sorted(CountryBrowseLogic.project(live)) }
+                LazyColumn(Modifier.width(50.dp).fillMaxHeight().padding(start = 4.dp, top = 8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    item(key = "all-countries") {
+                        CountryFlagButton("🌍", false, "Browse countries and categories", onClick = { phoneNavOpen = true }, onLongClick = { channelOrderMenu = true })
                     }
-                    if (channelOrderMenu) OptionPopup(listOf("Move channel up", "Move channel down"), -1, { channelOrderMenu = false }) { move ->
-                        channelOrderMenu = false
-                        flagChannel?.let { saveMovedChannel(it, if (move == 0) -1 else 1) }
+                    item(key = "all-channels") {
+                        CountryFlagButton("All", phoneCountry == null, "All channels", onClick = {
+                            phoneCountry = null
+                            sel = "ALL"
+                        }, onLongClick = { channelOrderMenu = true })
                     }
+                    itemsIndexed(countries, key = { _, country -> country.code }) { _, country ->
+                        CountryFlagButton(CountryBrowseLogic.flagEmoji(country.code), phoneCountry == country.code, country.name, onClick = {
+                            phoneCountry = country.code
+                            sel = "ALL"
+                        }, onLongClick = { channelOrderMenu = true })
+                    }
+                }
+                if (channelOrderMenu) OptionPopup(listOf("Move channel up", "Move channel down"), -1, { channelOrderMenu = false }) { move ->
+                    channelOrderMenu = false
+                    flagChannel?.let { saveMovedChannel(it, if (move == 0) -1 else 1) }
                 }
             } else LazyColumn(Modifier.width(270.dp).fillMaxHeight().padding(start = 24.dp, end = 8.dp), state = catState, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 // Stable keys: after moving a category, focus and menu state move with the row (duplicates get an index suffix)
@@ -640,6 +659,7 @@ fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: Li
                         Text(label, color = Color.White, fontSize = 18.sp, modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
                             .background(Color(0x1FFFFFFF)).clickable {
                                 phoneNavOpen = false
+                                phoneCountry = null
                                 if (name == "COUNTRIES") countryBrowse = true else tapCategory(name)
                             }.padding(16.dp))
                     }
@@ -677,6 +697,23 @@ fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: Li
                 }
             )
         }
+    }
+}
+
+@Composable
+private fun CountryFlagButton(flag: String, selected: Boolean, countryName: String, onClick: () -> Unit, onLongClick: () -> Unit) {
+    var focused by remember { mutableStateOf(false) }
+    Box(
+        Modifier.size(42.dp).clip(RoundedCornerShape(12.dp))
+            .background(if (selected) Color(0xFF315C88) else Color(0x20FFFFFF))
+            .border(if (focused) 3.dp else if (selected) 2.dp else 1.dp, if (focused) Color.White else if (selected) Accent1 else Color(0x30FFFFFF), RoundedCornerShape(12.dp))
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
+            .focusable()
+            .onFocusChanged { focused = it.isFocused }
+            .semantics { contentDescription = countryName },
+        contentAlignment = Alignment.Center
+    ) {
+        Text(raw = true, text = flag, color = Color.White, fontSize = if (flag.length > 2) 13.sp else 22.sp, fontWeight = FontWeight.Bold, maxLines = 1)
     }
 }
 
@@ -892,6 +929,7 @@ fun ReminderCard(r: Reminder, modifier: Modifier, onClose: () -> Unit, onSwitch:
 @Composable
 private fun LiveHome(live: List<Item>, genres: Map<String, List<Item>>, favs: List<Item>, firstReq: FocusRequester, onOpen: (Item, List<Item>) -> Unit) {
     val ctx = androidx.compose.ui.platform.LocalContext.current
+    var listMode by remember(ctx) { mutableStateOf(Profiles.sp(ctx, "ipvio_live").getBoolean("home_list_view", false)) }
     val byId = remember(live) { live.associateBy { it.id } }
     val recent = remember(live, History.ids.size) { Parental.filter(History.ids.mapNotNull { byId[it] }).take(24) }
     val rows = ArrayList<Pair<String, List<Item>>>()
@@ -900,17 +938,36 @@ private fun LiveHome(live: List<Item>, genres: Map<String, List<Item>>, favs: Li
     for ((k, l) in genres) rows.add((LiveGenre.byKey(k)?.label ?: k) to l.take(40))
     if (rows.isEmpty()) rows.add("Alle Sender" to live.take(40))
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 48.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        itemsIndexed(rows, key = { _, r -> r.first }) { ri, r ->
-            Column {
-                Text(r.first, color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 8.dp, top = 12.dp))
-                androidx.compose.foundation.lazy.LazyRow(
-                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 14.dp),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    itemsIndexed(r.second, key = { i, c -> c.id + "#" + i }) { i, c ->
-                        // W-009: in "Recently watched" a long OK removes the channel from the history (e.g. adult channels)
-                        val onLong: (() -> Unit)? = if (r.second === recent) ({ removeRecent(ctx, c) }) else null
-                        LiveCard(c, { onOpen(c, r.second) }, Modifier.width(260.dp).then(if (ri == 0 && i == 0) Modifier.focusRequester(firstReq) else Modifier), onLong)
+        item(key = "live-home-view") {
+            Row(Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(if (listMode) "All channels · ${live.size}" else "Live TV", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                PillButton("Cards", light = !listMode) {
+                    listMode = false
+                    Profiles.sp(ctx, "ipvio_live").edit().putBoolean("home_list_view", false).apply()
+                }
+                PillButton("List", light = listMode) {
+                    listMode = true
+                    Profiles.sp(ctx, "ipvio_live").edit().putBoolean("home_list_view", true).apply()
+                }
+            }
+        }
+        if (listMode) {
+            itemsIndexed(live, key = { i, c -> "${c.src}|${c.id}#$i" }) { i, c ->
+                ChannelLine(c, (if (i == 0) Modifier.focusRequester(firstReq) else Modifier), null, {}, onClick = { onOpen(c, live) })
+            }
+        } else {
+            itemsIndexed(rows, key = { _, r -> r.first }) { ri, r ->
+                Column {
+                    Text(r.first, color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 8.dp, top = 12.dp))
+                    androidx.compose.foundation.lazy.LazyRow(
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        itemsIndexed(r.second, key = { i, c -> c.id + "#" + i }) { i, c ->
+                            // W-009: in "Recently watched" a long OK removes the channel from the history (e.g. adult channels)
+                            val onLong: (() -> Unit)? = if (r.second === recent) ({ removeRecent(ctx, c) }) else null
+                            LiveCard(c, { onOpen(c, r.second) }, Modifier.width(190.dp).then(if (ri == 0 && i == 0) Modifier.focusRequester(firstReq) else Modifier), onLong, compact = true)
+                        }
                     }
                 }
             }
