@@ -1,12 +1,12 @@
 # Architecture
 
-arc42 overview for version 1.4.2 (versionCode 7). Counts, versions, R8, CI and release were checked against branch `dev` on 15 Nov 2026. Other facts come from the refactoring audit of 2026-11-11 (commit `b65e838`, tag `V1.3`) and are not re-checked unless marked. Unknowns are marked **TODO**. See [DIAGRAMS.md](DIAGRAMS.md) for the C4 diagrams.
+This architecture note records the IPVIO Stream baseline that LiteStream TV extends. The source inventory and audit facts below date from the 2026-11-11/15 upstream review and are not a complete audit of later fork changes. Current user-visible features are summarized in [FEATURES.md](FEATURES.md); verify code before making architectural decisions. Unknowns are marked **TODO**. See [DIAGRAMS.md](DIAGRAMS.md) for the C4 diagrams.
 
 All Kotlin files are in `app/src/main/java/com/ipvio/stream/`, so file names below carry no path.
 
 ## 1. Introduction and goals
 
-- IPVIO Stream is a free, open-source IPTV player (GPL-3.0) for Android TV, Google TV and Fire TV.
+- LiteStream TV is a free, open-source (GPL-3.0) TV-first fork of IPVIO Stream for Android TV, Google TV and Fire TV.
 - It plays content from the user's own playlist providers (Xtream, Stalker/Ministra, M3U). It does not supply content.
 - TODO: quality goals in priority order (not stated in the audit).
 
@@ -32,9 +32,9 @@ External actors and systems (details in [DIAGRAMS.md](DIAGRAMS.md)):
 - **Playlist providers**: Xtream, Stalker/Ministra portals, M3U URLs or files. Provided by the user.
 - **TMDB and OMDb**: metadata, only with the user's own API keys.
 - **ESPN**: data for the sports hub.
-- **GitHub Releases**: source of app updates.
+- **GitHub Releases**: upstream source-sync input; the LiteStream in-app update feed is not configured yet.
 - **List import sources**: Letterboxd, MAL, Trakt (`ListImport.kt`).
-- **Google Drive**: not in the code since 1.2. Planned again for 1.4 (LiveSync).
+- **Google Drive**: optional backup/sync implementation retained from IPVIO; LiteStream OAuth configuration needs to be completed before distribution.
 
 TODO: EPG (XMLTV) source: whether it always comes from the playlist provider is not verified.
 
@@ -44,7 +44,7 @@ TODO: EPG (XMLTV) source: whether it always comes from the playlist provider is 
 - Playback with Media3 ExoPlayer (HLS, DASH); the FFmpeg audio decoder is loaded by reflection (`Class.forName`, `SoftAudio.kt:24`).
 - State lives in global singletons (`object`) with Compose `mutableStateOf`. No dependency injection, no ViewModel.
 - Persistence in SharedPreferences and files. No database. See [ADR 0003](adr/0003-shared-prefs-no-database.md).
-- UI text: the German string is the translation key. See [ADR 0002](adr/0002-german-text-as-i18n-key.md).
+- UI text uses the inherited German strings as translation keys; LiteStream displays app chrome in English. Provider content is not translated. See [ADR 0002](adr/0002-german-text-as-i18n-key.md) and `Lang.kt`.
 - R8 runs over the whole app in the release build; the app's own code is kept unchanged (not device tested yet). See [ADR 0005](adr/0005-r8-whole-app.md).
 
 ## 5. Building block view
@@ -80,7 +80,7 @@ Logical building blocks, derived from the audit's feature table. The package is 
 | Local data | `Store.kt`, `Profiles.kt`, `Backup.kt`, `Secrets.kt`, `Parental.kt`, `ParentalLogic.kt` |
 | Network and security | `Net.kt`, `TlsFallback.kt` |
 | Updates | `AppUpdate.kt`, `Round17Logic.kt` (contains `UpdateLogic`), `Updater.kt` |
-| Languages | `Lang.kt`, `I18nCore.kt` (10 languages), dictionaries `Dict*` |
+| Languages | `Lang.kt`, `I18nCore.kt`, dictionaries `Dict*`; LiteStream app chrome is fixed to English |
 
 TODO: call directions between blocks are not verified. The audit gives no call graph.
 
@@ -108,8 +108,8 @@ TODO: not covered by the audit. Candidates: app start, playback start, playlist 
 
 ## 7. Deployment view
 
-- Distribution: APK in GitHub Releases. In-app update checks GitHub Releases once a day (`AppUpdate.kt:20-34`). Signing: see [RELEASE.md](RELEASE.md).
-- CI: `build.yml` runs unit tests and a debug build on push to `main` and `dev` and on pull requests. `release.yml` runs on push to `main`: tests, lint report (not blocking yet), signed release APK, then the GitHub release `v<versionName>` with `IPVIO-Stream.apk` and `update.json`. `pr-checks.yml` warns when app code changes without test changes. `build.yml` uses `@v4` tags; `release.yml` pins commit SHAs.
+- Distribution: first signed LiteStream release and its in-app update source are not configured yet. Signing and release steps are in [RELEASE.md](RELEASE.md).
+- CI: `build.yml` runs unit tests and a debug build on pushes to `main`/`dev`, pull requests, or manual dispatch. `release.yml` publishes a signed LiteStream APK on `main`. `pr-checks.yml` reports app changes without corresponding tests. Ordinary feature-branch pushes do not trigger these workflows.
 - Branches and release rules: [CLAUDE.md](../CLAUDE.md) section 16 and [ADR 0006](adr/0006-branch-model-and-release-pipeline.md).
 - Network ports: the phone server uses ports 8765-8775 (`PhoneImport.kt:195`).
 

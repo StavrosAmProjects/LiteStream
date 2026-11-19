@@ -1,30 +1,30 @@
 # Security
 
-Status of known security items and the current security state of IPVIO Stream.
-Source: refactoring audit of 2026-11-11, section 8 (state at commit `b65e838`, tag `V1.3`), updated for T-002.
+Status of known security items in LiteStream TV, derived from IPVIO Stream.
+Most findings below are from the upstream refactoring audit of 2026-11-11 (commit `b65e838`, tag `V1.3`) and later named follow-ups; this is not a complete security re-audit of the current fork.
 File references are to `app/src/main/java/com/ipvio/stream/` unless stated otherwise.
 
 Status values: **open**, **partly fixed**, **fixed**.
 
 ## 1. Scope
 
-IPVIO Stream is a free, open-source (GPL-3.0) IPTV player for Android TV, Google TV and Fire TV.
+LiteStream TV is a free, open-source (GPL-3.0) IPTV player for Android TV, Google TV and Fire TV, derived from IPVIO Stream.
 It has no accounts and no backend of its own. It does open network connections in these places:
 
 - **Local Wi-Fi:** the phone-remote pages and the Wi-Fi transfer. The TV app runs a small HTTP server on ports 8765–8775 (`PhoneImport.kt:195`).
 - **Playlist providers entered by the user:** Xtream Codes, M3U (URL or file) and Stalker/Ministra portals.
 - **Optional metadata services with user-supplied keys:** TMDB and OMDb. TheIntroDB needs no key.
-- **GitHub Releases:** in-app update check and download.
+- **GitHub Releases:** LiteStream's in-app update feed is not configured yet; the repository also checks upstream releases for reviewed source updates.
 
 ## 2. Reporting
 
-The repository root has no `SECURITY.md` yet, so there is no documented reporting channel in this repository. This is open item 15 below.
+The repository does not document a vulnerability reporting channel. This remains open item 15 below.
 
 ## 3. Known items
 
 | # | Item | Status | Detail | Planned task | Source |
 |---|---|---|---|---|---|
-| 1 | Phone pages over plain HTTP; server listens on all interfaces; no warning on phone or TV | open | Use only on your own, trusted Wi-Fi. No warning text found in the code | P3 / S3 (warning, new texts in 10 languages) | `PhoneImport.kt:195`, `RemoteUi.kt:64, 73` |
+| 1 | Phone pages over plain HTTP; server listens on all interfaces; no warning on phone or TV | open | Use only on your own, trusted Wi-Fi. No warning text found in the code | P3 / S3 (add clear warning copy for the English UI) | `PhoneImport.kt:195`, `RemoteUi.kt:64, 73` |
 | 2 | Access code has 4 digits | open | | P3 / S2 (6 digits) | `PhoneImport.kt:38` and the `maxlength="4"` lines |
 | 3 | Failed-attempt counter and lock | partly fixed | Fixed: counter is `AtomicInteger`, random value from `SecureRandom`. Open: the "locked?" check and the increment are not atomic together; comparison is not constant-time | P3 / S2 | `PhoneImport.kt:170, 172, 254-263` |
 | 4 | `/listimport` accepted uploads without a code while phone search was active; up to 16 MB reserved per request | fixed | T-002: code required, limit 16 MiB (`MAX_LIST_UPLOAD`), body read in 64 KiB chunks, answer 413 when too large. Test on a TV or Fire TV: pending | done (T-002) | was `PhoneImport.kt:307-312`; audit finding 4 |
@@ -49,7 +49,7 @@ Source: project note `t002_stand.md`.
 |---|---|---|
 | `/restore` reserves 4 MB up front (after the code check) | open | |
 | ZIP parsing in `ListImport.kt` has no size limit | open | |
-| Error message „Eingabe unvollständig oder ungültig“ (incomplete or invalid input) is shown for several different cases | open | Better messages need new texts in 10 languages (maintainer decision) |
+| Error message „Eingabe unvollständig oder ungültig“ (incomplete or invalid input) is shown for several different cases | open | Better English messages are needed (maintainer decision) |
 
 ## 5. Android configuration (facts, not status items)
 

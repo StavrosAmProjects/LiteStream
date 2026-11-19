@@ -19,26 +19,31 @@ LiteStream TV's product direction, branding, TV-first experience, and fork-speci
 ## Features
 
 **Playlists**
-- Xtream Codes login (server, user name, password), an M3U address or file, or a Stalker portal (MAC address); input from your phone over Wi-Fi
-- Several playlists at the same time ("Also show"), with a source filter in Movies/Series and a source switch in Live TV
+- Xtream Codes, M3U URL/file, and Stalker/Ministra providers
+- Add providers with a phone-assisted local setup, provider TXT/URL import, or manual entry
+- Several playlists can be active together; switch between one playlist, merged playlists, or all playlists in Live TV
+- Choose countries and categories per provider; refresh or edit a provider later and restore previously excluded categories
 - Xtream accounts load through `player_api.php` automatically when `get.php` is blocked
-- Handles very large playlists: language filter while loading, resumable downloads, compact storage
-- Automatic background refresh (interval or fixed time, waits during playback)
+- Handles large playlists with language selection, resumable downloads, and compact local storage
+- Scheduled refresh uses the saved playlist between updates and waits during playback
 
 **Home screen**
 - Home, Movies and Series with a large rotating header image
 - The background follows the selected title and shows its title, ratings and description
-- Rows: Continue watching, Live now, Top 10 today, Because you watched …, My list, New, Top rated, genres
+- Rows can be rearranged and hidden; Favourite Categories provides direct access to saved Live TV categories
+- Rows include Continue watching, Live TV now, Top 10 today, My list, recently watched, and optional genre rows
+- A Sports on TV tile opens the sports hub, including the Sport24.gr daily TV schedule and playlist-channel matching
 
 **Browse and details**
 - Grid or cinema view, filters by sort order, rating, year, genre and country
 - "Top rated" and sorting by rating use IMDb first, then Rotten Tomatoes, TMDB and finally the provider's rating
-- Provider categories or automatic genres, search with typo tolerance
+- Provider categories by default; optional TMDB automatic genres are off by default
 - Detail page with resume, trailer, my list, favourites, choice of source/quality
 - Series: seasons on the left, episodes on the right with picture, rating and description; sections and "go to episode" for very long series
 
 **Live TV**
-- Categories, favourites and your own channel lists
+- Country-first browsing with provider categories, favourites and your own channel lists
+- Compact channel list or cards, playlist switching, channel ordering and remote channel surfing
 - TV guide, catch-up/archive ("from the beginning"), reminders with notification
 - Rewind live TV with an on-device buffer, record the current show (internal storage or USB)
 - Sports section: live sports, fixtures matched to your playlist and EPG, plus the Sport24.gr TV schedule when available; channel matches can be corrected manually
@@ -56,20 +61,20 @@ LiteStream TV's product direction, branding, TV-first experience, and fork-speci
 - Profiles ("Who's watching?"), parental controls with PIN
 - History, my list, favourites, backup and restore of settings
 - Transfer to another device over Wi-Fi, optional Google Drive backup
-- In-app updates from GitHub Releases
+- In-app update support for LiteStream GitHub Releases (the update feed is not configured yet)
 
 **Look and feel**
-- IPVIO green on navy plus 12 colour themes, 5 backgrounds, custom colours
+- Navy-based interface, 12 colour themes, 5 backgrounds, custom colours
 - Fonts Outfit, Inter or system; adjustable text and display size; animations off/subtle/normal
 - Sidebar left, right or top, icons only or with text; phones: landscape, tap and double-tap controls
-- 10 languages: German, English, Turkish, Bosnian, Croatian, Serbian, Spanish, French, Italian, Dutch
+- App menus and controls are in English; provider names, programme titles and descriptions stay as supplied
 
 ## Screenshots
 
 | | |
 |---|---|
 | ![Home screen](docs/screenshots/homescreen.jpg)<br>**Home** – rotating header, quick tiles, live TV now | ![Series details](docs/screenshots/details_series.jpg)<br>**Series details** – seasons, episodes with ratings, director |
-| ![Categories](docs/screenshots/categories_list.jpg)<br>**Automatic genres** – detected in the background | ![Director page](docs/screenshots/producer.jpg)<br>**Cast and crew pages** – with the titles from your playlist |
+| ![Categories](docs/screenshots/categories_list.jpg)<br>**Categories** – provider groups and optional genres | ![Director page](docs/screenshots/producer.jpg)<br>**Cast and crew pages** – with the titles from your playlist |
 | ![Player](docs/screenshots/player.jpg)<br>**Player** – skip intro, audio/subtitles, quality | ![TV guide](docs/screenshots/tvguide.jpg)<br>**TV guide** – timeline with preview |
 | ![Live TV](docs/screenshots/channel_list.jpg)<br>**Live TV** – now and next at a glance | ![Settings](docs/screenshots/settings.jpg)<br>**Settings** – grouped, remote-friendly |
 
@@ -81,7 +86,7 @@ The app ships **without any API keys**. You can enter your own free keys in the 
 
 | Service | Used for | Key |
 |---|---|---|
-| TMDB | posters, descriptions in your language, cast, trailers, automatic genres, episode info, similar titles | free, see below |
+| TMDB | posters, descriptions, cast, trailers, optional automatic genres, episode info, similar titles | free, see below |
 | OMDb | IMDb and Rotten Tomatoes ratings | free, see below |
 | TheIntroDB | intro/recap/credits times | no key needed |
 
@@ -134,14 +139,9 @@ app/src/main/res/font/                Outfit and Inter (SIL Open Font License)
 licenses/                             font licences
 ```
 
-## Support the project
+## Project updates and contributions
 
-Hello, I'm Claude. If you enjoy using this project and want to help this wannabe developer keep building things (and occasionally understand what he's doing), feel free to support the project.
-
-- Ko-fi: https://ko-fi.com/ipviodude
-- PayPal: https://www.paypal.com/ncp/payment/EUSU4WAGRJNXY
-
-IPVIO Stream stays free, ad-free and open source. Donations are voluntary and do not unlock any features.
+LiteStream TV is maintained under [@StavrosAmProjects](https://github.com/StavrosAmProjects). Please use the [GitHub repository](https://github.com/StavrosAmProjects/LiteStream) for source, issues, and project updates. The project remains free and open source.
 
 ## License
 

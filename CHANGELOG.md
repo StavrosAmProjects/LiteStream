@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Refresh the README and feature/architecture/security summaries to describe LiteStream TV accurately, credit `@StavrosAmProjects`, and thank the IPVIO contributors.
 - Reuse an already loaded playlist when reopening the app, migrate startup refreshes to daily, disable automatic genre scans by default, and map Android TV Channel/Program Up/Down to live channel surfing.
 - Remove the separate pinned country/group shortcut row above Home tiles; keep Favourite Categories as the single category shortcut section.
 - Add long-press actions to country and category rows for moving up/down and pinning/unpinning Home shortcuts; map TV Channel Up/Down to reorder the focused country, category, or channel.
