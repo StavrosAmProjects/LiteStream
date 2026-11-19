@@ -2,7 +2,7 @@ Last update: 2026-11-19. Read `AGENTS.md` first, then this file.
 
 ## Current task
 
-T-059 (19 Nov 2026): Added quick Live TV playlist selection, direct Edit on phone/Update actions, easier per-playlist Settings cards, and per-provider Live TV country/category customization. M3U import now scans and compresses the source before selection instead of parsing the complete live catalogue; Xtream and Stalker use category previews and selected-category requests. XMLTV channel icon URLs fill missing provider logos. Tests cover M3U filtering and country/category rules. `git diff --check` passes. JVM tests, Android build, real provider calls, logo results, and TV UI have not been checked. No curated Greek/Cypriot image pack was bundled because a redistributable source/license was not verified. See `docs/tasks/T-059-playlist-management-and-selection.md`.
+T-059 (19 Nov 2026): Added quick Live TV playlist selection, direct Edit on phone/Update actions, easier per-playlist Settings cards, and per-provider Live TV country/category customization. M3U import scans and compresses the source before selection; Xtream and Stalker use category previews and selected-category requests. XMLTV channel icon URLs fill missing provider logos. `:app:assembleDebug` and `git diff --check` pass. Debug APK installed and launched on phone `192.168.1.58:39119` (OnePlus AC2003). JVM tests, real provider calls, logo results, and Android TV UI have not been checked. No static Greek/Cypriot logo pack was bundled because a redistributable source/license was not verified. See `docs/tasks/T-059-playlist-management-and-selection.md`.
 
 ## Previous task
 
@@ -124,4 +124,4 @@ Playlist mode switch fix (see Completed steps, 12 Nov 2026): implemented, **open
 
 ## Next step
 
-T-059 is implemented in the working tree and has not been pushed or built. Next: run `git diff --check` and inspect the patch here, then have the maintainer run JVM tests and the debug build; install on the Android TV for the playlist, focus, import, and logo checks in `docs/tasks/T-059-playlist-management-and-selection.md`. Older IPVIO handoff entries below are historical and not current fork branch status.
+T-059 is committed and pushed on `codex/litestream-tv-fork`; debug APK built and installed/launched on the phone. Next: run JVM tests and check the playlist, focus, import, and logo flows on Android TV using `docs/tasks/T-059-playlist-management-and-selection.md`. Older IPVIO handoff entries below are historical and not current fork branch status.

@@ -22,7 +22,9 @@ Make multiple playlists easier to use on TV and keep unselected live channels ou
 ## Validation
 
 - [x] `git diff --check` passes.
-- [ ] Run the JVM tests and Android debug build on the maintainer's machine.
+- [x] `:app:assembleDebug` succeeds.
+- [x] Install and launch the debug app on Android phone `192.168.1.58:39119`.
+- [ ] Run the JVM tests.
 - [ ] On Android TV, verify D-pad focus and all playlist choices with two providers, including one hidden from the merged set.
 - [ ] Verify Edit on phone, Update, rename, include/exclude, and per-provider selection from Settings.
 - [ ] Verify M3U import scanning and cancel behavior; confirm only selected live channels appear, then change the selection and confirm previously unselected channels return.

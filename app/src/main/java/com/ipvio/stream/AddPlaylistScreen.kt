@@ -250,7 +250,7 @@ fun AddPlaylistScreen(editProviderIndex: Int = -1, onDone: () -> Unit) {
                 val restore = pendingPlaylistRestore
                 pendingPlaylistUrl = null; pendingPlaylistName = ""; pendingPlaylistItems = emptyList(); pendingPlaylistRestore = -1
                 if (restore in PlaylistStore.lists.indices) scope.launch { PlaylistStore.switchTo(ctx, restore) }
-                else { PlaylistStore.setItems(emptyList()); onDone() }
+                else onDone()
             }
             else -> { PlaylistStore.clearPending(ctx); onDone() }
         }
@@ -507,7 +507,7 @@ fun AddPlaylistScreen(editProviderIndex: Int = -1, onDone: () -> Unit) {
                     val restore = pendingPlaylistRestore
                     pendingPlaylistUrl = null; pendingPlaylistName = ""; pendingPlaylistItems = emptyList(); pendingPlaylistRestore = -1
                     if (restore in PlaylistStore.lists.indices) scope.launch { PlaylistStore.switchTo(ctx, restore) }
-                    else { PlaylistStore.setItems(emptyList()); onDone() }
+                    else onDone()
                 }
             },
             onChoose = ::chooseProviderMode
