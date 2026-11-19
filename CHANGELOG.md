@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Remove the separate pinned country/group shortcut row above Home tiles; keep Favourite Categories as the single category shortcut section.
 - Add long-press actions to country and category rows for moving up/down and pinning/unpinning Home shortcuts; map TV Channel Up/Down to reorder the focused country, category, or channel.
 - Keep Update, Switch, and Edit playlist actions visible on every Live TV channel view; add a phone category picker under country flags and compact phone channel rows. Add Favourite Categories as a movable Home layout block after Live TV. Build full category previews for playlist customization, reload old M3U sources when local copies are missing, and report whether selection changes applied.
 - Fix Sport24's empty schedule by loading its dated JSON feed, making Reload refetch, and adding previous/today/next-day navigation. Add playlist Update/Switch/Edit actions beside Cards/List, including merged/all switching; use a compact single-column country → category → channel browser on phones; clarify that playlist customization can restore previously excluded categories. Favourite category shortcuts were already available on Home and remain unchanged.

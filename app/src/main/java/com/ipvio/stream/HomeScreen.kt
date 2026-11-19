@@ -257,7 +257,7 @@ fun HomeScreen(
         HomeCountryShortcutLogic.favoriteGroups(CatFavs.list.toList(), liveP)
     }
     val favouriteCategoriesVisible = HomeLayout.shown("favcats") && favoriteGroupShortcuts.isNotEmpty()
-    val homeEntryAvailable = favouriteCategoriesVisible || HomeCountryShortcuts.items.isNotEmpty() || HomeLayout.shown("tiles")
+    val homeEntryAvailable = favouriteCategoriesVisible || HomeLayout.shown("tiles")
     val initialContentFocus = if (tab == 0 && homeEntryAvailable) homeEntryFocus else ContentFocus.req
     // Provider categories follow the order / ignore settings of the category page. Only re-sorts the map keys when
     // CatOrder or IgnoredGroups change (cheap, not per recomposition); genre groups keep their own order.
@@ -477,7 +477,7 @@ fun HomeScreen(
     var inSidebar by remember { mutableStateOf(false) }
     val sideFocus = remember { FocusRequester() }
     // Start on the first personal TV shortcut, or the Live TV tile, instead of the featured VOD artwork.
-    LaunchedEffect(tab, favoriteGroupShortcuts.size, HomeCountryShortcuts.items.size, HomeLayout.shown("tiles"), favouriteCategoriesVisible) {
+    LaunchedEffect(tab, favoriteGroupShortcuts.size, HomeLayout.shown("tiles"), favouriteCategoriesVisible) {
         if (tab != 0 || HomeFlags.initialFocusDone || LastFocus.pending != null) return@LaunchedEffect
         var waited = 0
         while (waited < 5000) {
@@ -649,17 +649,6 @@ fun HomeScreen(
                                 }
                             }
                             item(key = "homeHeader") { header(Modifier) }
-                            if (HomeCountryShortcuts.items.isNotEmpty()) item(key = "countryShortcuts") {
-                                LazyRow(Modifier.fillMaxWidth().padding(start = RowPadX, top = 12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                    itemsIndexed(HomeCountryShortcuts.items, key = { _, item -> item.code + "|" + item.group.orEmpty() }) { index, shortcut ->
-                                        FocusButton(
-                                            "${CountryBrowseLogic.flagEmoji(shortcut.code)} ${shortcut.label}",
-                                            modifier = if (index == 0 && !favouriteCategoriesVisible) Modifier.focusRequester(homeEntryFocus) else Modifier,
-                                            compact = true
-                                        ) { countryShortcut = shortcut }
-                                    }
-                                }
-                            }
                             val wl = wlVod
                             for (blockId in HomeLayout.order) {
                                 val editing = HomeEdit.active
@@ -669,7 +658,7 @@ fun HomeScreen(
                                     "hero" -> if (ready.isNotEmpty()) item(key = "hero") {
                                         Hero(ready.toList(), heroH, true, onOpen, onPlayNow, { _ -> }, { heroScroll(states[0]) }) { scope.launch { states[0].animateScrollToItem(0) } }
                                     }
-                                    "tiles" -> { item(key = "tiles") { QuickTiles(tiles, if (!favouriteCategoriesVisible && HomeCountryShortcuts.items.isEmpty()) homeEntryFocus else null) } }
+                                    "tiles" -> { item(key = "tiles") { QuickTiles(tiles, if (!favouriteCategoriesVisible) homeEntryFocus else null) } }
                                     "clock" -> { item(key = "clock") { ClockWidget() } }
                                     // Continue watching directly under the tiles: whoever watches a lot wants to continue in few clicks
                                     "resume" -> { if (resumeList.isNotEmpty()) item(key = "resume") { ResumeRow(resumeList, cardW, onResume) } }
