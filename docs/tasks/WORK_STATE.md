@@ -2,6 +2,8 @@ Last update: 2026-11-19. Read `AGENTS.md` first, then this file.
 
 ## Current task
 
+T-062 (19 Nov 2026): Country and category rows in the country browser now open Move Up/Down and Pin/Unpin Home actions on long press. TV Channel Up/Down reorder the focused country, category, or channel using existing saved ordering. `:app:assembleDebug` and `git diff --check` pass. Installed and launched on Android TV at `192.168.1.2:5555`; long-press and remote behavior still needs hands-on confirmation. See `docs/tasks/T-062-country-row-actions.md`.
+
 T-061 (19 Nov 2026): Sport24 was approved by the maintainer as working. Follow-up changes keep Update/Switch/Edit playlist controls visible above every Live TV channel list; the phone flag rail now opens a category dropdown for countries with multiple groups and phone rows use the compact size. Favourite Categories is now a movable Home block, inserted after Live TV for existing saved layouts; the old always-on row was removed. Settings and Live TV customization now load complete category previews, including Stalker API preview and a fresh M3U scan if its retained source is missing. Applying selection falls back to a network reload for older M3U imports and gives the user a result message. `:app:assembleDebug` and `git diff --check` pass. APK installed on `192.168.1.58:39119`; phone display was asleep during the final visual check, so screen behavior remains unverified. Unit tests not run. See `docs/tasks/T-061-live-tv-controls-favourites-and-restore.md`.
 
 ## Previous task
