@@ -2,6 +2,8 @@ Last update: 2026-11-19. Read `AGENTS.md` first, then this file.
 
 ## Current task
 
+T-066 (19 Nov 2026): Checked the official IPVIO releases page. Latest listed stable is 1.4.3 at commit `e55395a73ee8ee7b21e67a00a677581d90fa9529`, matching LiteStream's recorded upstream baseline; no newer stable release was listed. GitHub's commit/compare pages were unavailable and direct network access failed, so unreleased changes on upstream `main` could not be ruled out. Added an explicit release-level status note to README. `git diff --check` passes. See `docs/tasks/T-066-upstream-update-check.md`.
+
 T-065 (19 Nov 2026): Refreshed the README, feature overview, architecture provenance, and security scope for the LiteStream TV fork. README credits `@StavrosAmProjects`, thanks IPVIO contributors, removes inherited Claude/donation copy, and describes current TV-first features, English app chrome, optional genres, and release status. `git diff --check` passes; reviewed for stale Claude/donation, language, and release claims. Documentation-only; no app build run. See `docs/tasks/T-065-project-documentation.md`.
 
 T-064 (19 Nov 2026): Startup now skips reloading a playlist already present in memory when no scheduled refresh is due. Existing every-start refresh plans migrate to daily; the automatic genre preference is switched off once and classifier work is opt-in. TV Channel Up/Down keys zap live channels, including repeat events. `:app:assembleDebug` and `git diff --check` pass; installed and launched on Android TV at `192.168.1.2:5555`. Physical Hitachi button mapping and startup time require maintainer confirmation. Unit tests not run. See `docs/tasks/T-064-startup-cache-genres-and-channel-keys.md`.

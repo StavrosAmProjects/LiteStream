@@ -8,6 +8,10 @@ LiteStream TV is a TV-first fork of IPVIO Stream for **Android TV, Google TV and
 
 This fork is based on [IPVIO Stream](https://github.com/Emrodev/IPVIO-Stream). It preserves the upstream GPL-3.0 notices and third-party notices.
 
+### Upstream status
+
+Checked **19 November 2026**: the official [IPVIO releases](https://github.com/Emrodev/IPVIO-Stream/releases) page lists **1.4.3** (`e55395a`, 16 November 2026) as its latest stable release. LiteStream's recorded upstream baseline is that same commit, so no newer stable release was available to bring in at this check. This confirms release-level alignment only; a live comparison with upstream's current `main` branch was unavailable, so unreleased commits are not confirmed.
+
 ## Project authorship and upstream thanks
 
 LiteStream TV's product direction, branding, TV-first experience, and fork-specific improvements are by **[@StavrosAmProjects](https://github.com/StavrosAmProjects)**. This work builds on the mature IPTV and playback foundation created by **[Emrodev](https://github.com/Emrodev) and the IPVIO contributors**; I am deeply grateful for their original work. The inherited code remains under GPL-3.0, with upstream copyright and license notices preserved.

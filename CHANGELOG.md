@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Document the official IPVIO stable-release check from 2026-11-19: latest listed release is 1.4.3 at the existing upstream baseline `e55395a`; live comparison with upstream `main` was unavailable, so unreleased changes are unverified.
 - Refresh the README and feature/architecture/security summaries to describe LiteStream TV accurately, credit `@StavrosAmProjects`, and thank the IPVIO contributors.
 - Reuse an already loaded playlist when reopening the app, migrate startup refreshes to daily, disable automatic genre scans by default, and map Android TV Channel/Program Up/Down to live channel surfing.
 - Remove the separate pinned country/group shortcut row above Home tiles; keep Favourite Categories as the single category shortcut section.
