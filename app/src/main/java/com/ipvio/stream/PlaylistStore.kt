@@ -641,7 +641,7 @@ object PlaylistStore {
         StalkerLogic.parse(u)?.let { return downloadStalker(c, u, it) }
         val acct = XtreamLogic.fromUrl(u) ?: return downloadList(c, u)
         // If get.php has already failed once for this login, use the API right away
-        if (useApi(c, u)) return downloadApi(c, u, acct)
+        if (CountryFilterStore.read(c, u) != null || useApi(c, u)) return downloadApi(c, u, acct)
         val got = try {
             downloadList(c, u)
         } catch (e: PlaylistError) {
@@ -701,7 +701,7 @@ object PlaylistStore {
         api.onTempBytes = { k -> synchronized(lock) { tempN += k; show() } }
         val counter = CountingOut(FileOutputStream(part)) { k -> synchronized(lock) { listN = k; show() } }
         try {
-            val n = OutputStreamWriter(BufferedOutputStream(counter, 1 shl 16), Charsets.UTF_8).use { w -> api.write(acct, w) }
+            val n = OutputStreamWriter(BufferedOutputStream(counter, 1 shl 16), Charsets.UTF_8).use { w -> api.write(acct, w, CountryFilterStore.read(c, u)) }
             if (n == 0) throw PlaylistError("Keine Sender in der Playlist gefunden.")
         } catch (e: Throwable) {
             part.delete()
@@ -725,7 +725,7 @@ object PlaylistStore {
         var more: List<StalkerLogic.CatRef> = emptyList()
         try {
             OutputStreamWriter(BufferedOutputStream(counter, 1 shl 16), Charsets.UTF_8).use { w ->
-                StalkerApi.write(src, w, { phase = it }, { if (cancelled()) throw CancellationException("abgebrochen") }) { more = it }
+                StalkerApi.write(src, w, { phase = it }, { if (cancelled()) throw CancellationException("abgebrochen") }, { more = it }, CountryFilterStore.read(c, u))
             }
         } catch (e: Throwable) {
             part.delete()
@@ -882,7 +882,7 @@ object PlaylistStore {
             }
         }
         phase = "Titel werden eingelesen …"
-        val parsed = readFile(src, gz, cs, teeTo) { r -> M3uParser.parseStream(r, hidden, guard()) }
+        val parsed = readFile(src, gz, cs, teeTo) { r -> M3uParser.parseStream(r, hidden, guard(), CountryFilterStore.read(c, url)) }
         return Built(parsed, hidden)
     }
 
@@ -966,6 +966,37 @@ object PlaylistStore {
     fun switchAsync(c: Context, i: Int) {
         val app = c.applicationContext
         switchScope.launch { switchTo(app, i) }
+    }
+
+    /** Refresh one saved playlist without changing which playlist is the main one. */
+    fun refreshAsync(c: Context, i: Int) {
+        val app = c.applicationContext
+        switchScope.launch {
+            if (i !in lists.indices || loadLock.isLocked) return@launch
+            val u = lists[i].url
+            if (i == active) {
+                load(app, u, false, ask = false)
+            } else if (isShown(i)) {
+                if (!loadLock.tryLock()) return@launch
+                try {
+                    job = currentCoroutineContext()[Job]
+                    loading = true; error = null; extraError = null; phase = "Updating ${nameOf(u)} …"
+                    val updated = withContext(Dispatchers.IO) { loadExtra(app, u, true) }
+                    if (updated != null) { extras[u] = updated; withContext(Dispatchers.Default) { rebuild(app) } }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: OutOfMemoryError) {
+                    extraError = "${nameOf(u)}: $MSG_TOO_BIG"
+                } catch (e: Exception) {
+                    extraError = "${nameOf(u)}: ${PlaylistLogic.friendlyError(e)}"
+                } finally {
+                    loading = false; heavy = false; loadStarted = 0L; job = null
+                    loadLock.unlock()
+                }
+            } else {
+                refreshCacheOnly(app, u)
+            }
+        }
     }
 
     private val switchScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -1108,9 +1139,11 @@ object PlaylistStore {
 
     private suspend fun loadExtra(c: Context, u: String, network: Boolean): Extra? {
         val hidden = PlaylistMode.withMode(c, u, LangFilter.hidden)
-        if (!network) {
+        val selection = CountryFilterStore.read(c, u)
+        val categoryApi = XtreamLogic.fromUrl(u) != null || StalkerLogic.parse(u) != null
+        if (!network && !(selection != null && categoryApi)) {
             val head = readHeader(c, u)
-            if (head != null && (head.hidden == null || head.hidden == hidden)) {
+            if (selection == null && head != null && (head.hidden == null || head.hidden == hidden)) {
                 readCache(c, u, hidden)?.let { if (it.items.isNotEmpty()) return Extra(it.items, it.epg, it.order) }
             }
             val gz = gzFile(c, u)
@@ -1167,7 +1200,7 @@ object PlaylistStore {
     private suspend fun fromLocal(c: Context, u: String, allowGz: Boolean, ask: Boolean): Local {
         val hidden = PlaylistMode.withMode(c, u, LangFilter.hidden)
         val head = readHeader(c, u)
-        if (head != null) {
+        if (head != null && CountryFilterStore.read(c, u) == null) {
             // Old version (whole list without language counts) with a very large file and no language selection: do not load everything into memory
             val legacyTooBig = head.hidden == null && (hidden - LangTagLogic.PSEUDO).isEmpty() && cacheFile(c, u).length() > budget()
             if (!legacyTooBig && (head.hidden == null || head.hidden == hidden)) {
@@ -1346,6 +1379,109 @@ object PlaylistStore {
             job = null
             loadLock.unlock()
         }
+    }
+
+    /** Rebuild the active provider from its complete local copy after country/group visibility changes. */
+    suspend fun reapplyCountryFilter(c: Context, url: String): Boolean {
+        ensure(c)
+        val u = PlaylistLogic.normalizeUrl(url) ?: return false
+        if (!loadLock.tryLock()) return false
+        try {
+            job = currentCoroutineContext()[Job]
+            loading = true; error = null
+            phase = "Applying live TV selection …"; bytesRead = 0L; totalBytes = -1L; downloadDone = false
+            if (XtreamLogic.fromUrl(u) != null || StalkerLogic.parse(u) != null) {
+                rawFile(c, u).delete(); infoFile(c, u).delete(); partFile(c, u).delete()
+            }
+            if (primaryUrl == u) {
+                if (XtreamLogic.fromUrl(u) != null || StalkerLogic.parse(u) != null) {
+                    return loadInner(c, u, false, false, false, false)
+                }
+                if (Mem.heapTight(0.45)) setItems(emptyList())
+                return withContext(Dispatchers.IO) { fromLocal(c, u, allowGz = true, ask = false) == Local.OK }
+            }
+            val index = lists.indexOfFirst { it.url == u }
+            if (index < 0) return false
+            if (!isShown(index)) {
+                if (XtreamLogic.fromUrl(u) == null && StalkerLogic.parse(u) == null) {
+                    return withContext(Dispatchers.IO) {
+                        val gz = gzFile(c, u)
+                        if (!gz.exists()) return@withContext false
+                        val b = build(c, u, gz, true, Charsets.UTF_8, false, null)
+                        val p = b.parsed
+                        val head = readHeader(c, u)
+                        val epg = head?.epg?.takeIf { it.isNotEmpty() } ?: epgFor(u, p.epgUrls)
+                        val order = head?.order ?: emptyMap()
+                        writeCache(c, u, p.items, epg, order, p.counts, p.bytes, b.hidden)
+                        Catchup.saveParsed(c, u, p.catchup)
+                        true
+                    }
+                }
+                extras.remove(u)
+                return true
+            }
+            extras.remove(u)
+            withContext(Dispatchers.IO) { loadExtras(c, network = XtreamLogic.fromUrl(u) != null || StalkerLogic.parse(u) != null) }
+            return true
+        } finally {
+            loading = false; heavy = false; loadStarted = 0L; job = null
+            loadLock.unlock()
+        }
+    }
+
+    /** Preview category choices without adding a playlist or changing the active catalogue. */
+    suspend fun countryFilterPreview(c: Context, url: String): List<Item> {
+        ensure(c)
+        val u = PlaylistLogic.normalizeUrl(url) ?: return emptyList()
+        XtreamLogic.fromUrl(u)?.let { account ->
+            return withContext(Dispatchers.IO) { xtreamApi().liveCategoryPreview(account) }
+        }
+        StalkerLogic.parse(u)?.let { source ->
+            if (!gzFile(c, u).exists()) return withContext(Dispatchers.IO) { StalkerApi.liveCategoryPreview(source) }
+        }
+        val gz = gzFile(c, u)
+        if (!gz.exists()) return emptyList()
+        return withContext(Dispatchers.IO) {
+            readFile(gz, true, Charsets.UTF_8, null) { r -> M3uParser.countryPreview(r, guard(false)) }
+        }
+    }
+
+    /** Downloads and scans an imported flat playlist without creating its full live catalogue in memory. */
+    suspend fun prepareCountryFilterPreview(c: Context, url: String): List<Item> {
+        ensure(c)
+        val u = PlaylistLogic.normalizeUrl(url) ?: return emptyList()
+        loading = true; heavy = false; error = null; phase = "Scanning playlist categories …"
+        try {
+            XtreamLogic.fromUrl(u)?.let { account ->
+                return withContext(Dispatchers.IO) { xtreamApi().liveCategoryPreview(account) }
+            }
+            StalkerLogic.parse(u)?.let { source ->
+                return withContext(Dispatchers.IO) { StalkerApi.liveCategoryPreview(source) }
+            }
+            val (src, charset) = withContext(Dispatchers.IO) { downloadWithRetry(c, u) }
+            return withContext(Dispatchers.IO) {
+                val gzTmp = tmp(gzFile(c, u))
+                try {
+                    val preview = readFile(src, false, charset, gzTmp) { r -> M3uParser.countryPreview(r, guard(false)) }
+                    commitGz(c, u, gzTmp)
+                    preview
+                } catch (e: Throwable) {
+                    gzTmp.delete()
+                    throw e
+                }
+            }
+        } finally {
+            loading = false; heavy = false; loadStarted = 0L
+        }
+    }
+
+    /** Adopt a playlist already scanned for its category preview, then save only the selected live channels. */
+    suspend fun adoptCached(c: Context, url: String, name: String): Boolean {
+        val u = PlaylistLogic.normalizeUrl(url) ?: return false
+        setItems(emptyList())
+        val ok = load(c, u, true, skipNetworkWhenCached = true, ask = false)
+        if (ok && name.isNotBlank()) rename(c, active, name)
+        return ok
     }
 
     /**

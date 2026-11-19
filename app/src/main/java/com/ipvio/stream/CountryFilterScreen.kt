@@ -16,6 +16,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -28,7 +29,10 @@ import java.util.Locale
 
 @Composable
 fun CountryFilterScreen(items: List<Item>, initial: Set<String>?, onCancel: () -> Unit, onDone: (Set<String>?) -> Unit) {
-    val countries = remember(items) { CountryBrowseLogic.project(items) }
+    val context = LocalContext.current
+    val previewOnly = items.isNotEmpty() && items.all { it.id.startsWith("preview:") }
+    val projected = remember(items) { CountryBrowseLogic.project(items) }
+    val countries = remember(projected, CountryBrowseOrder.version) { CountryBrowseOrder.sorted(projected) }
     var draft by remember { mutableStateOf(initial) }
     var countryCode by remember { mutableStateOf(countries.firstOrNull()?.code) }
     var groupName by remember { mutableStateOf(countries.firstOrNull()?.groups?.firstOrNull()?.name) }
@@ -50,12 +54,12 @@ fun CountryFilterScreen(items: List<Item>, initial: Set<String>?, onCancel: () -
     Column(Modifier.fillMaxSize().background(Bg).padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             FilterPane("Länder", country?.let(::filterCountryLabel), Modifier.weight(0.85f)) {
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                     itemsIndexed(countries, key = { _, value -> value.code }) { index, value ->
                         val modifier = (if (value.code == countryCode || (countryCode == null && index == 0)) Modifier.focusRequester(countryFocus) else Modifier).onPreviewKeyEvent { event ->
                             if (event.type == KeyEventType.KeyDown && event.key == Key.DirectionRight) runCatching { groupFocus.requestFocus() }.getOrDefault(false) else false
                         }
-                        FilterRow(filterCountryLabel(value), value.groups.sumOf { it.channels.size },
+                        FilterRow(filterCountryLabel(value), if (previewOnly) -1 else value.groups.sumOf { it.channels.size },
                             CountryFilterLogic.isCountrySelected(draft, value), CountryFilterLogic.isCountryPartial(draft, value), modifier, onFocus = {
                                 activePane = 0
                                 if (countryCode != value.code) { countryCode = value.code; groupName = value.groups.firstOrNull()?.name }
@@ -66,16 +70,20 @@ fun CountryFilterScreen(items: List<Item>, initial: Set<String>?, onCancel: () -
                         }
                     }
                 }
+                if (country != null) Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    FocusButton("Move up", compact = true) { CountryBrowseOrder.move(context, countries.map { it.code }, country.code, -1) }
+                    FocusButton("Move down", compact = true) { CountryBrowseOrder.move(context, countries.map { it.code }, country.code, 1) }
+                }
             }
             FilterPane("Kategorien", groupName, Modifier.weight(1.15f)) {
-                if (country == null) FilterHint("Land auswählen") else LazyColumn(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                if (country == null) FilterHint("Land auswählen") else LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                     itemsIndexed(groups, key = { _, value -> value.name }) { index, value ->
                         val modifier = (if (value.name == groupName || (groupName == null && index == 0)) Modifier.focusRequester(groupFocus) else Modifier).onPreviewKeyEvent { event ->
                             if (event.type == KeyEventType.KeyDown && event.key == Key.DirectionLeft) runCatching { countryFocus.requestFocus() }.getOrDefault(false)
                             else if (event.type == KeyEventType.KeyDown && event.key == Key.DirectionRight) runCatching { channelFocus.requestFocus() }.getOrDefault(false)
                             else false
                         }
-                        FilterRow(value.name, value.channels.size,
+                        FilterRow(value.name, if (previewOnly) -1 else value.channels.size,
                             CountryFilterLogic.isGroupSelected(draft, country.code, value.name), false, modifier, onFocus = { activePane = 1; groupName = value.name }) {
                             draft = CountryFilterLogic.toggleGroup(draft, country.code, value.name, countries)
                             groupName = value.name
@@ -84,7 +92,7 @@ fun CountryFilterScreen(items: List<Item>, initial: Set<String>?, onCancel: () -
                 }
             }
             FilterPane("Inhalt", null, Modifier.weight(1.5f)) {
-                if (group == null) FilterHint("Kategorie auswählen") else LazyColumn(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                if (group == null) FilterHint("Kategorie auswählen") else LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     itemsIndexed(group.channels) { index, channel ->
                         FilterPreviewRow(channel.title, (if (index == 0) Modifier.focusRequester(channelFocus) else Modifier).onPreviewKeyEvent { event ->
                             if (event.type == KeyEventType.KeyDown && event.key == Key.DirectionLeft) runCatching { groupFocus.requestFocus() }.getOrDefault(false) else false
@@ -124,7 +132,7 @@ private fun FilterRow(label: String, count: Int, selected: Boolean, partial: Boo
         .onFocusChanged { focused = it.isFocused; if (it.isFocused) onFocus() }.clickable(onClick = onClick).padding(horizontal = 10.dp, vertical = 11.dp),
         horizontalArrangement = Arrangement.SpaceBetween) {
         Text("$mark  $label", color = if (focused) DS.FocusInk else Color.White, fontSize = 15.sp, maxLines = 1, raw = true)
-        Text(count.toString(), color = if (focused) DS.FocusInk else Muted, fontSize = 12.sp, raw = true)
+        if (count >= 0) Text(count.toString(), color = if (focused) DS.FocusInk else Muted, fontSize = 12.sp, raw = true)
     }
 }
 

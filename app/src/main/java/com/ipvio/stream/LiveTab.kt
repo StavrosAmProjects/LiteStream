@@ -99,7 +99,7 @@ private fun FocusedBackdrop(focused: State<Item?>, modifier: Modifier) { LiveBac
 private fun FocusedNowPanel(focused: State<Item?>, fallback: Item?, compact: Boolean = false) { LiveNowPanel(focused.value ?: fallback, compact = compact) }
 
 @Composable
-fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: List<Item>, onOpen: (Item) -> Unit, onPlayNow: (Item) -> Unit = onOpen) {
+fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: List<Item>, onOpen: (Item) -> Unit, onPlayNow: (Item) -> Unit = onOpen, onEditPlaylist: (Int) -> Unit = {}) {
     val ctx = LocalContext.current
     // Several playlists: switch source with one press (All → Playlist 1 → Playlist 2 → …)
     val srcNames = PlaylistStore.sourceNames
@@ -171,7 +171,7 @@ fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: Li
         value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { Recorder.list(ctx).map { Recorder.itemOf(it) } }
         LiveRecCache.items = value
     }
-    val names = (if (PlaylistStore.lists.size > 1) listOf("PL") else emptyList()) + favCats + listOf("COUNTRIES", "HOME", "GUIDE", "SEARCH", "MULTI", FAV_CAT) + (if (recs.isNotEmpty()) listOf("REC") else emptyList()) + myLists.map { ChannelListLogic.key(it) } + listOf("NEW", "ALL") + CatOrder.sorted(CatOrder.LIVE, groups.keys.toList()).filter { it !in favCats && it !in HiddenCats.list } + genres.keys.filter { it !in HiddenCats.list } + (if (HiddenCats.list.any { it in groups || it in genres }) listOf("HIDDEN") else emptyList())
+    val names = (if (PlaylistStore.lists.size > 1) listOf("PL") else emptyList()) + (if (PlaylistStore.lists.isNotEmpty()) listOf("PL_EDIT", "PL_UPDATE") else emptyList()) + favCats + listOf("COUNTRIES", "HOME", "GUIDE", "SEARCH", "MULTI", FAV_CAT) + (if (recs.isNotEmpty()) listOf("REC") else emptyList()) + myLists.map { ChannelListLogic.key(it) } + listOf("NEW", "ALL") + CatOrder.sorted(CatOrder.LIVE, groups.keys.toList()).filter { it !in favCats && it !in HiddenCats.list } + genres.keys.filter { it !in HiddenCats.list } + (if (HiddenCats.list.any { it in groups || it in genres }) listOf("HIDDEN") else emptyList())
     val catKeys = remember(names) { val seen = HashSet<String>(); names.mapIndexed { i, n -> if (seen.add(n)) n else "$n#$i" } }
     val curList = ChannelLists.byKey(sel)
     // Own list currently being filled (OK on a channel adds it); declared early because bundling depends on it
@@ -375,24 +375,33 @@ fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: Li
                         // Choose playlist (round 22): "All" (with several shown), filter one of the shown sources
                         // or activate and load another playlist – without going into the settings.
                         val pls = PlaylistStore.lists.toList()
-                        val multiView = srcNames.size > 1
-                        val opts = (if (multiView) listOf(Lang.tr("Alle Playlists")) else emptyList()) + pls.map { it.name }
-                        val off = if (multiView) 1 else 0
-                        val curIdx = if (multiView && srcK < 0) 0 else {
-                            val si = if (multiView) srcK else 0
+                        val hasSeveral = pls.size > 1
+                        val opts = (if (hasSeveral) listOf("Merged playlists", "All playlists") else emptyList()) + pls.map { it.name }
+                        val off = if (hasSeveral) 2 else 0
+                        val curIdx = if (hasSeveral && srcK < 0) 0 else {
+                            val si = if (hasSeveral) srcK else 0
                             val pi = pls.indices.firstOrNull { PlaylistStore.shownIndex(it) == si } ?: PlaylistStore.active
                             pi + off
                         }
-                        val lbl = Lang.tr("Playlist") + ": " + (opts.getOrNull(curIdx) ?: "")
+                        val selectedLabel = when {
+                            hasSeveral && srcK < 0 && pls.indices.all { it == PlaylistStore.active || PlaylistStore.isShown(it) } -> "All playlists"
+                            else -> opts.getOrNull(curIdx).orEmpty()
+                        }
+                        val lbl = "Playlist: $selectedLabel"
                         Box {
                             CatRow(lbl, -1, false, Modifier.focusRequester(plFocus), onFocus = {}, onRight = { enterChannels() }, onFav = {}, icon = AIcon.Download, raw = true) { plOpen = true }
                             if (plOpen) OptionPopup(opts, curIdx, { plOpen = false; plBack = true }) { pick ->
                                 plOpen = false; plBack = true
-                                if (multiView && pick == 0) LiveSource.k = -1
+                                if (hasSeveral && pick == 0) LiveSource.k = -1
+                                else if (hasSeveral && pick == 1) {
+                                    LiveSource.k = -1
+                                    pls.indices.filter { it != PlaylistStore.active }.forEach { PlaylistStore.setShown(ctx, it, true) }
+                                    plScope.launch { PlaylistStore.applyMulti(ctx) }
+                                }
                                 else {
                                     val pi = pick - off
                                     val si = PlaylistStore.shownIndex(pi)
-                                    if (si >= 0) { if (multiView) LiveSource.k = si }
+                                    if (si >= 0) { if (hasSeveral) LiveSource.k = si }
                                     else {
                                         LiveSource.k = -1
                                         PlaylistStore.switchAsync(ctx, pi)
@@ -401,6 +410,19 @@ fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: Li
                                 // The chosen category may not exist in the other playlist: then "All channels"
                                 sel = "ALL"
                             }
+                        }
+                        return@itemsIndexed
+                    }
+                    if (n == "PL_EDIT" || n == "PL_UPDATE") {
+                        val playlistIndex = if (srcK >= 0) PlaylistStore.lists.indices.firstOrNull { PlaylistStore.shownIndex(it) == srcK } ?: PlaylistStore.active else PlaylistStore.active
+                        val targetUrl = PlaylistStore.lists.getOrNull(playlistIndex)?.url.orEmpty()
+                        if (n == "PL_EDIT" && StalkerLogic.parse(targetUrl) != null) return@itemsIndexed
+                        val title = if (n == "PL_EDIT") "Edit playlist" else "Update playlist"
+                        CatRow(title, -1, false, Modifier, onFocus = {}, onRight = { enterChannels() }, onFav = {}, icon = if (n == "PL_EDIT") AIcon.Edit else AIcon.Refresh, raw = true) {
+                            if (n == "PL_EDIT") {
+                                if (StalkerLogic.parse(PlaylistStore.lists.getOrNull(playlistIndex)?.url.orEmpty()) == null) onEditPlaylist(playlistIndex)
+                                else Toast.makeText(ctx, "Edit this Stalker playlist in Settings.", Toast.LENGTH_SHORT).show()
+                            } else PlaylistStore.refreshAsync(ctx, playlistIndex)
                         }
                         return@itemsIndexed
                     }
@@ -431,6 +453,8 @@ fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: Li
                     }
                     val label = when {
                         n == "COUNTRIES" -> "Länder"
+                        n == "PL_EDIT" -> "Edit playlist"
+                        n == "PL_UPDATE" -> "Update playlist"
                         n == FAV_CAT -> "Favoriten"
                         n == "HOME" -> "Start"
                         n == "ALL" -> "Alle Sender"
@@ -828,7 +852,7 @@ private fun ChannelLine(item: Item, modifier: Modifier, inList: ChList?, onNewLi
 private fun RowScope.ChannelLineContent(item: Item, epg: List<EpgEntry>, variantCount: Int, dims: RowDims) {
     val nowE = Epg.current(epg)
     val nextE = epg.firstOrNull { nowE != null && it.start >= nowE.end }
-    ChannelLogo(item.logo, item.title, dims.logo)
+    androidx.compose.runtime.key(Xmltv.logoRevision) { ChannelLogo(item.logo ?: Xmltv.logoFor(item.tvgId), item.title, dims.logo) }
     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(dims.gap)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(raw = true, text = item.title, color = Tok.TextHi, fontSize = dims.title, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))

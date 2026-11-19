@@ -4,6 +4,17 @@ package com.ipvio.stream
 object CountryFilterLogic {
     fun groupKey(country: String, group: String): String = "$country|$group"
 
+    fun includesLive(selection: Set<String>?, group: String, title: String): Boolean {
+        if (selection == null) return true
+        val country = CountryBrowseLogic.classify(group) ?: CountryBrowseLogic.classify(title) ?: "?"
+        return groupKey(country, group.ifBlank { "Other" }) in selection
+    }
+
+    /** Select whole provider categories before requesting their channel rows. */
+    fun includesCategory(selection: Set<String>?, category: String): Boolean =
+        selection == null || selection.any { it.substringAfter('|', "").equals(category.ifBlank { "Other" }, ignoreCase = true) }
+            || includesLive(selection, category, category)
+
     fun all(countries: List<BrowseCountry>): Set<String> = countries.flatMap { country ->
         country.groups.map { groupKey(country.code, it.name) }
     }.toSet()

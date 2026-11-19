@@ -56,6 +56,14 @@ class XtreamApi(private val client: OkHttpClient, private val ua: String) {
         return out
     }
 
+    /** Category-only preview for the import picker; channel streams are requested after selection. */
+    fun liveCategoryPreview(a: XtreamLogic.Acct): List<Item> {
+        verify(a)
+        return categories(a, "get_live_categories").map { (id, name) ->
+            Item(id, Kind.LIVE, name, null, "", null, name)
+        }
+    }
+
     /** Reads a flat JSON object (texts and numbers; for lists only the first value, e.g. "category_ids"). */
     private fun flat(r: JsonReader): Map<String, String> {
         val f = HashMap<String, String>(24)
@@ -211,7 +219,7 @@ class XtreamApi(private val client: OkHttpClient, private val ua: String) {
      * the three downloads no longer wait for each other, which is the biggest part of the first setup. If the provider refuses
      * the parallel requests, the missing part is simply fetched again one after the other.
      */
-    fun write(a: XtreamLogic.Acct, out: Writer): Int {
+    fun write(a: XtreamLogic.Acct, out: Writer, liveSelection: Set<String>? = null): Int {
         onPhase("Zugang wird geprüft …")
         verify(a)
         var n = 0
@@ -239,7 +247,15 @@ class XtreamApi(private val client: OkHttpClient, private val ua: String) {
 
             onPhase("Sender werden geladen …")
             val liveCats = categories(a, "get_live_categories")
-            stream(XtreamLogic.api(a, "get_live_streams")) { f ->
+            val selectedIds = liveSelection?.let { selected ->
+                liveCats.filterValues { CountryFilterLogic.includesCategory(selected, it) }.keys
+            }
+            val liveEndpoints = when {
+                selectedIds == null -> listOf(XtreamLogic.api(a, "get_live_streams"))
+                selectedIds.isEmpty() -> emptyList()
+                else -> selectedIds.map { id -> XtreamLogic.api(a, "get_live_streams", "&category_id=${java.net.URLEncoder.encode(id, "UTF-8")}") }
+            }
+            for (endpoint in liveEndpoints) stream(endpoint) { f ->
                 XtreamLogic.liveEntry(a, f, liveCats)?.let { out.write(it); out.write("\n"); n++ }
             }
             check()

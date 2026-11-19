@@ -1252,6 +1252,8 @@ private fun PlaylistPage(ctx: Context, onAdd: () -> Unit, reload: () -> Unit, on
     val scope = rememberCoroutineScope()
     var editing by remember { mutableIntStateOf(-1) }
     var name by remember { mutableStateOf("") }
+    var customizeIndex by remember { mutableIntStateOf(-1) }
+    var customizeItems by remember { mutableStateOf<List<Item>?>(null) }
     // Editing the backup servers of an Xtream playlist
     var editingB by remember { mutableIntStateOf(-1) }
     var backups by remember { mutableStateOf(backupList(emptyList())) }
@@ -1262,49 +1264,81 @@ private fun PlaylistPage(ctx: Context, onAdd: () -> Unit, reload: () -> Unit, on
     PlaylistStore.lists.forEachIndexed { i, pl ->
         val isActive = i == PlaylistStore.active
         val shown = PlaylistStore.isShown(i)
-        Row(
+        val mode = remember(PlaylistMode.version, pl.url) { PlaylistMode.get(ctx, pl.url) }
+        Column(
             Modifier.fillMaxWidth().clip(RoundedCornerShape(DS.RadiusM)).background(if (isActive) DS.Overlay2 else Color(0x12FFFFFF)).padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(9.dp)
         ) {
-            Column(Modifier.weight(1f)) {
-                Text(pl.name + if (isActive) "  ·  " + Lang.tr("Hauptliste") else if (shown) "  ·  " + Lang.tr("zusätzlich angezeigt") else "", color = if (isActive || shown) Accent2 else Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis, raw = true)
-                Text(PlaylistStore.hostOf(pl.url), color = Muted, fontSize = 13.sp, maxLines = 1)
-                val nb = if (editingB == i) 0 else PlaylistStore.backups(ctx, pl.url).size
-                if (nb > 0) Text("Backup-Server: $nb", color = Muted, fontSize = 13.sp, maxLines = 1)
-                val down = PlaylistStore.downServers(ctx, pl.url)
-                if (down.isNotEmpty()) Text("Nicht erreichbar: " + down.joinToString(", "), color = Color(0xFFFF8A80), fontSize = 13.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(pl.name + if (isActive) "  ·  Main playlist" else if (shown) "  ·  In merged playlists" else "", color = if (isActive || shown) Accent2 else Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis, raw = true)
+                    Text(PlaylistStore.hostOf(pl.url), color = Muted, fontSize = 13.sp, maxLines = 1)
+                    val nb = if (editingB == i) 0 else PlaylistStore.backups(ctx, pl.url).size
+                    if (nb > 0) Text("Backup servers: $nb", color = Muted, fontSize = 13.sp, maxLines = 1)
+                    val down = PlaylistStore.downServers(ctx, pl.url)
+                    if (down.isNotEmpty()) Text("Unavailable: " + down.joinToString(", "), color = Color(0xFFFF8A80), fontSize = 13.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                }
+                SmallPill("Update") { PlaylistStore.refreshAsync(ctx, i) }
             }
-            // "Show as well" can no longer be switched on (1.4.2); playlists already shown can still be switched off
-            if (!isActive && shown) SmallPill("Nicht mehr zusätzlich anzeigen") {
-                PlaylistStore.setShown(ctx, i, false)
-                scope.launch { PlaylistStore.applyMulti(ctx) }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (!isActive) {
+                    SmallPill("Make main") { PlaylistStore.switchAsync(ctx, i) }
+                    SmallPill(if (shown) "Remove from merged" else "Add to merged") {
+                        PlaylistStore.setShown(ctx, i, !shown)
+                        scope.launch { PlaylistStore.applyMulti(ctx) }
+                    }
+                }
+                SmallPill("Rename") { editing = i; name = pl.name }
+                SmallPill(PlaylistMode.labels[mode]) {
+                    PlaylistMode.set(ctx, pl.url, (mode + 1) % PlaylistMode.labels.size)
+                    scope.launch { if (!PlaylistStore.reapplyLanguages(ctx)) PlaylistStore.applyMode(ctx) }
+                }
             }
-            // Same as the playlist switch in Live TV: from the stored copy, without a new download
-            if (!isActive) SmallPill("Zur Hauptliste machen") { PlaylistStore.switchAsync(ctx, i) }
-            // Content mode (Wishbox): Live TV + VOD / Live TV only / VOD only, cycles on OK
-            val mode = remember(PlaylistMode.version, pl.url) { PlaylistMode.get(ctx, pl.url) }
-            SmallPill(PlaylistMode.labels[mode]) {
-                PlaylistMode.set(ctx, pl.url, (mode + 1) % PlaylistMode.labels.size)
-                // Parsed again from the stored list without network (the mode is applied while loading, saves memory)
-                scope.launch { if (!PlaylistStore.reapplyLanguages(ctx)) PlaylistStore.applyMode(ctx) }
-            }
-            SmallPill("Umbenennen") { editing = i; name = pl.name }
-            if (StalkerLogic.parse(pl.url) == null) SmallPill(Lang.tr("Am Handy bearbeiten")) { onEditProvider(i) }
-            if (XtreamLogic.fromUrl(pl.url) != null) SmallPill("Backup-Server") {
-                val b = PlaylistStore.backups(ctx, pl.url)
-                editingB = i; backups = backupList(b); backupErr = null
-            }
-            SmallPill("Löschen") {
-                val wasActive = isActive
-                editingB = -1
-                PlaylistStore.remove(ctx, i)
-                if (PlaylistStore.lists.isEmpty()) onAdd()
-                else if (wasActive) {
-                    val u = PlaylistStore.lists[PlaylistStore.active].url
-                    scope.launch { PlaylistStore.load(ctx, u, false) }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                SmallPill("Customize live TV") {
+                    scope.launch {
+                        val items = runCatching { PlaylistStore.countryFilterPreview(ctx, pl.url) }.getOrDefault(emptyList())
+                        if (items.isEmpty()) settingsToast(ctx, "No playlist categories are available. Update the playlist first.")
+                        else { customizeIndex = i; customizeItems = items.filter { it.kind == Kind.LIVE } }
+                    }
+                }
+                if (StalkerLogic.parse(pl.url) == null) SmallPill("Edit on phone") { onEditProvider(i) }
+                if (XtreamLogic.fromUrl(pl.url) != null) SmallPill("Backup servers") {
+                    backups = backupList(PlaylistStore.backups(ctx, pl.url)); editingB = i; backupErr = null
+                }
+                SmallPill("Delete") {
+                    val wasActive = isActive
+                    editingB = -1
+                    PlaylistStore.remove(ctx, i)
+                    if (PlaylistStore.lists.isEmpty()) onAdd()
+                    else if (wasActive) PlaylistStore.switchAsync(ctx, PlaylistStore.active)
                 }
             }
         }
+    }
+    val selecting = customizeItems
+    val selectedPlaylist = PlaylistStore.lists.getOrNull(customizeIndex)
+    if (selecting != null && selectedPlaylist != null) androidx.compose.ui.window.Dialog(
+        onDismissRequest = {
+            customizeItems = null; customizeIndex = -1
+        },
+        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        CountryFilterScreen(
+            selecting, CountryFilterStore.read(ctx, selectedPlaylist.url),
+            onCancel = {
+                customizeItems = null; customizeIndex = -1
+            },
+            onDone = { selection ->
+                val url = selectedPlaylist.url
+                val index = customizeIndex
+                CountryFilterStore.write(ctx, url, selection)
+                customizeItems = null; customizeIndex = -1
+                scope.launch {
+                    PlaylistStore.reapplyCountryFilter(ctx, url)
+                }
+            }
+        )
     }
     PlaylistStore.extraError?.let { Text(it, color = Color(0xFFFF8A80), fontSize = 15.sp) }
     if (editing >= 0) {
@@ -1326,8 +1360,8 @@ private fun PlaylistPage(ctx: Context, onAdd: () -> Unit, reload: () -> Unit, on
         }
     }
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        PillButton("+ Weitere Playlist hinzufügen", light = true) { onAdd() }
-        PillButton("Aktive Playlist neu laden", icon = AIcon.Refresh) { reload() }
+        PillButton("+ Add playlist", light = true) { onAdd() }
+        PillButton("Update active playlist", icon = AIcon.Refresh) { reload() }
     }
     LanguageFilterSection(ctx)
     SectionTitle("Automatisch aktualisieren")

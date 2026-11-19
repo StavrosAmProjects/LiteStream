@@ -136,6 +136,14 @@ object StalkerApi {
         return out
     }
 
+    /** Category-only preview for import filtering; channel and VOD rows are fetched after confirmation. */
+    fun liveCategoryPreview(src: StalkerLogic.Source): List<Item> {
+        val session = login(src, force = true)
+        return categories(session, "itv", "get_genres").map { (id, name) ->
+            Item(id, Kind.LIVE, name, null, "", null, name)
+        }
+    }
+
     private fun fields(o: JSONObject): Map<String, String> {
         val f = HashMap<String, String>()
         for (k in o.keys()) { val v = o.opt(k); if (v is String || v is Number) f[k] = v.toString() }
@@ -179,7 +187,7 @@ object StalkerApi {
      */
     fun write(
         src: StalkerLogic.Source, out: Writer, onPhase: (String) -> Unit, check: () -> Unit,
-        onCats: (List<StalkerLogic.CatRef>) -> Unit = {}
+        onCats: (List<StalkerLogic.CatRef>) -> Unit = {}, liveSelection: Set<String>? = null
     ): Int {
         onPhase("Zugang wird geprüft …")
         val s = login(src, force = true)
@@ -190,18 +198,28 @@ object StalkerApi {
         onPhase("Sender werden geladen …")
         val genres = categories(s, "itv", "get_genres")
         var live = 0
-        val all = js(src, StalkerLogic.api(s.endpoint, "itv", "get_all_channels"), s.token)
-        val data = (all as? JSONObject)?.optJSONArray("data") ?: (all as? JSONArray)
-        if (data != null) for (i in 0 until data.length()) {
-            val o = data.optJSONObject(i) ?: continue
-            StalkerLogic.liveEntry(src, fields(o), genres)?.let { out.write(it); out.write("\n"); n++; live++ }
-            if (i % 1000 == 0) check()
-        }
-        if (live == 0) {
-            // Fallback: many portals block "all channels at once" and deliver only page by page
-            paged(s, "itv", "&genre=*&force_ch_link_check=&fav=0&sortby=number&hd=0", MAX_CHANNELS, check) { o ->
+        if (liveSelection == null) {
+            val all = js(src, StalkerLogic.api(s.endpoint, "itv", "get_all_channels"), s.token)
+            val data = (all as? JSONObject)?.optJSONArray("data") ?: (all as? JSONArray)
+            if (data != null) for (i in 0 until data.length()) {
+                val o = data.optJSONObject(i) ?: continue
                 StalkerLogic.liveEntry(src, fields(o), genres)?.let { out.write(it); out.write("\n"); n++; live++ }
-                if (live % 400 == 0) onPhase("Sender werden geladen ($live) …")
+                if (i % 1000 == 0) check()
+            }
+            if (live == 0) {
+                // Fallback: many portals block "all channels at once" and deliver only page by page
+                paged(s, "itv", "&genre=*&force_ch_link_check=&fav=0&sortby=number&hd=0", MAX_CHANNELS, check) { o ->
+                    StalkerLogic.liveEntry(src, fields(o), genres)?.let { out.write(it); out.write("\n"); n++; live++ }
+                    if (live % 400 == 0) onPhase("Sender werden geladen ($live) …")
+                }
+            }
+        } else {
+            val selected = genres.filterValues { CountryFilterLogic.includesCategory(liveSelection, it) }
+            for ((id, _) in selected) {
+                paged(s, "itv", "&genre=${enc(id)}&force_ch_link_check=&fav=0&sortby=number&hd=0", MAX_CHANNELS, check) { o ->
+                    StalkerLogic.liveEntry(src, fields(o), genres)?.let { out.write(it); out.write("\n"); n++; live++ }
+                    if (live % 400 == 0) onPhase("Loading selected live TV channels ($live) …")
+                }
             }
         }
 

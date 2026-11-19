@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Base64
 import android.util.Xml
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.CoroutineScope
@@ -66,6 +67,9 @@ object Xmltv {
     var status by mutableStateOf("Noch nicht geladen")
     var channelCount by mutableStateOf(0)
     private val progs = ConcurrentHashMap<String, List<EpgEntry>>()
+    private val logos = ConcurrentHashMap<String, String>()
+    var logoRevision by mutableIntStateOf(0)
+        private set
     private val client = Net.withTimeouts(20, 180)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var job: Job? = null
@@ -76,6 +80,7 @@ object Xmltv {
 
     fun has(id: String?): Boolean = id != null && progs.containsKey(id.lowercase())
     fun forChannel(id: String?): List<EpgEntry> = if (id == null) emptyList() else progs[id.lowercase()] ?: emptyList()
+    fun logoFor(id: String?): String? = id?.let { logos[it.lowercase()] }
 
     /**
      * Loads the XMLTV program for the visible channels (hidden languages do not even arrive).
@@ -93,6 +98,7 @@ object Xmltv {
             if (delayMs > 0) kotlinx.coroutines.delay(delayMs)
             status = "Wird geladen …"
             val map = HashMap<String, MutableList<EpgEntry>>()
+            val logoMap = HashMap<String, String>()
             var err: String? = null
             truncated = false
             // Channels with archive (catchup): also keep past shows (at most 7 days, memory)
@@ -104,10 +110,13 @@ object Xmltv {
                 past[k] = maxOf(past[k] ?: 0, d.coerceAtMost(7))
             }
             for (u in all) {
-                try { parse(u, wanted, map, past) } catch (e: Exception) { err = if (e is PlaylistError) e.message else e.javaClass.simpleName }
+                try { parse(u, wanted, map, past, logoMap) } catch (e: Exception) { err = if (e is PlaylistError) e.message else e.javaClass.simpleName }
             }
             progs.clear()
             for ((k, v) in map) progs[k] = v.sortedBy { it.start }
+            logos.clear()
+            logos.putAll(logoMap)
+            logoRevision++
             channelCount = progs.size
             status = if (progs.isEmpty()) "Keine Programmdaten erhalten (${err ?: "leer"})"
             else if (truncated) "Geladen: ${progs.size} Sender mit Programm (gekürzt, Speicher knapp)"
@@ -124,7 +133,10 @@ object Xmltv {
     private fun shortDesc(d: String): String =
         if (d.length <= MAX_DESC) d else d.substring(0, d.lastIndexOf(' ', MAX_DESC).takeIf { it > MAX_DESC / 2 } ?: MAX_DESC) + " …"
 
-    private fun parse(url: String, wanted: Set<String>, out: HashMap<String, MutableList<EpgEntry>>, past: Map<String, Int> = emptyMap()) {
+    private fun parse(
+        url: String, wanted: Set<String>, out: HashMap<String, MutableList<EpgEntry>>,
+        past: Map<String, Int> = emptyMap(), logos: MutableMap<String, String>
+    ) {
         client.newCall(Request.Builder().url(url).build()).execute().use { r ->
             if (!r.isSuccessful) throw PlaylistError("HTTP ${r.code}")
             var ins: InputStream = BufferedInputStream((r.body ?: throw PlaylistError("leer")).byteStream())
@@ -163,6 +175,17 @@ object Xmltv {
                     }
                     // Memory is getting tight: stop and keep what has been read so far (better gaps in the program than a crash)
                     if (++seen % 5000 == 0 && Mem.heapTight(0.70)) { truncated = true; return }
+                } else if (ev == XmlPullParser.START_TAG && p.name == "channel") {
+                    val id = p.getAttributeValue(null, "id")?.lowercase()
+                    if (id != null && id in wanted) {
+                        var inner = p.next()
+                        while (!(inner == XmlPullParser.END_TAG && p.name == "channel") && inner != XmlPullParser.END_DOCUMENT) {
+                            if (inner == XmlPullParser.START_TAG && p.name == "icon") {
+                                p.getAttributeValue(null, "src")?.trim()?.takeIf { it.startsWith("https://") || it.startsWith("http://") }?.let { if (!logos.containsKey(id)) logos[id] = it }
+                            }
+                            inner = p.next()
+                        }
+                    }
                 }
                 ev = p.next()
             }

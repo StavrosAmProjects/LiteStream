@@ -47,4 +47,14 @@ class CountryFilterLogicTest {
         assertFalse(key.contains("secret"))
         assertEquals(key, CountryFilterStore.key(url))
     }
+
+    @Test fun selectedGroupsMatchLiveItemsAndProviderCategories() {
+        val selected = setOf(CountryFilterLogic.groupKey("GR", "GR | Sports"))
+        assertTrue(CountryFilterLogic.includesLive(selected, "GR | Sports", "Alpha"))
+        assertFalse(CountryFilterLogic.includesLive(selected, "GR | Movies", "Film"))
+        assertTrue(CountryFilterLogic.includesCategory(selected, "GR | Sports"))
+        assertFalse(CountryFilterLogic.includesCategory(selected, "GR | Movies"))
+        assertFalse(CountryFilterLogic.includesLive(emptySet(), "GR | Sports", "Alpha"))
+        assertTrue(CountryFilterLogic.includesLive(null, "GR | Sports", "Alpha"))
+    }
 }

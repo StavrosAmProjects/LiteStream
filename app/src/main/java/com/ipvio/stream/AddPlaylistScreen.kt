@@ -66,7 +66,13 @@ fun AddPlaylistScreen(editProviderIndex: Int = -1, onDone: () -> Unit) {
     var phonePending by remember { mutableStateOf<ProviderImport?>(null) }
     var providerChoice by remember { mutableStateOf<ProviderImport?>(null) }
     var pendingBackups by remember { mutableStateOf(emptyList<String>()) }
+    var pendingPlaylistUrl by remember { mutableStateOf<String?>(null) }
+    var pendingPlaylistName by remember { mutableStateOf("") }
+    var pendingPlaylistItems by remember { mutableStateOf<List<Item>>(emptyList()) }
+    var pendingPlaylistRestore by remember { mutableIntStateOf(-1) }
     var customizeUrl by remember { mutableStateOf<String?>(null) }
+    var customizeItems by remember { mutableStateOf<List<Item>?>(null) }
+    var customizeName by remember { mutableStateOf("") }
     var setupPath by remember { mutableStateOf<String?>(null) }
     var serving by remember { mutableStateOf(false) }
     // The local phone server starts only when the user opens phone setup.
@@ -83,31 +89,62 @@ fun AddPlaylistScreen(editProviderIndex: Int = -1, onDone: () -> Unit) {
         }, setupOnly = true)
     }
     suspend fun addProvider(finalUrl: String, name: String = providerName) {
-        if (PlaylistStore.load(ctx, finalUrl, true)) {
-            if (name.isNotBlank()) PlaylistStore.rename(ctx, PlaylistStore.active, name)
-            onDone()
-        }
+        pendingPlaylistRestore = PlaylistStore.active
+        PlaylistStore.error = null
+        val preview = runCatching { PlaylistStore.prepareCountryFilterPreview(ctx, finalUrl) }
+            .getOrElse { PlaylistStore.error = PlaylistLogic.friendlyError(it); emptyList() }
+        if (PlaylistStore.error != null) return
+        pendingPlaylistUrl = finalUrl
+        pendingPlaylistName = name.ifBlank { PlaylistStore.hostOf(finalUrl) }
+        pendingPlaylistItems = preview
     }
     fun chooseProviderMode(mode: String) {
-        val imported = providerChoice ?: return
-        val finalUrl = imported.input.url.takeIf { XtreamLogic.fromUrl(it) != null }
-            ?: PlaylistStore.xtreamUrl(imported.input.host, imported.input.user, imported.input.pass)
+        val imported = providerChoice
+        val finalUrl = imported?.let {
+            it.input.url.takeIf { XtreamLogic.fromUrl(it) != null }
+                ?: PlaylistStore.xtreamUrl(it.input.host, it.input.user, it.input.pass)
+        } ?: pendingPlaylistUrl
         if (finalUrl == null) { PlaylistStore.error = "Angaben unvollständig oder ungültig."; return }
+        if (mode == "customize") {
+            if (imported == null) {
+                if (pendingPlaylistItems.isEmpty()) { PlaylistStore.error = "No live TV categories were found to customize."; return }
+                customizeUrl = finalUrl
+                customizeItems = pendingPlaylistItems
+                customizeName = pendingPlaylistName
+            } else {
+                val account = XtreamLogic.fromUrl(finalUrl) ?: return
+                scope.launch {
+                    PlaylistStore.error = null
+                    val categories = runCatching {
+                        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { PlaylistStore.xtreamApi().liveCategoryPreview(account) }
+                    }.getOrElse {
+                        PlaylistStore.error = "Could not load provider categories. Check the connection and try again."
+                        emptyList()
+                    }
+                    if (categories.isEmpty()) {
+                        if (PlaylistStore.error == null) PlaylistStore.error = "The provider returned no live TV categories."
+                    } else {
+                        customizeUrl = finalUrl
+                        customizeItems = categories
+                        customizeName = imported.name
+                    }
+                }
+            }
+            return
+        }
         providerChoice = null
         val backupsForProvider = pendingBackups
         pendingBackups = emptyList()
         if (backupsForProvider.isNotEmpty()) PlaylistStore.setBackups(ctx, finalUrl, backupsForProvider)
+        CountryFilterStore.write(ctx, finalUrl, if (mode == "none") emptySet() else null)
         scope.launch {
-            if (!PlaylistStore.load(ctx, finalUrl, true)) return@launch
-            if (imported.name.isNotBlank()) PlaylistStore.rename(ctx, PlaylistStore.active, imported.name)
-            val savedUrl = PlaylistStore.savedUrl(ctx) ?: finalUrl
-            when (mode) {
-                "none" -> { CountryFilterStore.write(ctx, savedUrl, emptySet()); onDone() }
-                "customize" -> {
-                    if (PlaylistStore.channels.none { it.src == PlaylistStore.active }) onDone() else customizeUrl = savedUrl
-                }
-                else -> { CountryFilterStore.write(ctx, savedUrl, null); onDone() }
-            }
+            val name = imported?.name ?: pendingPlaylistName
+            val ok = if (imported == null) PlaylistStore.adoptCached(ctx, finalUrl, name)
+                else PlaylistStore.load(ctx, finalUrl, true)
+            if (!ok) return@launch
+            if (imported != null && imported.name.isNotBlank()) PlaylistStore.rename(ctx, PlaylistStore.active, imported.name)
+            pendingPlaylistUrl = null; pendingPlaylistName = ""; pendingPlaylistItems = emptyList(); pendingPlaylistRestore = -1
+            onDone()
         }
     }
     fun startPhoneSetup() {
@@ -205,7 +242,19 @@ fun AddPlaylistScreen(editProviderIndex: Int = -1, onDone: () -> Unit) {
             if (n >= 0) Profiles.restart(ctx) else PlaylistStore.error = "Keine gültige Sicherung gefunden."
         }
     }
-    BackHandler(enabled = canCancel) { PlaylistStore.clearPending(ctx); onDone() }
+    BackHandler(enabled = customizeUrl != null || providerChoice != null || pendingPlaylistUrl != null || canCancel) {
+        when {
+            customizeUrl != null -> { customizeUrl = null; customizeItems = null }
+            providerChoice != null -> { providerChoice = null; pendingBackups = emptyList() }
+            pendingPlaylistUrl != null -> {
+                val restore = pendingPlaylistRestore
+                pendingPlaylistUrl = null; pendingPlaylistName = ""; pendingPlaylistItems = emptyList(); pendingPlaylistRestore = -1
+                if (restore in PlaylistStore.lists.indices) scope.launch { PlaylistStore.switchTo(ctx, restore) }
+                else { PlaylistStore.setItems(emptyList()); onDone() }
+            }
+            else -> { PlaylistStore.clearPending(ctx); onDone() }
+        }
+    }
 
     // Interrupted in the middle of loading last time: continue automatically without entering anything again
     LaunchedEffect(Unit) {
@@ -448,22 +497,46 @@ fun AddPlaylistScreen(editProviderIndex: Int = -1, onDone: () -> Unit) {
             }
         )
     }
-    providerChoice?.let { imported ->
+    (providerChoice?.name ?: pendingPlaylistName.takeIf { pendingPlaylistUrl != null })?.let { name ->
         ProviderChoiceDialog(
-            imported.name,
-            onCancel = { providerChoice = null; pendingBackups = emptyList() },
+            name,
+            canCustomize = providerChoice != null || pendingPlaylistItems.isNotEmpty(),
+            onCancel = {
+                if (providerChoice != null) { providerChoice = null; pendingBackups = emptyList() }
+                else {
+                    val restore = pendingPlaylistRestore
+                    pendingPlaylistUrl = null; pendingPlaylistName = ""; pendingPlaylistItems = emptyList(); pendingPlaylistRestore = -1
+                    if (restore in PlaylistStore.lists.indices) scope.launch { PlaylistStore.switchTo(ctx, restore) }
+                    else { PlaylistStore.setItems(emptyList()); onDone() }
+                }
+            },
             onChoose = ::chooseProviderMode
         )
     }
+    val providerPreview = customizeItems
     customizeUrl?.let { providerUrl ->
-        Dialog(onDismissRequest = { customizeUrl = null; onDone() }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        Dialog(onDismissRequest = { customizeUrl = null; customizeItems = null }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
             CountryFilterScreen(
-                PlaylistStore.channels.filter { it.src == 0 }, CountryFilterStore.read(ctx, providerUrl),
-                onCancel = { customizeUrl = null; onDone() },
+                providerPreview.orEmpty(), CountryFilterStore.read(ctx, providerUrl),
+                onCancel = { customizeUrl = null; customizeItems = null },
                 onDone = { selection ->
                     CountryFilterStore.write(ctx, providerUrl, selection)
+                    val imported = providerChoice
+                    val name = imported?.name ?: customizeName
+                    val backupsForProvider = pendingBackups
+                    providerChoice = null
+                    pendingBackups = emptyList()
+                    if (backupsForProvider.isNotEmpty()) PlaylistStore.setBackups(ctx, providerUrl, backupsForProvider)
                     customizeUrl = null
-                    onDone()
+                    customizeItems = null
+                    scope.launch {
+                        val ok = if (imported == null) PlaylistStore.adoptCached(ctx, providerUrl, name)
+                            else PlaylistStore.load(ctx, providerUrl, true)
+                        if (!ok) return@launch
+                        if (imported != null && name.isNotBlank()) PlaylistStore.rename(ctx, PlaylistStore.active, name)
+                        pendingPlaylistUrl = null; pendingPlaylistName = ""; pendingPlaylistItems = emptyList(); pendingPlaylistRestore = -1
+                        onDone()
+                    }
                 }
             )
         }
@@ -503,17 +576,17 @@ private fun ProviderConfirmDialog(
 }
 
 @Composable
-private fun ProviderChoiceDialog(name: String, onCancel: () -> Unit, onChoose: (String) -> Unit) {
+private fun ProviderChoiceDialog(name: String, canCustomize: Boolean = true, onCancel: () -> Unit, onChoose: (String) -> Unit) {
     Dialog(onDismissRequest = onCancel) {
         Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(DS.RadiusXl)).background(Surf).border(2.dp, Surf2, RoundedCornerShape(DS.RadiusXl)).padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(Lang.tr("Anbieter") + ": $name", color = Color.White, fontSize = 20.sp, maxLines = 1)
-            Text("Wie viele Sender möchtest du zuerst sehen?", color = Muted, fontSize = 16.sp)
+            Text("Provider: $name", color = Color.White, fontSize = 20.sp, maxLines = 1)
+            Text("Choose the live TV categories to keep active.", color = Muted, fontSize = 16.sp)
             Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                FocusButton(Lang.tr("Alles"), primary = true, compact = true) { onChoose("all") }
-                FocusButton(Lang.tr("Nichts"), compact = true) { onChoose("none") }
-                FocusButton(Lang.tr("Anpassen"), compact = true) { onChoose("customize") }
+                FocusButton("All", primary = true, compact = true) { onChoose("all") }
+                FocusButton("None", compact = true) { onChoose("none") }
+                if (canCustomize) FocusButton("Customize", compact = true) { onChoose("customize") }
             }
-            FocusButton(Lang.tr("Abbrechen"), compact = true, onClick = onCancel)
+            FocusButton("Cancel", compact = true, onClick = onCancel)
         }
     }
 }

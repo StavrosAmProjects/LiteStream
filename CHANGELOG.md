@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Add direct Live TV playlist switching, Edit on phone and Update actions; simplify multi-playlist controls in Settings and add per-playlist live country/category customization. Import scans M3U categories first and keeps only selected live channels active while retaining the local source for later changes; Xtream/Stalker request selected live categories. Channel rows now fall back to XMLTV channel icons when provider logos are absent.
 - Match Sport24 broadcaster names across common spacing, HD-tag, Nova Sports, and Magenta/Cosmote variations while keeping channel numbers exact.
 - Keep build and PR checks off ordinary work-branch pushes; retain checks when a PR opens and preserve manual builds and release triggers.
 - Add a Home shortcut to Sport24's daily Greek sports TV schedule, with automatic and manual playlist-channel matching.

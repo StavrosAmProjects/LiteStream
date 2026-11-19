@@ -280,9 +280,29 @@ object M3uParser {
 
     fun parse(text: String): List<Item> = parseLines(text.lineSequence()).items
 
+    /** Small category preview for flat M3U/Stalker playlists; keeps one sample per country and group. */
+    fun countryPreview(reader: java.io.Reader, check: (() -> Unit)? = null): List<Item> = LinePump(reader).use { pump ->
+        val out = LinkedHashMap<String, Item>()
+        val stats = Stats()
+        val langOf = LangOf(StringPool())
+        entries(pump.lines(), check) { e ->
+            if (isSeparator(e.name)) return@entries
+            val kinded = classify(e, stats, langOf) ?: return@entries
+            if (kinded.kind != Kind.LIVE) return@entries
+            val group = e.group.ifBlank { "Other" }
+            val country = CountryBrowseLogic.classify(group) ?: CountryBrowseLogic.classify(e.name) ?: "?"
+            val key = "$country\u0001$group"
+            if (key !in out) {
+                val sample = if (country == "?") e.name else "$country | ${e.name}"
+                out[key] = Item("preview:${key.hashCode()}", Kind.LIVE, sample, null, "", null, group)
+            }
+        }
+        out.values.toList()
+    }
+
     /** Reads line by line from a Reader. This way the whole list never has to sit in memory as a single String. */
-    fun parseStream(reader: java.io.Reader, hidden: Set<String> = emptySet(), check: (() -> Unit)? = null): ParsedPlaylist =
-        LinePump(reader).use { parseLines(it.lines(), hidden, check) }
+    fun parseStream(reader: java.io.Reader, hidden: Set<String> = emptySet(), check: (() -> Unit)? = null, liveSelection: Set<String>? = null): ParsedPlaylist =
+        LinePump(reader).use { parseLines(it.lines(), hidden, check, liveSelection) }
 
     /** Quick pass without creating titles: how many titles and how much data per language (for the language selection). */
     fun scanStream(reader: java.io.Reader, check: (() -> Unit)? = null): PlaylistScan =
@@ -423,7 +443,7 @@ object M3uParser {
      * so a list with 800,000 entries needs only as much memory as the chosen languages.
      * [check] is called every 2,000 entries (progress, abort, memory guard).
      */
-    fun parseLines(lines: Sequence<String>, hidden: Set<String> = emptySet(), check: (() -> Unit)? = null): ParsedPlaylist {
+    fun parseLines(lines: Sequence<String>, hidden: Set<String> = emptySet(), check: (() -> Unit)? = null, liveSelection: Set<String>? = null): ParsedPlaylist {
         val pool = StringPool()
         val langOf = LangOf(pool)
         val st = Stats()
@@ -436,6 +456,7 @@ object M3uParser {
         entries(lines, check, onHeader = { header = it; headCu = CatchupLogic.fromInfo(it, "") }) { e ->
             val kd = classify(e, st, langOf) ?: return@entries
             if (LangTagLogic.hides(hidden, kd.lang, kd.kind)) return@entries
+            if (kd.kind == Kind.LIVE && !CountryFilterLogic.includesLive(liveSelection, e.group, e.name)) return@entries
             val group = pool.of(e.group)
             val q = quality(e.name, e.group)
             when (kd.kind) {

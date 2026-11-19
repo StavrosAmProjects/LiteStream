@@ -42,6 +42,15 @@ http://h/x
         assertEquals(listOf("http://epg/x.xml"), p.epgUrls)
     }
 
+    @Test fun countrySelectionKeepsOnlyChosenLiveChannelsAndLeavesVodUntouched() {
+        val selection = setOf(CountryFilterLogic.groupKey("DE", "DE | News"))
+        val p = M3uParser.parseStream(StringReader(m3u), liveSelection = selection)
+        assertEquals(1, p.items.count { it.kind == Kind.LIVE })
+        assertEquals(1, p.items.count { it.kind == Kind.MOVIE })
+        assertEquals(1, p.items.count { it.kind == Kind.SERIES })
+        assertEquals("DE | News", p.items.single { it.kind == Kind.LIVE }.group)
+    }
+
     @Test fun ausgeblendeteSprachenWerdenNichtAngelegtAberGezaehlt() {
         val p = M3uParser.parseStream(StringReader(m3u), hidden = setOf("en", "tr"))
         assertTrue(p.items.all { it.lang == "de" })
