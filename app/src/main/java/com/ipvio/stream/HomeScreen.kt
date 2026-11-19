@@ -256,7 +256,8 @@ fun HomeScreen(
     val favoriteGroupShortcuts = remember(liveP, CatFavs.list.toList()) {
         HomeCountryShortcutLogic.favoriteGroups(CatFavs.list.toList(), liveP)
     }
-    val homeEntryAvailable = favoriteGroupShortcuts.isNotEmpty() || HomeCountryShortcuts.items.isNotEmpty() || HomeLayout.shown("tiles")
+    val favouriteCategoriesVisible = HomeLayout.shown("favcats") && favoriteGroupShortcuts.isNotEmpty()
+    val homeEntryAvailable = favouriteCategoriesVisible || HomeCountryShortcuts.items.isNotEmpty() || HomeLayout.shown("tiles")
     val initialContentFocus = if (tab == 0 && homeEntryAvailable) homeEntryFocus else ContentFocus.req
     // Provider categories follow the order / ignore settings of the category page. Only re-sorts the map keys when
     // CatOrder or IgnoredGroups change (cheap, not per recomposition); genre groups keep their own order.
@@ -476,7 +477,7 @@ fun HomeScreen(
     var inSidebar by remember { mutableStateOf(false) }
     val sideFocus = remember { FocusRequester() }
     // Start on the first personal TV shortcut, or the Live TV tile, instead of the featured VOD artwork.
-    LaunchedEffect(tab, favoriteGroupShortcuts.size, HomeCountryShortcuts.items.size, HomeLayout.shown("tiles")) {
+    LaunchedEffect(tab, favoriteGroupShortcuts.size, HomeCountryShortcuts.items.size, HomeLayout.shown("tiles"), favouriteCategoriesVisible) {
         if (tab != 0 || HomeFlags.initialFocusDone || LastFocus.pending != null) return@LaunchedEffect
         var waited = 0
         while (waited < 5000) {
@@ -653,23 +654,9 @@ fun HomeScreen(
                                     itemsIndexed(HomeCountryShortcuts.items, key = { _, item -> item.code + "|" + item.group.orEmpty() }) { index, shortcut ->
                                         FocusButton(
                                             "${CountryBrowseLogic.flagEmoji(shortcut.code)} ${shortcut.label}",
-                                            modifier = if (index == 0 && favoriteGroupShortcuts.isEmpty()) Modifier.focusRequester(homeEntryFocus) else Modifier,
+                                            modifier = if (index == 0 && !favouriteCategoriesVisible) Modifier.focusRequester(homeEntryFocus) else Modifier,
                                             compact = true
                                         ) { countryShortcut = shortcut }
-                                    }
-                                }
-                            }
-                            if (favoriteGroupShortcuts.isNotEmpty()) item(key = "favoriteGroupShortcuts") {
-                                Column(Modifier.fillMaxWidth().padding(start = RowPadX, top = 12.dp)) {
-                                    Text("Favourite categories", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                                    LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp), contentPadding = PaddingValues(vertical = 8.dp)) {
-                                        itemsIndexed(favoriteGroupShortcuts, key = { _, shortcut -> "${shortcut.code}|${shortcut.group}" }) { index, shortcut ->
-                                            FocusButton(
-                                                "${CountryBrowseLogic.flagEmoji(shortcut.code)}  ${shortcut.group}",
-                                                modifier = if (index == 0) Modifier.focusRequester(homeEntryFocus) else Modifier,
-                                                compact = true
-                                            ) { countryShortcut = shortcut }
-                                        }
                                     }
                                 }
                             }
@@ -682,12 +669,26 @@ fun HomeScreen(
                                     "hero" -> if (ready.isNotEmpty()) item(key = "hero") {
                                         Hero(ready.toList(), heroH, true, onOpen, onPlayNow, { _ -> }, { heroScroll(states[0]) }) { scope.launch { states[0].animateScrollToItem(0) } }
                                     }
-                                    "tiles" -> { item(key = "tiles") { QuickTiles(tiles, if (favoriteGroupShortcuts.isEmpty() && HomeCountryShortcuts.items.isEmpty()) homeEntryFocus else null) } }
+                                    "tiles" -> { item(key = "tiles") { QuickTiles(tiles, if (!favouriteCategoriesVisible && HomeCountryShortcuts.items.isEmpty()) homeEntryFocus else null) } }
                                     "clock" -> { item(key = "clock") { ClockWidget() } }
                                     // Continue watching directly under the tiles: whoever watches a lot wants to continue in few clicks
                                     "resume" -> { if (resumeList.isNotEmpty()) item(key = "resume") { ResumeRow(resumeList, cardW, onResume) } }
                                     "favch" -> { if (favLiveHome.isNotEmpty()) item(key = "favch") { ItemsRow("Meine Sender", favLiveHome, cardW, onOpen) { onTab(3) } } }
                                     "chnow" -> { if (nowChannels.isNotEmpty()) item(key = "chnow") { ChannelNowRow("Live TV", nowChannels, onOpen) { onTab(3) } } }
+                                    "favcats" -> { if (favoriteGroupShortcuts.isNotEmpty()) item(key = "favoriteGroupShortcuts") {
+                                        Column(Modifier.fillMaxWidth().padding(start = RowPadX, top = 12.dp)) {
+                                            Text("Favourite Categories", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                                            LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp), contentPadding = PaddingValues(vertical = 8.dp)) {
+                                                itemsIndexed(favoriteGroupShortcuts, key = { _, shortcut -> "${shortcut.code}|${shortcut.group}" }) { index, shortcut ->
+                                                    FocusButton(
+                                                        "${CountryBrowseLogic.flagEmoji(shortcut.code)}  ${shortcut.group}",
+                                                        modifier = if (index == 0) Modifier.focusRequester(homeEntryFocus) else Modifier,
+                                                        compact = true
+                                                    ) { countryShortcut = shortcut }
+                                                }
+                                            }
+                                        }
+                                    } }
                                     // Top 10 always as whole covers (independent of the picture setting)
                                     "trend" -> { if (trendItems.size >= 3) item(key = "trend") {
                                         ItemsRow("Top 10 heute", trendTop, cardW, onOpen, style = CARD_TOP10) { onBrowse(BrowseReq("Im Trend", trendItems, SORT_PLAYLIST)) }

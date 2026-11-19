@@ -25,6 +25,7 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -33,6 +34,7 @@ fun CountryBrowseScreen(items: List<Item>, onExit: () -> Unit, onCustomize: (() 
     val countriesRaw = remember(items) { CountryBrowseLogic.project(items) }
     val countries = remember(countriesRaw, CountryBrowseOrder.version) { CountryBrowseOrder.sorted(countriesRaw) }
     val context = LocalContext.current
+    val mobile = LocalConfiguration.current.screenWidthDp < 900
     var countryCode by remember(initialCountryCode) { mutableStateOf(initialCountryCode) }
     var groupName by remember(initialCountryCode, initialGroupName) { mutableStateOf(initialGroupName) }
     val country = countries.firstOrNull { it.code == countryCode }
@@ -62,7 +64,37 @@ fun CountryBrowseScreen(items: List<Item>, onExit: () -> Unit, onCustomize: (() 
             else -> onExit()
         }
     }
-    Row(Modifier.fillMaxSize().background(Bg).padding(20.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+    if (mobile) {
+        Column(Modifier.fillMaxSize().background(Bg).padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            val level = when { country == null -> 0; group == null -> 1; else -> 2 }
+            if (level > 0) FocusButton("‹ Back", compact = true) {
+                if (groupName != null) groupName = null else countryCode = null
+            }
+            Text(when (level) {
+                0 -> "Choose a country"
+                1 -> "${CountryBrowseLogic.flagEmoji(country!!.code)} ${countryLabel(country)} · Choose a category"
+                else -> "${CountryBrowseLogic.flagEmoji(country!!.code)} ${group!!.name} · Channels"
+            }, color = Color.White, fontSize = 18.sp, raw = true)
+            when (level) {
+                0 -> LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    itemsIndexed(countries, key = { _, value -> value.code }) { _, value ->
+                        BrowseRow("${CountryBrowseLogic.flagEmoji(value.code)}  ${countryLabel(value)}", value.groups.sumOf { it.channels.size }, false,
+                            onClick = { countryCode = value.code; groupName = null })
+                    }
+                }
+                1 -> LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    itemsIndexed(groups, key = { _, value -> value.name }) { _, value ->
+                        BrowseRow(value.name, value.channels.size, false, dense = true, onClick = { groupName = value.name })
+                    }
+                }
+                else -> LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    itemsIndexed(channels, key = { index, item -> "${item.id}#$index" }) { _, item ->
+                        BrowseRow(item.title, null, false, dense = true) { onOpen(item, channels, group!!.name) }
+                    }
+                }
+            }
+        }
+    } else Row(Modifier.fillMaxSize().background(Bg).padding(20.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
         CountryPane("Länder", country?.let { "${CountryBrowseLogic.flagEmoji(it.code)} ${countryLabel(it)}" }, Modifier.weight(0.85f)) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 onCustomize?.let { FocusButton(Lang.tr("Auswahl anpassen"), if (countries.isEmpty()) Modifier.focusRequester(countryFocus) else Modifier, compact = true, onClick = it) }
@@ -135,7 +167,7 @@ fun CountryBrowseScreen(items: List<Item>, onExit: () -> Unit, onCustomize: (() 
                             runCatching { groupFocus.requestFocus() }.getOrDefault(false)
                         } else false
                     }
-                    BrowseRow(item.title, null, false, modifier) { onOpen(item, channels, group.name) }
+                    BrowseRow(item.title, null, false, modifier, dense = true) { onOpen(item, channels, group.name) }
                 }
             }
         }

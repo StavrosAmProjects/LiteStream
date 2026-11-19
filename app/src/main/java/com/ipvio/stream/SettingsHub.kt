@@ -1314,6 +1314,7 @@ private fun PlaylistPage(ctx: Context, onAdd: () -> Unit, reload: () -> Unit, on
                     else if (wasActive) PlaylistStore.switchAsync(ctx, PlaylistStore.active)
                 }
             }
+            Text("Choose which categories are included. You can add previously excluded categories again here.", color = Muted, fontSize = 13.sp)
         }
     }
     val selecting = customizeItems
@@ -1335,7 +1336,8 @@ private fun PlaylistPage(ctx: Context, onAdd: () -> Unit, reload: () -> Unit, on
                 CountryFilterStore.write(ctx, url, selection)
                 customizeItems = null; customizeIndex = -1
                 scope.launch {
-                    PlaylistStore.reapplyCountryFilter(ctx, url)
+                    val applied = PlaylistStore.reapplyCountryFilter(ctx, url)
+                    settingsToast(ctx, if (applied) "Playlist selection applied." else "Selection saved, but the playlist could not be restored. Update it to try again.")
                 }
             }
         )

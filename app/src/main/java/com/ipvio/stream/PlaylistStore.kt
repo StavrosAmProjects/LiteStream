@@ -1398,7 +1398,10 @@ object PlaylistStore {
                     return loadInner(c, u, false, false, false, false)
                 }
                 if (Mem.heapTight(0.45)) setItems(emptyList())
-                return withContext(Dispatchers.IO) { fromLocal(c, u, allowGz = true, ask = false) == Local.OK }
+                val local = withContext(Dispatchers.IO) { fromLocal(c, u, allowGz = true, ask = false) }
+                if (local == Local.OK) return true
+                // Older M3U imports may lack a full local source for restoring newly selected categories.
+                return loadInner(c, u, false, false, false, false)
             }
             val index = lists.indexOfFirst { it.url == u }
             if (index < 0) return false
@@ -1437,10 +1440,16 @@ object PlaylistStore {
             return withContext(Dispatchers.IO) { xtreamApi().liveCategoryPreview(account) }
         }
         StalkerLogic.parse(u)?.let { source ->
-            if (!gzFile(c, u).exists()) return withContext(Dispatchers.IO) { StalkerApi.liveCategoryPreview(source) }
+            val preview = runCatching { withContext(Dispatchers.IO) { StalkerApi.liveCategoryPreview(source) } }.getOrNull()
+            if (!preview.isNullOrEmpty()) return preview
+            val cached = gzFile(c, u)
+            if (cached.exists()) return withContext(Dispatchers.IO) {
+                readFile(cached, true, Charsets.UTF_8, null) { r -> M3uParser.countryPreview(r, guard(false)) }
+            }
+            return emptyList()
         }
         val gz = gzFile(c, u)
-        if (!gz.exists()) return emptyList()
+        if (!gz.exists()) return prepareCountryFilterPreview(c, u)
         return withContext(Dispatchers.IO) {
             readFile(gz, true, Charsets.UTF_8, null) { r -> M3uParser.countryPreview(r, guard(false)) }
         }

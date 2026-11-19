@@ -4,6 +4,9 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.util.Calendar
 import java.util.TimeZone
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 /**
  * sport24.gr TV program: parsing and mapping to the channels of your own playlist (pure logic, no Android).
@@ -29,6 +32,26 @@ object Sport24Logic {
         else emptyList()
         return rows.ifEmpty { parseHtml(body, known, dayStartSec, tz) }
     }
+
+    /** Parses Sport24's public events feed (scheduleDate, channel.name, title and tags). */
+    fun parseFeed(body: String, tz: TimeZone): List<Row> = runCatching {
+        val rows = JSONArray(body)
+        val format = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ROOT).also { it.timeZone = tz }
+        buildList {
+            for (i in 0 until rows.length()) {
+                val item = rows.optJSONObject(i) ?: continue
+                val start = format.parse(item.optString("scheduleDate"))?.time?.div(1000) ?: continue
+                val channel = item.optJSONObject("channel")?.optString("name").orEmpty()
+                val title = item.optString("title")
+                if (channel.isBlank() || title.isBlank()) continue
+                val tags = item.optJSONArray("tags")
+                val sport = (0 until (tags?.length() ?: 0)).asSequence()
+                    .mapNotNull { tags?.optJSONObject(it)?.optString("displayName")?.ifBlank { null } }
+                    .firstOrNull().orEmpty()
+                add(Row(start, channel, title, sport))
+            }
+        }
+    }.getOrDefault(emptyList())
 
     private fun parseHtml(html: String, known: (String) -> Boolean, dayStartSec: Long, tz: TimeZone): List<Row> {
         val text = html.replace(SCRIPTS, " ").replace(BLOCKS, "\n").replace(TAGS, " ")

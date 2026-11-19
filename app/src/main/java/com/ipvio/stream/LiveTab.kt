@@ -6,10 +6,12 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -153,6 +155,8 @@ fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: Li
     var phoneNavOpen by remember { mutableStateOf(false) }
     var phoneSelected by remember { mutableStateOf<Item?>(null) }
     var phoneCountry by remember { mutableStateOf<String?>(null) }
+    var phoneGroup by remember { mutableStateOf<String?>(null) }
+    var phoneGroupMenu by remember { mutableStateOf(false) }
     var channelOrderMenu by remember { mutableStateOf(false) }
     var lastChannel by remember { mutableStateOf<Item?>(null) }
     var countryFilterEditor by remember { mutableStateOf(false) }
@@ -171,7 +175,7 @@ fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: Li
         value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { Recorder.list(ctx).map { Recorder.itemOf(it) } }
         LiveRecCache.items = value
     }
-    val names = (if (PlaylistStore.lists.size > 1) listOf("PL") else emptyList()) + (if (PlaylistStore.lists.isNotEmpty()) listOf("PL_EDIT", "PL_UPDATE") else emptyList()) + favCats + listOf("COUNTRIES", "HOME", "GUIDE", "SEARCH", "MULTI", FAV_CAT) + (if (recs.isNotEmpty()) listOf("REC") else emptyList()) + myLists.map { ChannelListLogic.key(it) } + listOf("NEW", "ALL") + CatOrder.sorted(CatOrder.LIVE, groups.keys.toList()).filter { it !in favCats && it !in HiddenCats.list } + genres.keys.filter { it !in HiddenCats.list } + (if (HiddenCats.list.any { it in groups || it in genres }) listOf("HIDDEN") else emptyList())
+    val names = (if (PlaylistStore.lists.size > 1) listOf("PL") else emptyList()) + favCats + listOf("COUNTRIES", "HOME", "GUIDE", "SEARCH", "MULTI", FAV_CAT) + (if (recs.isNotEmpty()) listOf("REC") else emptyList()) + myLists.map { ChannelListLogic.key(it) } + listOf("NEW", "ALL") + CatOrder.sorted(CatOrder.LIVE, groups.keys.toList()).filter { it !in favCats && it !in HiddenCats.list } + genres.keys.filter { it !in HiddenCats.list } + (if (HiddenCats.list.any { it in groups || it in genres }) listOf("HIDDEN") else emptyList())
     val catKeys = remember(names) { val seen = HashSet<String>(); names.mapIndexed { i, n -> if (seen.add(n)) n else "$n#$i" } }
     val curList = ChannelLists.byKey(sel)
     // Own list currently being filled (OK on a channel adds it); declared early because bundling depends on it
@@ -188,8 +192,12 @@ fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: Li
         value = if (addTo != null && query.isBlank()) live
             else kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) { ChannelSearch.filter(live, query) }
     }
-    val phoneCountryChannels = remember(live, phoneCountry) {
-        phoneCountry?.let { code -> live.filter { CountryBrowseLogic.countryCode(it) == code } }
+    val phoneCountryGroups = remember(groups, phoneCountry) {
+        phoneCountry?.let { code -> groups.keys.filter { name -> groups[name].orEmpty().any { CountryBrowseLogic.countryCode(it) == code } } }.orEmpty()
+    }
+    LaunchedEffect(phoneCountry) { phoneGroup = null }
+    val phoneCountryChannels = remember(live, phoneCountry, phoneGroup) {
+        phoneCountry?.let { code -> live.filter { CountryBrowseLogic.countryCode(it) == code && (phoneGroup == null || it.group == phoneGroup) } }
     }
     val rawList = when {
         phoneCountryChannels != null -> phoneCountryChannels
@@ -213,6 +221,7 @@ fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: Li
     val firstChan = remember { FocusRequester() }
     // Back from the player: the last watched channel gets the focus (not the sidebar)
     val chanState = remember { LazyListState() }
+    LaunchedEffect(phoneCountry, phoneGroup) { runCatching { chanState.scrollToItem(0) } }
     val restoreReq = remember { FocusRequester() }
     val restoreId = remember { LastFocus.pending }
     LaunchedEffect(Unit) {
@@ -244,6 +253,8 @@ fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: Li
     }
     fun tapCategory(name: String) {
         if (name == "COUNTRIES") { countryBrowse = true; return }
+        phoneCountry = null
+        phoneGroup = null
         if (name == sel) { enterChannels(); return }
         sel = name
         LiveMemory.setSel(ctx, name)
@@ -413,19 +424,6 @@ fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: Li
                         }
                         return@itemsIndexed
                     }
-                    if (n == "PL_EDIT" || n == "PL_UPDATE") {
-                        val playlistIndex = if (srcK >= 0) PlaylistStore.lists.indices.firstOrNull { PlaylistStore.shownIndex(it) == srcK } ?: PlaylistStore.active else PlaylistStore.active
-                        val targetUrl = PlaylistStore.lists.getOrNull(playlistIndex)?.url.orEmpty()
-                        if (n == "PL_EDIT" && StalkerLogic.parse(targetUrl) != null) return@itemsIndexed
-                        val title = if (n == "PL_EDIT") "Edit playlist" else "Update playlist"
-                        CatRow(title, -1, false, Modifier, onFocus = {}, onRight = { enterChannels() }, onFav = {}, icon = if (n == "PL_EDIT") AIcon.Edit else AIcon.Refresh, raw = true) {
-                            if (n == "PL_EDIT") {
-                                if (StalkerLogic.parse(PlaylistStore.lists.getOrNull(playlistIndex)?.url.orEmpty()) == null) onEditPlaylist(playlistIndex)
-                                else Toast.makeText(ctx, "Edit this Stalker playlist in Settings.", Toast.LENGTH_SHORT).show()
-                            } else PlaylistStore.refreshAsync(ctx, playlistIndex)
-                        }
-                        return@itemsIndexed
-                    }
                     if (n == "SRC") {
                         val lbl = Lang.tr("Quelle") + ": " + (if (srcK < 0) Lang.tr("Alle") else srcNames[srcK])
                         CatRow(lbl, -1, false, Modifier, onFocus = {}, onRight = { enterChannels() }, onFav = {}, icon = AIcon.Sliders, raw = true) {
@@ -453,8 +451,6 @@ fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: Li
                     }
                     val label = when {
                         n == "COUNTRIES" -> "Länder"
-                        n == "PL_EDIT" -> "Edit playlist"
-                        n == "PL_UPDATE" -> "Update playlist"
                         n == FAV_CAT -> "Favoriten"
                         n == "HOME" -> "Start"
                         n == "ALL" -> "Alle Sender"
@@ -547,7 +543,7 @@ fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: Li
             }
             // With no live channels at all the plain list shows the hint instead of an empty home
             if (sel == "HOME" && live.isNotEmpty()) Box(Modifier.weight(2f).fillMaxHeight().padding(end = 24.dp)) {
-                LiveHome(live, genres.filterKeys { it !in HiddenCats.list }, favs, firstChan, onOpen = { ch, l -> ZapContext.list = l; ZapContext.key = "ALL"; openLiveChannel(ch) })
+                LiveHome(live, genres.filterKeys { it !in HiddenCats.list }, favs, firstChan, onEditPlaylist, onOpen = { ch, l -> ZapContext.list = l; ZapContext.key = "ALL"; openLiveChannel(ch) })
             } else {
             Column(Modifier.weight(if (phoneUi) 1f else 0.9f).fillMaxHeight().padding(end = if (phoneUi) 8.dp else 24.dp)) {
                 // Own list: rename and delete clearly visible above the channels (before only via long OK on the list)
@@ -567,6 +563,23 @@ fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: Li
                             if (i == 0) { ChannelLists.delete(ctx, curList.id); sel = "ALL"; LiveMemory.setSel(ctx, "ALL") }
                         }
                     }
+                }
+                Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), verticalAlignment = Alignment.CenterVertically) {
+                    LivePlaylistActions(ctx, onEditPlaylist)
+                }
+                if (phoneUi && phoneCountry != null && phoneCountryGroups.isNotEmpty()) Row(
+                    Modifier.fillMaxWidth().padding(bottom = 8.dp), verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    val selectedGroup = phoneGroup ?: "All categories"
+                    Box {
+                        PillButton("${CountryBrowseLogic.flagEmoji(phoneCountry!!)} $selectedGroup ▾") { phoneGroupMenu = true }
+                        if (phoneGroupMenu) OptionPopup(listOf("All categories") + phoneCountryGroups, -1, { phoneGroupMenu = false }) { index ->
+                            phoneGroup = phoneCountryGroups.getOrNull(index - 1)
+                            phoneGroupMenu = false
+                        }
+                    }
+                    Text("${phoneCountryChannels?.size ?: 0} channels", color = Muted, fontSize = 13.sp)
                 }
                 if (addList != null) Row(
                     Modifier.fillMaxWidth().padding(bottom = 12.dp),
@@ -708,18 +721,28 @@ fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: Li
                 }
             }
         }
-        if (countryFilterEditor && filterUrl != null) Dialog(
-            onDismissRequest = { countryFilterEditor = false }, properties = DialogProperties(usePlatformDefaultWidth = false)
-        ) {
-            CountryFilterScreen(
-                PlaylistStore.channels.filter { it.src == filterSource }, CountryFilterStore.read(ctx, filterUrl),
-                onCancel = { countryFilterEditor = false },
-                onDone = { selection ->
-                    CountryFilterStore.write(ctx, filterUrl, selection)
-                    countryFilterEditor = false
-                    filterRevision++
+        if (countryFilterEditor && filterUrl != null) {
+            val filterItems by produceState<List<Item>?>(null, filterUrl) {
+                value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    runCatching { PlaylistStore.countryFilterPreview(ctx, filterUrl) }.getOrDefault(emptyList())
                 }
-            )
+            }
+            Dialog(onDismissRequest = { countryFilterEditor = false }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+                if (filterItems == null) HubEmpty(AIcon.Info, "Loading playlist categories…", "Please wait.")
+                else CountryFilterScreen(
+                    filterItems.orEmpty().filter { it.kind == Kind.LIVE }, CountryFilterStore.read(ctx, filterUrl),
+                    onCancel = { countryFilterEditor = false },
+                    onDone = { selection ->
+                        CountryFilterStore.write(ctx, filterUrl, selection)
+                        countryFilterEditor = false
+                        plScope.launch {
+                            val applied = PlaylistStore.reapplyCountryFilter(ctx, filterUrl)
+                            filterRevision++
+                            Toast.makeText(ctx, if (applied) "Playlist selection applied." else "Selection saved. Update the playlist to restore its channels.", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                )
+            }
         }
     }
 }
@@ -824,7 +847,8 @@ private fun ChannelLine(item: Item, modifier: Modifier, inList: ChList?, onNewLi
     }
     // Round 17b: the selected channel floats forward as light glass with a shadow (instead of a frame)
     val sc by androidx.compose.animation.core.animateFloatAsState(if (f) focusScale(1.03f) else 1f, label = "chl")
-    val dims = ROW_DIMS[General.channelRowSize.coerceIn(0, 2)]
+    val phone = LocalConfiguration.current.screenWidthDp < 900 || LocalConfiguration.current.screenHeightDp > LocalConfiguration.current.screenWidthDp
+    val dims = ROW_DIMS[if (phone) 0 else General.channelRowSize.coerceIn(0, 2)]
     Row(
         modifier.fillMaxWidth().height(dims.height)   // fixed height: rows no longer grow when guide data arrives, so the list never re-measures while scrolling
             .graphicsLayer { scaleX = sc; scaleY = sc; transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0f, 0.5f) }
@@ -949,9 +973,47 @@ fun ReminderCard(r: Reminder, modifier: Modifier, onClose: () -> Unit, onSwitch:
 }
 
 
+@Composable
+private fun RowScope.LivePlaylistActions(ctx: android.content.Context, onEditPlaylist: (Int) -> Unit) {
+    val playlists = PlaylistStore.lists.toList()
+    if (playlists.isEmpty()) return
+    val hasSeveral = playlists.size > 1
+    val offset = if (hasSeveral) 2 else 0
+    val options = (if (hasSeveral) listOf("Merged playlists", "All playlists") else emptyList()) + playlists.map { it.name }
+    val selected = if (hasSeveral && LiveSource.k < 0) {
+        if (playlists.indices.all { it == PlaylistStore.active || PlaylistStore.isShown(it) }) 1 else 0
+    } else (playlists.indices.firstOrNull { PlaylistStore.shownIndex(it) == LiveSource.k } ?: PlaylistStore.active) + offset
+    val target = if (LiveSource.k >= 0) playlists.indices.firstOrNull { PlaylistStore.shownIndex(it) == LiveSource.k } ?: PlaylistStore.active else PlaylistStore.active
+    val scope = rememberCoroutineScope()
+    var switchOpen by remember { mutableStateOf(false) }
+    PillButton("Update playlist") { PlaylistStore.refreshAsync(ctx, target) }
+    PillButton("Switch playlist") { switchOpen = true }
+    PillButton("Edit playlist") {
+        if (StalkerLogic.parse(playlists.getOrNull(target)?.url.orEmpty()) == null) onEditPlaylist(target)
+        else Toast.makeText(ctx, "Edit this Stalker playlist in Settings.", Toast.LENGTH_SHORT).show()
+    }
+    if (switchOpen) OptionPopup(options, selected, { switchOpen = false }) { index ->
+        switchOpen = false
+        when {
+            hasSeveral && index == 0 -> LiveSource.k = -1
+            hasSeveral && index == 1 -> {
+                LiveSource.k = -1
+                playlists.indices.filter { it != PlaylistStore.active }.forEach { PlaylistStore.setShown(ctx, it, true) }
+                scope.launch { PlaylistStore.applyMulti(ctx) }
+            }
+            else -> {
+                val playlistIndex = index - offset
+                val sourceIndex = PlaylistStore.shownIndex(playlistIndex)
+                if (sourceIndex >= 0) LiveSource.k = if (hasSeveral) sourceIndex else -1
+                else { LiveSource.k = -1; PlaylistStore.switchAsync(ctx, playlistIndex) }
+            }
+        }
+    }
+}
+
 /** Start in the Live TV area: last watched, favorites and a row of channels per genre. */
 @Composable
-private fun LiveHome(live: List<Item>, genres: Map<String, List<Item>>, favs: List<Item>, firstReq: FocusRequester, onOpen: (Item, List<Item>) -> Unit) {
+private fun LiveHome(live: List<Item>, genres: Map<String, List<Item>>, favs: List<Item>, firstReq: FocusRequester, onEditPlaylist: (Int) -> Unit, onOpen: (Item, List<Item>) -> Unit) {
     val ctx = androidx.compose.ui.platform.LocalContext.current
     var listMode by remember(ctx) { mutableStateOf(Profiles.sp(ctx, "ipvio_live").getBoolean("home_list_view", false)) }
     val byId = remember(live) { live.associateBy { it.id } }
@@ -963,15 +1025,18 @@ private fun LiveHome(live: List<Item>, genres: Map<String, List<Item>>, favs: Li
     if (rows.isEmpty()) rows.add("Alle Sender" to live.take(40))
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 48.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         item(key = "live-home-view") {
-            Row(Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(if (listMode) "All channels · ${live.size}" else "Live TV", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                PillButton("Cards", light = !listMode) {
-                    listMode = false
-                    Profiles.sp(ctx, "ipvio_live").edit().putBoolean("home_list_view", false).apply()
-                }
-                PillButton("List", light = listMode) {
-                    listMode = true
-                    Profiles.sp(ctx, "ipvio_live").edit().putBoolean("home_list_view", true).apply()
+            Column(Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 4.dp)) {
+                Text(if (listMode) "All channels · ${live.size}" else "Live TV", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), verticalAlignment = Alignment.CenterVertically) {
+                    PillButton("Cards", light = !listMode) {
+                        listMode = false
+                        Profiles.sp(ctx, "ipvio_live").edit().putBoolean("home_list_view", false).apply()
+                    }
+                    PillButton("List", light = listMode) {
+                        listMode = true
+                        Profiles.sp(ctx, "ipvio_live").edit().putBoolean("home_list_view", true).apply()
+                    }
+                    LivePlaylistActions(ctx, onEditPlaylist)
                 }
             }
         }

@@ -48,7 +48,9 @@ open class BlockLayout(private val prefName: String, val blocks: List<LayoutBloc
     private fun normalize(l: List<String>): List<String> {
         val out = ArrayList<String>()
         for (id in l) if (id != fixedId && block(id) != null && id !in out) out.add(id)
-        for (b in blocks) if (b.id != fixedId && b.id !in out) out.add(b.id)
+        for (b in blocks) if (b.id != fixedId && b.id !in out) {
+            if (b.id == "favcats" && "chnow" in out) out.add(out.indexOf("chnow") + 1, b.id) else out.add(b.id)
+        }
         if (fixedId != null) out.add(0, fixedId)
         return out
     }
@@ -84,6 +86,7 @@ private val HOME_BLOCKS = listOf(
     LayoutBlock("tiles", "Kacheln", "Live TV, Filme, Serien, Favoriten und Meine Liste"),
     LayoutBlock("favch", "Meine Sender", "Deine Live-Favoriten als Reihe"),
     LayoutBlock("chnow", "Live TV gerade", "Was jetzt auf deinen Sendern läuft"),
+    LayoutBlock("favcats", "Favourite Categories", "Your saved Live TV categories on Home"),
     LayoutBlock("hero", "Große Slideshow", "Großes Bild mit aktuellen Filmen und Serien"),
     LayoutBlock("resume", "Weiterschauen", "Dort weitermachen, wo du aufgehört hast"),
     LayoutBlock("trend", "Top 10 heute", "Die beliebtesten Titel des Tages"),
