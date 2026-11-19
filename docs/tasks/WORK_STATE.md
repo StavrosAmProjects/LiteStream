@@ -2,7 +2,7 @@ Last update: 2026-11-19. Read `AGENTS.md` first, then this file.
 
 ## Current task
 
-T-058 (19 Nov 2026): Applied the supplied Sport24 matching changes: canonical broadcaster aliases handle spacing, Nova Sports, Magenta/Cosmote, and HD variants while preserving exact channel-number matching. Updated public author credit to `@StavrosAmProjects`. `git diff --check` passed. New alias tests were added but not run; no Gradle build/device check. Not pushed yet. See `docs/tasks/T-058-sport24-channel-aliases.md`.
+T-058 (19 Nov 2026): Applied the supplied Sport24 matching changes: canonical broadcaster aliases handle spacing, Nova Sports, Magenta/Cosmote, and HD variants while preserving exact channel-number matching. Updated public author credit to `@StavrosAmProjects`. `git diff --check` passed. New alias tests were added but not run; no Gradle build/device check. Commit `e0bc3dd` is pushed to `codex/litestream-tv-fork`. See `docs/tasks/T-058-sport24-channel-aliases.md`.
 
 ## Previous task
 
