@@ -12,7 +12,7 @@ This fork is based on [IPVIO Stream](https://github.com/Emrodev/IPVIO-Stream). I
 
 Checked **19 November 2026**: the official [IPVIO releases](https://github.com/Emrodev/IPVIO-Stream/releases) page lists **1.4.3** (`e55395a`, 16 November 2026) as its latest stable release. LiteStream's recorded upstream baseline is that same commit, so no newer stable release was available to bring in at this check. This confirms release-level alignment only; a live comparison with upstream's current `main` branch was unavailable, so unreleased commits are not confirmed.
 
-The LiteStream workflow is configured to check IPVIO's official `main` branch daily and propose source changes as a review pull request into LiteStream's `dev` branch. It becomes active after the workflow reaches the repository's default branch. LiteStream changes continue on `codex/litestream-tv-fork`; upstream changes are reviewed before integration.
+The LiteStream workflow is configured to check IPVIO's official `main` branch daily and propose source changes as a review pull request into `codex/litestream-tv-fork`. It becomes active after the workflow reaches the repository's default branch. Upstream changes are reviewed before integration.
 
 ## Project authorship and upstream thanks
 

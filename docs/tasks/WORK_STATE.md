@@ -2,7 +2,7 @@ Last update: 2026-11-19. Read `AGENTS.md` first, then this file.
 
 ## Current task
 
-T-067 (20 Nov 2026): Changed upstream source sync from latest stable release tags to the official IPVIO `main` commit. The daily/manual workflow creates or updates a review PR into LiteStream `dev`; no auto-merge or upstream APK distribution. Feature development remains on `codex/litestream-tv-fork`, with LiteStream `main` release-only. `git diff --check` passes; live GitHub workflow execution and Actions permissions are not verified. See `docs/tasks/T-067-sync-upstream-main.md`.
+T-067 (20 Nov 2026): Changed upstream source sync from latest stable release tags to the official IPVIO `main` commit. After the workflow reaches the repository default branch, it creates or updates a review PR into `codex/litestream-tv-fork`; no auto-merge or upstream APK distribution. LiteStream `main` remains release-only. `git diff --check` and shell syntax checks pass; live GitHub workflow execution and Actions permissions are not verified. See `docs/tasks/T-067-sync-upstream-main.md`.
 
 T-066 (19 Nov 2026): Checked the official IPVIO releases page. Latest listed stable is 1.4.3 at commit `e55395a73ee8ee7b21e67a00a677581d90fa9529`, matching LiteStream's recorded upstream baseline; no newer stable release was listed. GitHub's commit/compare pages were unavailable and direct network access failed, so unreleased changes on upstream `main` could not be ruled out. Added an explicit release-level status note to README. `git diff --check` passes. See `docs/tasks/T-066-upstream-update-check.md`.
 

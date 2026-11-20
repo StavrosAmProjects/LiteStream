@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          ref: dev
+          ref: codex/litestream-tv-fork
           fetch-depth: 0
 
       - name: Merge IPVIO main into a review branch
@@ -34,28 +34,28 @@ jobs:
             refs/heads/main:refs/remotes/ipvio/main
           upstream_commit="$(git rev-parse refs/remotes/ipvio/main^{commit})"
 
-          if git merge-base --is-ancestor "$upstream_commit" origin/dev; then
-            echo "IPVIO main ($upstream_commit) is already included in dev."
+          if git merge-base --is-ancestor "$upstream_commit" origin/codex/litestream-tv-fork; then
+            echo "IPVIO main ($upstream_commit) is already included in codex/litestream-tv-fork."
             exit 0
           fi
 
           branch="automation/ipvio-main-sync"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git switch --create "$branch" origin/dev
+          git switch --create "$branch" origin/codex/litestream-tv-fork
           git merge --no-ff --no-edit "$upstream_commit"
           git push --force origin "HEAD:refs/heads/$branch"
 
           body="$(printf '%s\n\n%s\n\n%s' \
-            "This pull request brings IPVIO's official `main` source through commit `$upstream_commit` into LiteStream's development branch." \
+            "This pull request brings IPVIO's official `main` source through commit `$upstream_commit` into LiteStream's `codex/litestream-tv-fork` branch." \
             "Review all upstream changes for conflicts with LiteStream's TV UX, branding, package identity, update feed, and local provider flows. Resolve any conflicts and run the project checks before merging. This workflow does not merge the pull request automatically." \
             "[Upstream main history](https://github.com/Emrodev/IPVIO-Stream/commits/main)")"
-          number="$(gh pr list --base dev --head "$OWNER:$branch" --state all --json number --jq '.[0].number // empty')"
+          number="$(gh pr list --base codex/litestream-tv-fork --head "$OWNER:$branch" --state all --json number --jq '.[0].number // empty')"
           if [ -n "$number" ]; then
             state="$(gh pr view "$number" --json state --jq '.state')"
             if [ "$state" = "CLOSED" ]; then gh pr reopen "$number"; fi
             gh pr edit "$number" --title "Sync IPVIO main ($upstream_commit)" --body "$body"
           else
-            gh pr create --repo "$REPOSITORY" --base dev --head "$OWNER:$branch" \
+            gh pr create --repo "$REPOSITORY" --base codex/litestream-tv-fork --head "$OWNER:$branch" \
               --title "Sync IPVIO main ($upstream_commit)" --body "$body"
           fi

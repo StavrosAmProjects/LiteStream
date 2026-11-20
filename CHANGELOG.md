@@ -1,7 +1,7 @@
 # Changelog
 
 ## Unreleased
-- Change upstream sync to follow IPVIO's official `main` branch and open a daily/manual review PR into LiteStream `dev`; continue feature work on `codex/litestream-tv-fork` and keep LiteStream `main` release-only.
+- Change upstream sync to follow IPVIO's official `main` branch and open a daily/manual review PR into `codex/litestream-tv-fork`; keep LiteStream `main` release-only.
 - Document the official IPVIO stable-release check from 2026-11-19: latest listed release is 1.4.3 at the existing upstream baseline `e55395a`; live comparison with upstream `main` was unavailable, so unreleased changes are unverified.
 - Refresh the README and feature/architecture/security summaries to describe LiteStream TV accurately, credit `@StavrosAmProjects`, and thank the IPVIO contributors.
 - Reuse an already loaded playlist when reopening the app, migrate startup refreshes to daily, disable automatic genre scans by default, and map Android TV Channel/Program Up/Down to live channel surfing.
@@ -14,7 +14,7 @@
 - Keep build and PR checks off ordinary work-branch pushes; retain checks when a PR opens and preserve manual builds and release triggers.
 - Add a Home shortcut to Sport24's daily Greek sports TV schedule, with automatic and manual playlist-channel matching.
 - Credit `@StavrosAmProjects` for LiteStream's fork-specific product and UX work, while thanking Emrodev and IPVIO contributors and retaining upstream notices.
-- Check IPVIO `main` daily or manually and open a review pull request into LiteStream `dev`; do not auto-merge or distribute upstream APKs.
+- Check IPVIO `main` daily or manually and open a review pull request into LiteStream's work branch; do not auto-merge or distribute upstream APKs.
 - Put Home's personal TV shortcuts and primary navigation before a shorter, movable VOD hero; make the banner movable and hideable, and focus the first favourite shortcut (or Live TV) on entry.
 - Move saved Live TV category favourites directly under the playlist selector; show them as country-flag shortcuts on Home and make country browsing more compact with page scrolling.
 - Put provider channel groups ahead of automatically detected smart playlists in the Live TV category list.
