@@ -1,5 +1,7 @@
 # T-056 — Reviewable upstream release sync
 
+**Superseded by [T-067](T-067-sync-upstream-main.md):** the current workflow follows IPVIO `main` rather than stable release tags. This record describes the original implementation for history.
+
 ## Goal
 
 Automatically bring new stable IPVIO source releases to the LiteStream repository as reviewable pull requests, while preserving manual review and LiteStream's fork-specific behavior.

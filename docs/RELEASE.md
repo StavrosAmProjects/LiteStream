@@ -2,7 +2,7 @@
 
 ## Current state
 
-LiteStream TV uses package ID `com.litestream.tv` and starts at version `0.1.0` / version code `1`. It installs beside IPVIO Stream, so its app data is separate. The `Sync IPVIO release` workflow checks for upstream stable releases daily and on demand, then opens or updates a review pull request into `dev`. It never merges upstream changes automatically. This is source synchronization for maintainers; it does not install upstream IPVIO APKs on LiteStream TVs.
+LiteStream TV uses package ID `com.litestream.tv` and starts at version `0.1.0` / version code `1`. It installs beside IPVIO Stream, so its app data is separate. Once merged into the repository's default branch, the `Sync IPVIO main` workflow checks the official upstream `main` branch daily and on demand, then opens or updates a review pull request into `dev`. It never merges upstream changes automatically. This is source synchronization for maintainers; it does not install upstream IPVIO APKs on LiteStream TVs.
 
 In-app updates must use signed LiteStream TV releases from this repository. Do not use the upstream IPVIO APK or release URL: its package ID and signing identity do not match LiteStream TV. The app's update URL remains disabled until the LiteStream release feed is configured and the first signed release is available.
 
@@ -55,7 +55,7 @@ The app verifies the downloaded package name, version and signer before opening 
 
 ## Upstream source synchronization
 
-The scheduled workflow reads the latest non-prerelease release tag from `Emrodev/IPVIO-Stream`, merges that tag into a bot branch based on `dev`, and opens or updates a pull request. A merge conflict stops the workflow before the branch is pushed. Review every upstream change for LiteStream-specific behavior, run the normal PR checks, and merge manually. The workflow preserves upstream Git history and does not copy or publish the upstream APK.
+The scheduled workflow fetches the current `main` commit from `Emrodev/IPVIO-Stream`, merges it into a bot branch based on `dev`, and opens or updates a pull request. A merge conflict stops the workflow before the branch is pushed. Review every upstream change for LiteStream-specific behavior, run the normal PR checks, and merge manually. The workflow preserves upstream Git history and does not copy or publish the upstream APK. Development continues on `codex/litestream-tv-fork` and other feature branches; `dev` remains the integration target, and LiteStream's `main` remains release-only.
 
 ## Google Drive
 

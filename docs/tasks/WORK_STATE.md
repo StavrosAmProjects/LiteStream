@@ -2,6 +2,8 @@ Last update: 2026-11-19. Read `AGENTS.md` first, then this file.
 
 ## Current task
 
+T-067 (20 Nov 2026): Changed upstream source sync from latest stable release tags to the official IPVIO `main` commit. The daily/manual workflow creates or updates a review PR into LiteStream `dev`; no auto-merge or upstream APK distribution. Feature development remains on `codex/litestream-tv-fork`, with LiteStream `main` release-only. `git diff --check` passes; live GitHub workflow execution and Actions permissions are not verified. See `docs/tasks/T-067-sync-upstream-main.md`.
+
 T-066 (19 Nov 2026): Checked the official IPVIO releases page. Latest listed stable is 1.4.3 at commit `e55395a73ee8ee7b21e67a00a677581d90fa9529`, matching LiteStream's recorded upstream baseline; no newer stable release was listed. GitHub's commit/compare pages were unavailable and direct network access failed, so unreleased changes on upstream `main` could not be ruled out. Added an explicit release-level status note to README. `git diff --check` passes. See `docs/tasks/T-066-upstream-update-check.md`.
 
 T-065 (19 Nov 2026): Refreshed the README, feature overview, architecture provenance, and security scope for the LiteStream TV fork. README credits `@StavrosAmProjects`, thanks IPVIO contributors, removes inherited Claude/donation copy, and describes current TV-first features, English app chrome, optional genres, and release status. `git diff --check` passes; reviewed for stale Claude/donation, language, and release claims. Documentation-only; no app build run. See `docs/tasks/T-065-project-documentation.md`.
@@ -30,7 +32,7 @@ T-057 (19 Nov 2026): Added a Home tile that enters the Sport24 TV tab in the exi
 
 ## Previous task
 
-T-056 (19 Nov 2026): Added a daily and manually triggered GitHub Actions workflow that merges the latest stable IPVIO release source into a bot branch and opens/updates a review PR into `dev`. It never auto-merges and does not publish the upstream APK. The workflow is pushed in commit `95e2cb8` but will not run until the workflow is merged to the repository's default branch. The live workflow, release endpoint, and Actions pull-request permission have not been verified. See `docs/tasks/T-056-upstream-release-sync.md`.
+T-056 (19 Nov 2026; superseded by T-067): Initially added stable-release source sync. T-067 changes this to track official upstream `main`; the original task record is retained for history.
 
 ## Previous task
 
