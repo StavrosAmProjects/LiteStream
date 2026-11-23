@@ -99,8 +99,8 @@ private fun providerGroups(list: List<Item>): Map<String, List<Item>> {
 }
 
 /**
- * Everything the home screen derives from the playlist. Computed on a background thread (with 100,000+ titles
- * this takes noticeable time); the UI shows the previous state or the loading skeleton meanwhile.
+ * Everything the home screen derives from the playlist. The Live TV/favorite-category preview is published first;
+ * the full movie/series indexes are then computed on a background thread.
  */
 private class HomeData(
     val live: List<Item>, val movies: List<Item>, val series: List<Item>,
@@ -109,12 +109,35 @@ private class HomeData(
     val topM: List<Item>, val topS: List<Item>, val byId: Map<String, Item>, val trendItems: List<Item>,
     val genresOk: Boolean,
     /** Movies/series for the home rows: without adult titles when Parental control > "never on the home pages" is on. */
-    val rowMovies: List<Item> = movies, val rowSeries: List<Item> = series
+    val rowMovies: List<Item> = movies, val rowSeries: List<Item> = series,
+    val complete: Boolean = true
 )
 
-private fun buildHome(all: List<Item>, ipvioWanted: Boolean, trend: Set<String>, noAdult: Boolean = false): HomeData {
-    val live = ArrayList<Item>(); val movies0 = ArrayList<Item>(); val series = ArrayList<Item>()
-    for (i in all) when (i.kind) { Kind.LIVE -> live.add(i); Kind.MOVIE -> movies0.add(i); Kind.SERIES -> series.add(i) }
+private class HomeSource(val live: List<Item>, val movies: List<Item>, val series: List<Item>)
+
+private fun partitionHome(all: List<Item>): HomeSource {
+    val live = ArrayList<Item>(); val movies = ArrayList<Item>(); val series = ArrayList<Item>()
+    for (i in all) when (i.kind) { Kind.LIVE -> live.add(i); Kind.MOVIE -> movies.add(i); Kind.SERIES -> series.add(i) }
+    return HomeSource(live, movies, series)
+}
+
+private fun buildLiveHome(live: List<Item>, favoriteGroups: List<String>): HomeData {
+    val wanted = favoriteGroups.toHashSet()
+    val found = LinkedHashMap<String, ArrayList<Item>>()
+    for (item in live) if (item.group in wanted) found.getOrPut(item.group) { ArrayList() }.add(item)
+    val liveP = LinkedHashMap<String, List<Item>>()
+    favoriteGroups.forEach { group -> found[group]?.let { liveP[group] = it } }
+    return HomeData(
+        live, emptyList(), emptyList(), liveP, emptyMap(), emptyMap(), emptyMap(), emptyMap(),
+        emptyList(), emptyList(), live.associateBy { it.id }, emptyList(), false,
+        emptyList(), emptyList(), complete = false
+    )
+}
+
+private fun buildHome(all: List<Item>, source: HomeSource, ipvioWanted: Boolean, trend: Set<String>, noAdult: Boolean = false): HomeData {
+    val live = source.live
+    val movies0 = source.movies
+    val series = source.series
     // Show the same movie in several versions (HD, 4K, …) only once; the version is chosen on the detail page (source)
     val movies = PlaylistLogic.firstPerKey(movies0) { it.mk + "|" + it.lang }
     val genresOk = ipvioWanted && MetaRepo.enabled() && Classifier.supported(movies.size + series.size)
@@ -132,7 +155,7 @@ private fun buildHome(all: List<Item>, ipvioWanted: Boolean, trend: Set<String>,
     return HomeData(
         live, movies, series, providerGroups(live), movieP, seriesP,
         if (ipvio) ipvioGroups(rm) else rowMP, if (ipvio) ipvioGroups(rs) else rowSP,
-        topRated(rm), topRated(rs), all.associateBy { it.id }, trendItems, genresOk, rm, rs
+        topRated(rm), topRated(rs), all.associateBy { it.id }, trendItems, genresOk, rm, rs, complete = true
     )
 }
 
@@ -157,7 +180,7 @@ private fun keepLiveLists(d: HomeData, prev: HomeData?): HomeData {
     val liveP = if (d.liveP.size == prev.liveP.size && d.liveP.keys.zip(prev.liveP.keys).all { (a, b) -> a == b } &&
         d.liveP.all { (k, l) -> sameItems(l, prev.liveP[k]) }) prev.liveP else d.liveP
     if (live === d.live && liveP === d.liveP) return d
-    return HomeData(live, d.movies, d.series, liveP, d.movieP, d.seriesP, d.movieG, d.seriesG, d.topM, d.topS, d.byId, d.trendItems, d.genresOk, d.rowMovies, d.rowSeries)
+    return HomeData(live, d.movies, d.series, liveP, d.movieP, d.seriesP, d.movieG, d.seriesG, d.topM, d.topS, d.byId, d.trendItems, d.genresOk, d.rowMovies, d.rowSeries, d.complete)
 }
 
 private fun sameItems(a: List<Item>, b: List<Item>?): Boolean {
@@ -199,7 +222,7 @@ private object HomeCache {
 
 private val EMPTY_HOME = HomeData(
     emptyList(), emptyList(), emptyList(), emptyMap(), emptyMap(), emptyMap(), emptyMap(), emptyMap(),
-    emptyList(), emptyList(), emptyMap(), emptyList(), false
+    emptyList(), emptyList(), emptyMap(), emptyList(), false, complete = false
 )
 
 private fun topRated(list: List<Item>): List<Item> =
@@ -239,23 +262,36 @@ fun HomeScreen(
     val dataVersion = ver * 31 + PrivateCats.version
     val wantIpvio = AppSettings.ipvioFilter
     val noAdult = Parental.adultOffHome
+    CatFavs.init(ctx)
+    val favoriteGroups = CatFavs.list.toList()
     val cached = HomeCache.get(all, order, wantIpvio, dataVersion, trend, noAdult)
     // When inputs change, the previous state stays visible until the new result (produceState keeps the value)
     val dataState = produceState(cached, all, order, wantIpvio, dataVersion, trend, noAdult) {
-        value = HomeCache.get(all, order, wantIpvio, dataVersion, trend, noAdult)
-            ?: withContext(Dispatchers.Default) { keepLiveLists(buildHome(all, wantIpvio, trend, noAdult), HomeCache.last()) }.also { HomeCache.put(all, order, wantIpvio, dataVersion, trend, noAdult, it) }
+        val existing = HomeCache.get(all, order, wantIpvio, dataVersion, trend, noAdult)
+        if (existing != null) {
+            value = existing
+        } else {
+            val source = withContext(Dispatchers.Default) { partitionHome(all) }
+            value = withContext(Dispatchers.Default) { buildLiveHome(source.live, favoriteGroups) }
+            val complete = withContext(Dispatchers.Default) {
+                keepLiveLists(buildHome(all, source, wantIpvio, trend, noAdult), HomeCache.last())
+            }
+            HomeCache.put(all, order, wantIpvio, dataVersion, trend, noAdult, complete)
+            value = complete
+        }
     }
     // While recomputing: show the previous state, the loading skeleton only the very first time
     val prev = HomeCache.last()
     val data = dataState.value ?: prev?.takeIf { it.byId.isNotEmpty() && all.isNotEmpty() } ?: EMPTY_HOME
-    val computing = dataState.value == null && prev == null && all.isNotEmpty()
+    val livePreviewReady = data.live.isNotEmpty()
+    val liveFirstTab = tab == 0 || tab == 3 || tab == MenuLogic.SPORT
+    val computing = all.isNotEmpty() && !data.complete && (!liveFirstTab || !livePreviewReady)
     val live = data.live
     val movies = data.movies
     val series = data.series
     val movieP = data.movieP
     val seriesP = data.seriesP
     val liveP = data.liveP
-    CatFavs.init(ctx)
     val favoriteGroupShortcuts = remember(liveP, CatFavs.list.toList()) {
         HomeCountryShortcutLogic.favoriteGroups(CatFavs.list.toList(), liveP)
     }
@@ -292,12 +328,12 @@ fun HomeScreen(
     val trendItems = data.trendItems
     val trendTop = remember(trendItems) { trendItems.take(10) }
     val wlVod = remember(watchHome) { watchHome.filter { it.kind != Kind.LIVE } }
-    // Live TV opens faster: genres and quality bundling of all channels are prepared in the background (both keep their result)
-    LaunchedEffect(live) {
+    // Keep genre preparation behind the existing opt-in; provider categories do not depend on it.
+    LaunchedEffect(live, AppSettings.ipvioFilter) {
         if (live.isEmpty()) return@LaunchedEffect
         delay(2500)
         withContext(Dispatchers.Default) {
-            runCatching { LiveGenre.split(live) }
+            if (AppSettings.ipvioFilter) runCatching { LiveGenre.split(live) }
             if (General.bundleLive) runCatching { LiveBundleLogic.bundle(live) }
             runCatching { SportWatch.prewarm(live) }
         }
@@ -716,7 +752,7 @@ fun HomeScreen(
                                     SmallPill("Startseite anpassen", icon = AIcon.Sliders) { HomeEdit.active = true; scope.launch { states[0].animateScrollToItem(0) } }
                                 }
                             }
-                            if (movies.isEmpty() && series.isEmpty()) {
+                            if (data.complete && movies.isEmpty() && series.isEmpty()) {
                                 item { EmptyHint("Diese Playlist enthält keine Filme oder Serien. Live TV findest du links.") }
                                 item { EmptyHint(CONTENT_MODE_HINT.format("Filme oder Serien", "Nur Live TV")) }
                             }

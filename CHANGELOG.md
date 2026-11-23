@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+- Prepare Home in stages: show Live TV and saved category shortcuts first, then build full provider-category and movie/series indexes in the background.
+- Make Live TV smart-genre playlists opt-in through the existing Automatic genres setting; default startup skips the smart-genre scan while provider categories stay available.
 - Adapt approved IPVIO updates surgically: guard against incomplete unsized playlists, retry backup servers on 401/403/404, require consent before HTTPS certificate-mismatch fallback to HTTP, and improve `/live/` stream classification. Add private provider categories, optional Media3 stream details, and credential-free per-playlist country/category selection export/import.
 - Change upstream sync to follow IPVIO's official `main` branch and open a daily/manual review PR into `codex/litestream-tv-fork`; keep LiteStream `main` release-only.
 - Document the official IPVIO stable-release check from 2026-11-19: latest listed release is 1.4.3 at the existing upstream baseline `e55395a`; live comparison with upstream `main` was unavailable, so unreleased changes are unverified.

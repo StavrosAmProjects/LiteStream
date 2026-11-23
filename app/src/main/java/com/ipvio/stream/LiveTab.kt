@@ -141,8 +141,9 @@ fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: Li
             }
         }
     }
-    // Genres (sports, movies, documentary, kids, news, music) – detected by category and channel name
-    val genres = remember(live) { LiveGenre.split(live) }
+    // Smart Live TV playlists share the existing opt-in; provider categories remain available by default.
+    val smartGenresEnabled = AppSettings.ipvioFilter
+    val genres = remember(live, smartGenresEnabled) { if (smartGenresEnabled) LiveGenre.split(live) else emptyMap() }
     val favs = remember(favsAll, srcK, PrivateCats.version) { PrivateCats.visible(if (srcK < 0) favsAll else favsAll.filter { it.src == srcK }) }
     CatFavs.init(ctx)
     ChannelLists.init(ctx)

@@ -220,7 +220,7 @@ Die Sprachauswahl erscheint, sobald der Download fertig ist.¦De taalkeuze versc
 Das dauert ungewöhnlich lange. Mit der Sprachauswahl lädst du nur die Titel, die du wirklich brauchst.¦Dit duurt ongewoon lang. Met de taalkeuze laad je alleen de titels die je echt nodig hebt.
 Sprachen wählen¦Talen kiezen
 Weiter warten¦Verder wachten
-Aus = Kategorien deines Anbieters (Standard). Umschalten geht auch direkt in der Ansicht „Kategorien“.¦Uit = categorieën van je aanbieder (standaard). Omschakelen kan ook direct in de weergave „Categorieën”.
+Aus = Kategorien deines Anbieters (Standard). Automatische Genres schalten auch Smart-Playlists für Live-TV frei.¦Uit = categorieën van je aanbieder (standaard). Automatische genres schakelen ook slimme Live TV-afspeellijsten in.
 Folgen {0}¦Afleveringen {0}
 {#0} Abschnitte¦{#0} onderdelen
 Links/Rechts = Abschnitt wechseln¦Links/rechts = onderdeel wisselen

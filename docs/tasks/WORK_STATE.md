@@ -2,6 +2,10 @@ Last update: 2026-11-23. Read `AGENTS.md` first, then this file.
 
 ## Current task
 
+T-070 (23 Nov 2026): Home data preparation is staged. The first pass publishes Live TV channels and saved category favourites; full provider-category and movie/series indexes are built next in the background. VOD/favorites/history tabs retain a loading screen until full data is ready; Home and Live TV can use the preview. No build/tests/device check run; see `docs/tasks/T-070-staged-home-startup.md`. Existing user edits remain untouched.
+
+T-069 (23 Nov 2026): Live TV smart-genre scanning and its delayed prewarm now follow the existing Automatic genres opt-in (default off). Provider categories remain unchanged. No tests or build run; see `docs/tasks/T-069-live-tv-smart-genres-opt-in.md` for manual verification. Existing local edits to `HomeLayout.kt` and untracked `AGENTS.md` remain untouched.
+
 T-068 (23 Nov 2026): Adapted the maintainer-approved upstream updates on `codex/litestream-tv-fork`: incomplete unsized playlist checks, Xtream category completeness check, 401/403/404 backup failover, explicit per-host TLS fallback consent, private categories, optional Media3 title-page stream details, and credential-free playlist selection JSON import/export. Existing LiteStream infrastructure was reused. `git diff --check` passes. No Gradle build, tests, or device validation was run; see `docs/tasks/T-068-approved-upstream-updates.md` for exact risks and maintainer test steps. Existing local edits to `HomeLayout.kt` and untracked `AGENTS.md` were preserved.
 
 ## Previous tasks
