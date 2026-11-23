@@ -163,7 +163,8 @@ fun CategoriesScreen(
                         else -> CatOrder.move(ctx, area, names, name, how)
                     }
                 } else null
-                if (CatPrefs.listView) ListMode(req.title, entries, catSort, firstFocus, pillFocus, onPick, onOpen, onMove) { bgItem = it }
+                val privateKind = if (mode == 1) when (area) { CatOrder.MOVIE -> Kind.MOVIE; CatOrder.SERIES -> Kind.SERIES; else -> null } else null
+                if (CatPrefs.listView) ListMode(req.title, entries, catSort, firstFocus, pillFocus, onPick, onOpen, onMove, privateKind) { bgItem = it }
                 else TileMode(entries, catSort, firstFocus, onPick)
             }
         }
@@ -191,7 +192,7 @@ object CatMemory {
 private fun ListMode(
     title: String, entries: List<Pair<String, List<Item>>>, sort: Int, firstFocus: FocusRequester, pillFocus: FocusRequester,
     onPick: (String, List<Item>, Int) -> Unit, onOpen: (Item) -> Unit,
-    onMove: ((String, Int) -> Unit)?, onFocusItem: (Item) -> Unit
+    onMove: ((String, Int) -> Unit)?, privateKind: Kind?, onFocusItem: (Item) -> Unit
 ) {
     val scope = rememberCoroutineScope()
     var sel by remember { mutableIntStateOf((CatMemory.sel[title] ?: 0).coerceIn(0, maxOf(entries.lastIndex, 0))) }
@@ -292,21 +293,32 @@ private fun ListMode(
                             } else Modifier
                         ),
                         onFocus = { sel = i }, onRight = { focusPreview() },
-                        onMenu = if (onMove != null && !isTopEntry(e.first)) ({ moveMenu = true }) else null,
+                        onMenu = if ((onMove != null || privateKind != null) && !isTopEntry(e.first)) ({ moveMenu = true }) else null,
                         floating = isFloating
                     ) { if (!isFloating) onPick(e.first, all, sortFor(e.first, sort)) }
                     // Issue 19: the menu stays open while moving step by step; the row (and with it the menu) follows the category
-                    if (moveMenu && onMove != null) OptionPopup(
-                        listOf("Mit Hoch/Runter verschieben", "Nach oben verschieben", "Nach unten verschieben", "An den Anfang verschieben", "Ans Ende verschieben"),
+                    val privateAction = privateKind != null && !isTopEntry(e.first)
+                    val actions = buildList {
+                        if (onMove != null) addAll(listOf("Move with Up/Down", "Move up", "Move down", "Move to top", "Move to bottom"))
+                        if (privateAction) add(if (PrivateCats.isPrivate(privateKind!!, e.first)) "Make category public" else "Make category private")
+                    }
+                    if (moveMenu && actions.isNotEmpty()) OptionPopup(
+                        actions,
                         -1, { moveMenu = false }
                     ) { k ->
-                        movedName = e.first
-                        when (k) {
-                            0 -> { moveMenu = false; floating = e.first }
-                            1 -> onMove(e.first, -1)
-                            2 -> onMove(e.first, 1)
-                            3 -> { moveMenu = false; onMove(e.first, MOVE_TOP) }
-                            else -> { moveMenu = false; onMove(e.first, MOVE_BOTTOM) }
+                        val moveCount = if (onMove != null) 5 else 0
+                        if (k >= moveCount) {
+                            privateKind?.let { privateToggle(ctx, it, e.first) }
+                            moveMenu = false
+                        } else {
+                            movedName = e.first
+                            when (k) {
+                                0 -> { moveMenu = false; floating = e.first }
+                                1 -> onMove?.invoke(e.first, -1)
+                                2 -> onMove?.invoke(e.first, 1)
+                                3 -> { moveMenu = false; onMove?.invoke(e.first, MOVE_TOP) }
+                                else -> { moveMenu = false; onMove?.invoke(e.first, MOVE_BOTTOM) }
+                            }
                         }
                     }
                 }

@@ -89,7 +89,7 @@ object RemoteHub {
     }
 
     private fun handle(name: String, q: Map<String, String>): String? {
-        val all = PlaylistStore.channels
+        val all = PrivateCats.visible(PlaylistStore.channels)
         return when (name) {
             "search" -> {
                 if (all.isEmpty()) return "{\"loading\":true}"

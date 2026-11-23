@@ -543,7 +543,7 @@ private fun BoomerChips(names: List<String>, selected: Int, colors: List<Color>?
 /** Small preview of the selected channels; OK on a tile = move left/right or remove. */
 @Composable
 private fun BoomerBuilder(ctx: Context) {
-    val live = remember(PlaylistStore.channels) { PlaylistStore.channels.filter { it.kind == Kind.LIVE } }
+    val live = remember(PlaylistStore.channels, PrivateCats.version) { PrivateCats.visible(PlaylistStore.channels.filter { it.kind == Kind.LIVE }) }
     val ids = remember(live) { live.mapTo(HashSet()) { it.id } }
     val custom = Boomer.custom.toList()
     val tiles = BoomerLogic.tiles(live, Library.favs.toList(), History.ids.toList(), custom)

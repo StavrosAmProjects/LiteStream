@@ -182,6 +182,30 @@ object LoadLogic {
         val pass = q["password"] ?: return null
         return Triple(m.groupValues[1], user, pass)
     }
+
+    /** Detect obvious truncated M3U downloads when the server provides no content length. */
+    fun tailLooksCut(tail: String): Boolean {
+        val last = tail.split('\n').map { it.trim('\r', ' ', '\t') }.lastOrNull { it.isNotEmpty() } ?: return false
+        if (last.startsWith("#")) return !last.startsWith("#EXTM3U")
+        val hasLineBreak = tail.endsWith("\n") || tail.endsWith("\r")
+        return !hasLineBreak && !last.contains("://")
+    }
+
+    fun groupTitle(line: String): String? {
+        val start = line.indexOf("group-title=\"")
+        if (start < 0) return null
+        val from = start + 13
+        val end = line.indexOf('"', from)
+        return if (end < 0) null else line.substring(from, end)
+    }
+
+    fun normGroup(name: String): String = name.replace('"', '\'').trim().lowercase()
+
+    fun missingCategories(api: Collection<String>, found: Set<String>): Boolean {
+        val names = api.map(::normGroup).filter { it.isNotEmpty() }.toSet()
+        if (names.size < 5) return false
+        return names.count { it in found } * 2 < names.size
+    }
 }
 
 /**

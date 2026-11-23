@@ -446,6 +446,25 @@ private fun ParentalPage(ctx: Context, onExit: () -> Unit) {
                 "Zeigt Titel und Sender für Erwachsene nie in den Reihen der Startseiten (Start, Filme, Serien), auch nicht unter „Zuletzt geschaut“ oder „Weiter schauen“. In Live TV, in den Kategorien und in der Suche bleiben sie erreichbar.",
                 Parental.homeHide
             ) { Parental.setHomeHide(ctx, it) }
+            PrivateCats.init(ctx)
+            ToggleRow(
+                "Treat parental categories as private",
+                "Keep flagged content inside its category and hide it from search, home rows, history and all-channel lists.",
+                PrivateCats.parental
+            ) { PrivateCats.setParental(ctx, it) }
+            val privateRows = remember(PrivateCats.version) { PrivateCats.keys.sorted() }
+            if (privateRows.isNotEmpty()) {
+                SectionTitle("Private categories")
+                privateRows.forEach { key ->
+                    val split = key.indexOf('\t')
+                    val kind = runCatching { Kind.valueOf(key.substring(0, split)) }.getOrNull()
+                    val group = key.substring((split + 1).coerceAtMost(key.length))
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text(group, color = Color.White, fontSize = 15.sp, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        SmallPill("Make public") { if (kind != null) PrivateCats.set(ctx, kind, group, false) }
+                    }
+                }
+            }
             SectionTitle("PIN")
             Text(if (Parental.pinSet) "PIN ist gesetzt" else "Keine PIN gesetzt", color = if (Parental.pinSet) Accent2 else Muted, fontSize = 16.sp)
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -1258,6 +1277,46 @@ private fun PlaylistPage(ctx: Context, onAdd: () -> Unit, reload: () -> Unit, on
     var editingB by remember { mutableIntStateOf(-1) }
     var backups by remember { mutableStateOf(backupList(emptyList())) }
     var backupErr by remember { mutableStateOf<String?>(null) }
+    var selectionTransferUrl by remember { mutableStateOf<String?>(null) }
+    var selectionTransferMsg by remember { mutableStateOf<String?>(null) }
+    val exportSelection = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/json")) { uri ->
+        val url = selectionTransferUrl
+        if (uri != null && url != null) scope.launch {
+            val ok = withContext(Dispatchers.IO) {
+                runCatching {
+                    val json = PlaylistSelectionTransfer.encode(CountryFilterStore.read(ctx, url))
+                    ctx.contentResolver.openOutputStream(uri, "wt")?.use { it.write(json.toByteArray(Charsets.UTF_8)) } != null
+                }.getOrDefault(false)
+            }
+            selectionTransferMsg = if (ok) "Playlist selection exported without provider credentials." else "Could not export this selection."
+        }
+    }
+    val importSelection = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri ->
+        val url = selectionTransferUrl
+        if (uri != null && url != null) scope.launch {
+            val selection = withContext(Dispatchers.IO) {
+                runCatching {
+                    val bytes = ctx.contentResolver.openInputStream(uri)?.use { stream ->
+                        val out = java.io.ByteArrayOutputStream()
+                        val buffer = ByteArray(8192)
+                        while (true) {
+                            val count = stream.read(buffer)
+                            if (count < 0) break
+                            require(out.size() + count <= PlaylistSelectionTransfer.MAX_BYTES) { "File is too large" }
+                            out.write(buffer, 0, count)
+                        }
+                        out.toByteArray()
+                    } ?: throw IllegalArgumentException("Could not read file")
+                    PlaylistSelectionTransfer.decode(String(bytes, Charsets.UTF_8))
+                }
+            }
+            selection.onSuccess { chosen ->
+                CountryFilterStore.write(ctx, url, chosen)
+                val applied = PlaylistStore.reapplyCountryFilter(ctx, url)
+                selectionTransferMsg = if (applied) "Playlist selection imported and applied." else "Selection imported. Update the playlist to apply it."
+            }.onFailure { selectionTransferMsg = it.message ?: "Invalid selection file." }
+        }
+    }
     PlaylistStore.savedUrl(ctx)
     if (Secrets.plainFallback) Hint("Dieses Gerät hat keinen sicheren Schlüsselspeicher: Playlist-Adressen mit Zugangsdaten werden unverschlüsselt gespeichert.")
     Text("Meine Playlists (${PlaylistStore.lists.size})", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
@@ -1302,6 +1361,21 @@ private fun PlaylistPage(ctx: Context, onAdd: () -> Unit, reload: () -> Unit, on
                         else { customizeIndex = i; customizeItems = items.filter { it.kind == Kind.LIVE } }
                     }
                 }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                SmallPill("Export selection") {
+                    selectionTransferUrl = pl.url
+                    val safeName = pl.name.replace(Regex("[^A-Za-z0-9_-]"), "_").take(40).ifBlank { "playlist" }
+                    runCatching { exportSelection.launch("${safeName}_selection.json") }
+                        .onFailure { selectionTransferMsg = "File saving is unavailable on this device." }
+                }
+                SmallPill("Import selection") {
+                    selectionTransferUrl = pl.url
+                    runCatching { importSelection.launch(arrayOf("application/json", "text/*", "*/*")) }
+                        .onFailure { selectionTransferMsg = "File selection is unavailable on this device." }
+                }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (StalkerLogic.parse(pl.url) == null) SmallPill("Edit on phone") { onEditProvider(i) }
                 if (XtreamLogic.fromUrl(pl.url) != null) SmallPill("Backup servers") {
                     backups = backupList(PlaylistStore.backups(ctx, pl.url)); editingB = i; backupErr = null
@@ -1317,6 +1391,7 @@ private fun PlaylistPage(ctx: Context, onAdd: () -> Unit, reload: () -> Unit, on
             Text("Choose which categories are included. You can add previously excluded categories again here.", color = Muted, fontSize = 13.sp)
         }
     }
+    selectionTransferMsg?.let { Text(it, color = Muted, fontSize = 14.sp) }
     val selecting = customizeItems
     val selectedPlaylist = PlaylistStore.lists.getOrNull(customizeIndex)
     if (selecting != null && selectedPlaylist != null) androidx.compose.ui.window.Dialog(

@@ -193,6 +193,7 @@ object PlaylistStore {
     private var primaryEpg: List<String> = emptyList()
     private var primaryOrder: Map<String, Int> = emptyMap()
     private var epgSig = 0L
+    @Volatile private var lastUnsized = false
     private var inited = false
     private val loadLock = Mutex()
     @Volatile private var job: Job? = null
@@ -624,6 +625,8 @@ object PlaylistStore {
         throw last ?: IOException("Download")
     }
 
+    private class IncompletePlaylist : IOException("Playlist download was incomplete")
+
     private fun charsetOf(name: String?): Charset = try { Charset.forName(name ?: "UTF-8") } catch (e: Exception) { Charsets.UTF_8 }
 
     /**
@@ -646,9 +649,15 @@ object PlaylistStore {
             downloadList(c, u)
         } catch (e: PlaylistError) {
             return apiInstead(c, u, acct, e)
+        } catch (e: IncompletePlaylist) {
+            return apiInstead(c, u, acct, PlaylistError("The playlist download was incomplete."))
         }
         val head = runCatching { got.first.inputStream().use { s -> val b = ByteArray(512); val k = s.read(b); if (k > 0) String(b, 0, k, got.second) else "" } }.getOrDefault("")
-        if (XtreamLogic.looksLikeM3u(head)) return got
+        if (XtreamLogic.looksLikeM3u(head)) {
+            if (!lastUnsized || !missesCategories(acct, got.first, got.second)) return got
+            got.first.delete(); infoFile(c, u).delete()
+            return apiInstead(c, u, acct, PlaylistError("The playlist download was incomplete."))
+        }
         // 200, but no list (error page, empty response): try the API
         got.first.delete(); infoFile(c, u).delete()
         return apiInstead(c, u, acct, PlaylistError("Der Server hat keine gültige Playlist geliefert."))
@@ -656,6 +665,21 @@ object PlaylistStore {
 
     private fun apiKey(u: String) = "xt_api_" + key(u)
     private fun useApi(c: Context, u: String) = prefs(c).getBoolean(apiKey(u), false)
+
+    private fun missesCategories(acct: XtreamLogic.Acct, file: File, charset: Charset): Boolean {
+        val apiNames = runCatching { XtreamApi(client, UA).liveCategoryNames(acct) }.getOrNull().orEmpty()
+        if (apiNames.size < 5) return false
+        phase = "Checking playlist completeness…"
+        val found = HashSet<String>()
+        var lineCount = 0
+        file.bufferedReader(charset).useLines { lines ->
+            for (line in lines) {
+                if (line.startsWith("#EXTINF")) LoadLogic.groupTitle(line)?.let { found.add(LoadLogic.normGroup(it)) }
+                if (++lineCount % 20_000 == 0 && cancelled()) throw CancellationException("cancelled")
+            }
+        }
+        return LoadLogic.missingCategories(apiNames, found)
+    }
 
     /** get.php failed: load via player_api.php and remember that for this login. If that fails too, the clearer error counts. */
     private fun apiInstead(c: Context, u: String, acct: XtreamLogic.Acct, first: PlaylistError): Pair<File, Charset> {
@@ -745,9 +769,11 @@ object PlaylistStore {
         val part = partFile(c, u)
         val pi = LoadLogic.PartInfo.decode(runCatching { info.readText() }.getOrNull())?.takeIf { it.urlHash == key(u) }
         if (pi != null && raw.exists() && raw.length() > 0 && System.currentTimeMillis() - raw.lastModified() < RAW_MAX_AGE) {
+            lastUnsized = false
             return raw to charsetOf(pi.charset)
         }
         raw.delete()
+        lastUnsized = false
         var offset = if (pi != null && part.exists()) part.length() else 0L
         // After a power loss the last written bytes may be missing or corrupt: go back a bit
         if (offset > 0) { offset = maxOf(0L, offset - 65_536); RandomAccessFile(part, "rw").use { it.setLength(offset) } }
@@ -778,6 +804,7 @@ object PlaylistStore {
                     else -> len
                 }
                 totalBytes = total
+                lastUnsized = total <= 0L
                 if (len > 0 && c.filesDir.usableSpace < len + SPACE_RESERVE) throw PlaylistError(PlaylistLogic.NO_SPACE)
                 val cs = body.contentType()?.charset(Charsets.UTF_8) ?: Charsets.UTF_8
                 info.writeText(LoadLogic.PartInfo(key(u), r.header("ETag"), r.header("Last-Modified"), cs.name()).encode())
@@ -801,15 +828,27 @@ object PlaylistStore {
                     out.flush()
                     bytesRead = n
                 }
-                if (total > 0 && part.length() < total) throw IOException("Download unvollständig")
+                if (total > 0 && part.length() < total) throw IOException("Download incomplete")
             }
         } finally {
             call = null
         }
         if (part.length() == 0L) throw PlaylistError("Der Server hat keine Daten geliefert.")
+        if (lastUnsized && LoadLogic.tailLooksCut(tailOf(part))) {
+            part.delete(); info.delete()
+            throw IncompletePlaylist()
+        }
         raw.delete()
         if (!part.renameTo(raw)) throw IOException("Datei konnte nicht umbenannt werden")
         return raw to charsetOf(LoadLogic.PartInfo.decode(runCatching { info.readText() }.getOrNull())?.charset)
+    }
+
+    private fun tailOf(file: File, maxBytes: Int = 4096): String = RandomAccessFile(file, "r").use { input ->
+        val size = minOf(input.length(), maxBytes.toLong()).toInt()
+        val bytes = ByteArray(size)
+        input.seek(input.length() - size)
+        input.readFully(bytes)
+        String(bytes, Charsets.ISO_8859_1)
     }
 
     // ------------------------------------------------------------------ Reading

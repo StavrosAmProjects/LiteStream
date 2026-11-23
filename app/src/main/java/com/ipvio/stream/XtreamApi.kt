@@ -64,6 +64,9 @@ class XtreamApi(private val client: OkHttpClient, private val ua: String) {
         }
     }
 
+    /** Names used to check that an unsized get.php response contains the provider's live catalogue. */
+    fun liveCategoryNames(a: XtreamLogic.Acct): List<String> = categories(a, "get_live_categories").values.toList()
+
     /** Reads a flat JSON object (texts and numbers; for lists only the first value, e.g. "category_ids"). */
     private fun flat(r: JsonReader): Map<String, String> {
         val f = HashMap<String, String>(24)

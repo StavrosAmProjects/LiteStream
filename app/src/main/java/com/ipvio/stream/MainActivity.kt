@@ -39,6 +39,7 @@ class MainActivity : ComponentActivity() {
         // Load settings early so colors and size are right in the very first frame.
         Profiles.init(this)
         Profiles.prewarm(this)
+        TlsFallback.init(this)
         val pick = Profiles.needsPicker(this)
         if (!pick) AppSettings.init(this)
         General.init(this)
@@ -166,6 +167,7 @@ fun App(pick: Boolean = false) {
         }
         // New version available: dialog with one button (above every screen)
         UpdatePromptHost()
+        TlsConsentDialog()
         // First start without a playlist: one non-blocking card that checks for updates (T-014)
         if (picked) UpdateCardHost()
     }
@@ -186,7 +188,7 @@ private val SE_RE = Regex("""S(\d+)E(\d+)""")
 private fun AppContent() {
     val ctx = LocalContext.current
     remember {
-        AppSettings.init(ctx); WatchStore.init(ctx); History.init(ctx); Library.init(ctx); QualityStore.init(ctx)
+        AppSettings.init(ctx); WatchStore.init(ctx); History.init(ctx); PrivateCats.init(ctx); Library.init(ctx); QualityStore.init(ctx)
         PlaybackPrefs.init(ctx); PlayerSync.init(ctx); loadWishboxTexts(); DeadLinks.init(ctx); ChannelLists.init(ctx); Reminders.init(ctx); Reminders.schedule(ctx)
         // W-010b: live sync of favorites and history (silent; only when Google Drive is connected)
         LiveSync.start(ctx); 0
@@ -259,6 +261,7 @@ private fun AppContent() {
     }
 
     val all = PlaylistStore.channels
+    LaunchedEffect(all, PrivateCats.version) { PrivateCats.reload(all) }
     val tvProviderUrls = remember(PlaylistStore.shownUrl, PlaylistStore.sourceNames) {
         listOfNotNull(PlaylistStore.shownUrl) + PlaylistStore.extraUrls(ctx)
     }

@@ -69,8 +69,8 @@ fun SearchScreen(
         listOfNotNull(PlaylistStore.shownUrl) + PlaylistStore.extraUrls(ctx)
     }
     val providerFilters = providerUrls.map { CountryFilterStore.read(ctx, it) }
-    val all = remember(PlaylistStore.channels, providerFilters) {
-        CountryFilterLogic.filterSources(PlaylistStore.channels, providerFilters)
+    val all = remember(PlaylistStore.channels, providerFilters, PrivateCats.version) {
+        PrivateCats.visible(CountryFilterLogic.filterSources(PlaylistStore.channels, providerFilters))
     }
     // Build the index in the background; searches also run in the background and only after a short typing pause
     // With very large playlists memory can run out while the index is built: then free the image cache and try once more,

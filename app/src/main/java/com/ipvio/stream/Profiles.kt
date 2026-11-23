@@ -53,7 +53,7 @@ object Profiles {
     private val SCOPED = listOf(
         "ipvio_settings", "ipvio_lib", "ipvio_quality", "ipvio_hist", "ipvio_watch", "ipvio_catfavs",
         "ipvio_variants", "ipvio_guide", "ipvio_browse", "ipvio_cat", "ipvio_general", "ipvio_lang", "ipvio_sport24fix",
-        "ipvio_chlists", "ipvio_tracks", "ipvio_eprog", "ipvio_live"
+        "ipvio_chlists", "ipvio_tracks", "ipvio_eprog", "ipvio_live", "ipvio_privatecats"
     )
 
     val list = mutableStateListOf<Profile>()

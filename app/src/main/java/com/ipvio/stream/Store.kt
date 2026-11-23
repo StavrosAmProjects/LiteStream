@@ -426,6 +426,7 @@ object History {
     }
 
     fun add(c: Context, id: String) {
+        if (PrivateCats.isPrivateId(id)) return
         ids.remove(id)
         ids.add(0, id)
         while (ids.size > 80) ids.removeAt(ids.lastIndex)
@@ -436,6 +437,10 @@ object History {
     fun remove(c: Context, id: String) {
         if (!ids.remove(id)) return
         prefs(c).edit().putString("ids", ids.joinToString("\n")).apply()
+    }
+
+    fun removeAll(c: Context, privateIds: Set<String>) {
+        if (ids.removeAll(privateIds)) prefs(c).edit().putString("ids", ids.joinToString("\n")).apply()
     }
 
     /** Reads the list again after the live sync (W-010b). Main thread. */
@@ -480,6 +485,14 @@ object ResumeLog {
         while (lines.size > 25) lines.removeAt(lines.lastIndex)
         prefs(c).edit().putString("l", lines.joinToString("\n")).apply()
     }
+
+    fun removeFor(c: Context, privateIds: Set<String>, all: List<Item>) {
+        init(c)
+        // Resume log lines contain a title and short ID suffix, never a stream URL. Match both to avoid collateral removal.
+        val signatures = all.asSequence().filter { it.id in privateIds }.map { it.title.take(40) + " #" + it.id.takeLast(4) }.toSet()
+        if (lines.removeAll { line -> signatures.any(line::contains) })
+            prefs(c).edit().putString("l", lines.joinToString("\n")).apply()
+    }
 }
 
 object WatchStore {
@@ -517,6 +530,10 @@ object WatchStore {
      * Under 30 seconds nothing changes – a short peek does not delete an old resume point.
      */
     fun save(c: Context, e: Entry, next: Entry? = null) {
+        if (PrivateCats.isPrivateId(e.itemId)) {
+            remove(c, e.itemId)
+            return
+        }
         val fin = ResumeLogic.finished(e.pos, e.dur)
         val old = entries.firstOrNull { it.itemId == e.itemId }
         val what = e.title.take(40) + " #" + e.itemId.takeLast(4) + " " + (e.pos / 1000) + "s/" + (e.dur / 1000) + "s"
@@ -536,6 +553,10 @@ object WatchStore {
     /** Remove from "Continue watching" (menu key on the card). */
     fun remove(c: Context, itemId: String) {
         if (entries.removeAll { it.itemId == itemId }) persist(c)
+    }
+
+    fun removeAll(c: Context, privateIds: Set<String>) {
+        if (entries.removeAll { it.itemId in privateIds }) persist(c)
     }
 
     private fun persist(c: Context) {
@@ -580,6 +601,7 @@ object EpProgress {
 
     @Synchronized
     fun put(c: Context, seriesId: String, season: Int, ep: Int, posMs: Long, durMs: Long) {
+        if (PrivateCats.isPrivateId(seriesId)) return
         if (durMs <= 0) return
         val m = load(c, seriesId)
         val v = ResumeLogic.EpPos((posMs / 1000).toInt(), (durMs / 1000).toInt())

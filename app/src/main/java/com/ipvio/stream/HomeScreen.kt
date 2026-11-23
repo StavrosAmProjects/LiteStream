@@ -122,8 +122,10 @@ private fun buildHome(all: List<Item>, ipvioWanted: Boolean, trend: Set<String>,
     val movieP = providerGroups(movies)
     val seriesP = providerGroups(series)
     // Home rows never show adult titles if wanted; categories, "All movies" and Live TV keep them (whoever looks finds them there)
-    val rm = if (noAdult) movies.filterNot { ParentalLogic.isAdult(it.group, it.title) } else movies
-    val rs = if (noAdult) series.filterNot { ParentalLogic.isAdult(it.group, it.title) } else series
+    val publicMovies = PrivateCats.visible(movies)
+    val publicSeries = PrivateCats.visible(series)
+    val rm = if (noAdult) publicMovies.filterNot { ParentalLogic.isAdult(it.group, it.title) } else publicMovies
+    val rs = if (noAdult) publicSeries.filterNot { ParentalLogic.isAdult(it.group, it.title) } else publicSeries
     val trendItems = if (trend.isEmpty()) emptyList() else (rm.asSequence() + rs.asSequence()).filter { Trending.norm(it.title) in trend }.toList()
     val rowMP = if (rm === movies) movieP else providerGroups(rm)
     val rowSP = if (rs === series) seriesP else providerGroups(rs)
@@ -234,13 +236,14 @@ fun HomeScreen(
     LaunchedEffect(Unit) { while (true) { delay(45_000); if (ver != Classifier.version) { ver = Classifier.version; HomeVer.value = ver } } }
     var trend by remember { mutableStateOf(HomeVer.trend) }
     LaunchedEffect(all.isNotEmpty()) { if (all.isNotEmpty()) { trend = Trending.titles(); HomeVer.trend = trend } }
+    val dataVersion = ver * 31 + PrivateCats.version
     val wantIpvio = AppSettings.ipvioFilter
     val noAdult = Parental.adultOffHome
-    val cached = HomeCache.get(all, order, wantIpvio, ver, trend, noAdult)
+    val cached = HomeCache.get(all, order, wantIpvio, dataVersion, trend, noAdult)
     // When inputs change, the previous state stays visible until the new result (produceState keeps the value)
-    val dataState = produceState(cached, all, order, wantIpvio, ver, trend, noAdult) {
-        value = HomeCache.get(all, order, wantIpvio, ver, trend, noAdult)
-            ?: withContext(Dispatchers.Default) { keepLiveLists(buildHome(all, wantIpvio, trend, noAdult), HomeCache.last()) }.also { HomeCache.put(all, order, wantIpvio, ver, trend, noAdult, it) }
+    val dataState = produceState(cached, all, order, wantIpvio, dataVersion, trend, noAdult) {
+        value = HomeCache.get(all, order, wantIpvio, dataVersion, trend, noAdult)
+            ?: withContext(Dispatchers.Default) { keepLiveLists(buildHome(all, wantIpvio, trend, noAdult), HomeCache.last()) }.also { HomeCache.put(all, order, wantIpvio, dataVersion, trend, noAdult, it) }
     }
     // While recomputing: show the previous state, the loading skeleton only the very first time
     val prev = HomeCache.last()
@@ -1082,5 +1085,7 @@ private fun BillboardLayer(fade: () -> Float, item: State<Item?>, infoMod: Modif
 }
 
 /** Home rows without adult titles when Parental control > "never on the home pages" is on ([on]). */
-private fun homeSafe(list: List<Item>, on: Boolean): List<Item> =
-    if (!on) list else list.filterNot { ParentalLogic.isAdult(it.group, it.title) }
+private fun homeSafe(list: List<Item>, on: Boolean): List<Item> {
+    val visible = PrivateCats.visible(list)
+    return if (!on) visible else visible.filterNot { ParentalLogic.isAdult(it.group, it.title) }
+}

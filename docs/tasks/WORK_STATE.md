@@ -1,6 +1,10 @@
-Last update: 2026-11-19. Read `AGENTS.md` first, then this file.
+Last update: 2026-11-23. Read `AGENTS.md` first, then this file.
 
 ## Current task
+
+T-068 (23 Nov 2026): Adapted the maintainer-approved upstream updates on `codex/litestream-tv-fork`: incomplete unsized playlist checks, Xtream category completeness check, 401/403/404 backup failover, explicit per-host TLS fallback consent, private categories, optional Media3 title-page stream details, and credential-free playlist selection JSON import/export. Existing LiteStream infrastructure was reused. `git diff --check` passes. No Gradle build, tests, or device validation was run; see `docs/tasks/T-068-approved-upstream-updates.md` for exact risks and maintainer test steps. Existing local edits to `HomeLayout.kt` and untracked `AGENTS.md` were preserved.
+
+## Previous tasks
 
 T-067 (20 Nov 2026): Changed upstream source sync from latest stable release tags to the official IPVIO `main` commit. After the workflow reaches the repository default branch, it creates or updates a review PR into `codex/litestream-tv-fork`; no auto-merge or upstream APK distribution. LiteStream `main` remains release-only. `git diff --check` and shell syntax checks pass; live GitHub workflow execution and Actions permissions are not verified. See `docs/tasks/T-067-sync-upstream-main.md`.
 

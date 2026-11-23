@@ -53,8 +53,13 @@ object ZapContext {
 
 /** Remembers the last chosen category / list in Live TV (also across a restart). */
 object LiveMemory {
-    fun sel(c: android.content.Context): String? = Profiles.sp(c, "ipvio_live").getString("sel", null)
-    fun setSel(c: android.content.Context, k: String) { Profiles.sp(c, "ipvio_live").edit().putString("sel", k).apply() }
+    @Volatile private var privateSel: String? = null
+    fun sel(c: android.content.Context): String? = privateSel ?: Profiles.sp(c, "ipvio_live").getString("sel", null)
+    fun setSel(c: android.content.Context, k: String) {
+        if (PrivateCats.isPrivate(Kind.LIVE, k)) { privateSel = k; return }
+        privateSel = null
+        Profiles.sp(c, "ipvio_live").edit().putString("sel", k).apply()
+    }
 }
 
 /** Entering a name (new channel list, rename). */
@@ -124,8 +129,8 @@ fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: Li
     val savedFilters = remember(providerUrls, filterRevision) { providerUrls.map { CountryFilterStore.read(ctx, it) } }
     val allProvidersUnfiltered = savedFilters.all { it == null }
     val filteredAll = remember(orderedSource, savedFilters) { CountryFilterLogic.filterSources(orderedSource, savedFilters) }
-    val live = remember(filteredAll, srcK) { if (srcK < 0) filteredAll else filteredAll.filter { it.src == srcK } }
-    val groups = remember(groupsAll, srcK, allProvidersUnfiltered, savedFilters, orderRank) {
+    val live = remember(filteredAll, srcK, PrivateCats.version) { PrivateCats.visible(if (srcK < 0) filteredAll else filteredAll.filter { it.src == srcK }) }
+    val groups = remember(groupsAll, srcK, allProvidersUnfiltered, savedFilters, orderRank, PrivateCats.version) {
         if (srcK < 0 && allProvidersUnfiltered) LinkedHashMap<String, List<Item>>().also { m ->
             groupsAll.forEach { (g, entries) -> m[g] = entries.sortedBy { orderRank[LiveChannelOrderLogic.key(it)] ?: Int.MAX_VALUE } }
         } else LinkedHashMap<String, List<Item>>().also { m ->
@@ -138,7 +143,7 @@ fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: Li
     }
     // Genres (sports, movies, documentary, kids, news, music) – detected by category and channel name
     val genres = remember(live) { LiveGenre.split(live) }
-    val favs = remember(favsAll, srcK) { if (srcK < 0) favsAll else favsAll.filter { it.src == srcK } }
+    val favs = remember(favsAll, srcK, PrivateCats.version) { PrivateCats.visible(if (srcK < 0) favsAll else favsAll.filter { it.src == srcK }) }
     CatFavs.init(ctx)
     ChannelLists.init(ctx)
     remember { LiveQuality.init(ctx) }
@@ -512,6 +517,7 @@ fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: Li
                         if (catMenu && plainCat) OptionPopup(
                             listOf(
                                 if (n in CatFavs.list) "Aus Favoriten entfernen" else "Zu Favoriten hinzufügen", "Kategorie ausblenden",
+                                if (PrivateCats.isPrivate(Kind.LIVE, n)) "Make category public" else "Make category private",
                                 "Mit Hoch/Runter verschieben", "Nach oben verschieben", "Nach unten verschieben", "An den Anfang verschieben", "Ans Ende verschieben", "Kategorien sortieren …"
                             ), -1, { catMenu = false }
                         ) { i ->
@@ -520,11 +526,12 @@ fun LiveTab(liveAll: List<Item>, groupsAll: Map<String, List<Item>>, favsAll: Li
                             when (i) {
                                 0 -> CatFavs.toggle(ctx, n)
                                 1 -> { if (sel == n) sel = "ALL"; HiddenCats.hide(ctx, n) }
-                                2 -> floatingCat = n
-                                3 -> CatOrder.move(ctx, CatOrder.LIVE, all, n, -1)
-                                4 -> CatOrder.move(ctx, CatOrder.LIVE, all, n, 1)
-                                5 -> CatOrder.toTop(ctx, CatOrder.LIVE, all, n)
-                                6 -> CatOrder.toBottom(ctx, CatOrder.LIVE, all, n)
+                                2 -> privateToggle(ctx, Kind.LIVE, n)
+                                3 -> floatingCat = n
+                                4 -> CatOrder.move(ctx, CatOrder.LIVE, all, n, -1)
+                                5 -> CatOrder.move(ctx, CatOrder.LIVE, all, n, 1)
+                                6 -> CatOrder.toTop(ctx, CatOrder.LIVE, all, n)
+                                7 -> CatOrder.toBottom(ctx, CatOrder.LIVE, all, n)
                                 else -> sortMenu = true
                             }
                         }

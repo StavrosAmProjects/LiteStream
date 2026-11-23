@@ -2,7 +2,7 @@
 
 This is the current product summary for the LiteStream TV fork. The code is derived from [IPVIO Stream](https://github.com/Emrodev/IPVIO-Stream); see the repository README for authorship and upstream credit. Source references use `app/src/main/java/com/ipvio/stream/`.
 
-Reviewed against the feature branch on 19 November 2026. A listed feature means it exists in source; it does not imply every provider or device combination has been tested.
+Reviewed against the feature branch on 23 November 2026. A listed feature means it exists in source; it does not imply every provider or device combination has been tested.
 
 ## TV experience
 
@@ -18,13 +18,17 @@ Reviewed against the feature branch on 19 November 2026. A listed feature means 
 - Phone-assisted local setup, TXT/provider URL import, and manual setup.
 - Several playlists can be shown together, switched individually, or viewed as a merged/all list.
 - Country/category selection is saved per provider. Excluded categories can be restored later; provider data is retained for supported import paths.
+- Per-playlist country/category selections can be exported to or imported from JSON without exporting provider URLs or credentials.
 - Large playlists use resumable downloads, local compressed storage, and language selection when needed.
+- Unsized downloads receive an end-of-file check; Xtream `get.php` lists also receive a best-effort category completeness check when the API is available.
 - Refresh can be scheduled; the app uses its saved playlist between refreshes.
 
 ## Movies and series
 
 - Search, provider categories, favourites, history, custom lists, and resume playback.
+- Provider categories can be marked private so their titles remain accessible inside that category but stay out of ordinary home/search/history rows.
 - Grid or cinema-view browsing with filters and title details.
+- Optional title-page stream probing shows detected resolution, HDR, and available audio/subtitle tracks.
 - TMDB/OMDb metadata requires user-supplied keys. Automatic genre scans are off by default; provider categories remain available.
 - HLS, DASH, and common direct stream playback use the existing Media3 player, with audio/subtitle selection, reconnect handling, quality variants, and optional live timeshift.
 

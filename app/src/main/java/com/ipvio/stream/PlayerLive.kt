@@ -417,8 +417,8 @@ private fun ChannelRow(item: Item, current: Boolean, modifier: Modifier, onFocus
  */
 @Composable
 fun RecentChannelsRow(liveAll: List<Item>, curId: String, onLabel: (String) -> Unit, onPick: (Item) -> Unit) {
-    val recent by produceState(emptyList<Item>(), liveAll, curId, History.ids.size) {
-        val want = History.ids.toList().filter { it != curId }.take(40)
+    val recent by produceState(emptyList<Item>(), liveAll, curId, History.ids.size, PrivateCats.version) {
+        val want = History.ids.toList().filter { it != curId && !PrivateCats.isPrivateId(it) }.take(40)
         value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
             val pos = HashMap<String, Int>(want.size * 2)
             want.forEachIndexed { i, id -> pos.putIfAbsent(id, i) }
